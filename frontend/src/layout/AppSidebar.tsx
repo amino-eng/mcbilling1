@@ -15,6 +15,8 @@ import {
   PlugInIcon,
   TableIcon,
   UserCircleIcon,
+  QueueDqsh,
+  Rapport
 } from "../icons";
 import SidebarWidget from "./SidebarWidget";
 
@@ -29,51 +31,58 @@ const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+    
+    subItems: [{ name: "Recharge History", path: "/", pro: false }],
   },
   {
-    icon: <CalenderIcon />,
-    name: "Calendar",
+    icon: <QueueDqsh/>,
+    name: "QueueDash",
     path: "/calendar",
   },
   {
     icon: <UserCircleIcon />,
-    name: "User Profile",
+    name: "My Profile",
     path: "/profile",
+    
   },
 
   {
-    name: "Forms",
+    name: "My SDA Numbers",
     icon: <ListIcon />,
-    subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
+    path: "/form-elements"
   },
   {
-    name: "Tables",
+    name: "Pricing",
     icon: <TableIcon />,
-    subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
+     path: "/basic-tables"
   },
   {
-    name: "Pages",
+    name: "Clients",
     icon: <PageIcon />,
     subItems: [
-      { name: "404 Error", path: "/404", pro: false },
-      { name: "Blank Page", path: "/blank", pro: false },
+      { name: "Caller ID", path: "/404", pro: false },
+      { name: "Live Calls", path: "/404", pro: false },
+      { name: "SIP Users", path: "/blank", pro: false },
+    ],
+  },
+  {
+    icon: <Rapport />,
+    name: "Reports",
+    subItems: [
+      { name: "Summary Per Day", path: "/alerts", pro: false },
+      { name: "Summary Per Month", path: "/avatars", pro: false },
+      { name: "Reports / Destination", path: "/badges", pro: false },
+      { name: "Inbound Reports", path: "/buttons", pro: false },
+      
     ],
   },
 ];
 
 const othersItems: NavItem[] = [
-  {
-    icon: <PieChartIcon />,
-    name: "Charts",
-    subItems: [
-      { name: "Line Chart", path: "/line-chart", pro: false },
-      { name: "Bar Chart", path: "/bar-chart", pro: false },
-    ],
-  },
+
   {
     icon: <BoxCubeIcon />,
-    name: "UI Elements",
+    name: "reports",
     subItems: [
       { name: "Alerts", path: "/alerts", pro: false },
       { name: "Avatar", path: "/avatars", pro: false },
@@ -83,14 +92,7 @@ const othersItems: NavItem[] = [
       { name: "Videos", path: "/videos", pro: false },
     ],
   },
-  {
-    icon: <PlugInIcon />,
-    name: "Authentication",
-    subItems: [
-      { name: "Sign In", path: "/signin", pro: false },
-      { name: "Sign Up", path: "/signup", pro: false },
-    ],
-  },
+  
 ];
 
 const AppSidebar: React.FC = () => {
@@ -350,7 +352,7 @@ const AppSidebar: React.FC = () => {
               </h2>
               {renderMenuItems(navItems, "main")}
             </div>
-
+{/* 
             <div className="">
               <h2
                 className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
@@ -360,13 +362,13 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "Others"
+                  "main"
                 ) : (
                   <HorizontaLDots />
                 )}
               </h2>
               {renderMenuItems(othersItems, "others")}
-            </div>
+            </div> */}
           </div>
         </nav>
         {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}

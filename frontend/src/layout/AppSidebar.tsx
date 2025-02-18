@@ -31,8 +31,10 @@ const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    
-    subItems: [{ name: "Recharge History", path: "/", pro: false }],
+   
+    subItems: 
+    [{ name: "Activity-Dash" , path: "/", pro: false } , 
+     { name: "Recharge History" , path: "/", pro: false }],
   },
   {
     icon: <QueueDqsh/>,

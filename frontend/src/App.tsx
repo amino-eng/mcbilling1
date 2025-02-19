@@ -19,6 +19,9 @@ import UserProfiles from "./pages/UserProfiles";
 
 
 
+
+
+
 export default function App() {
   return (
     <>
@@ -33,6 +36,7 @@ export default function App() {
             <Route path="/blank" element={<Blank />} />
             <Route path="/rechargerTable" element={<RechargeTable />} />
             <Route path="/rechargerTable" element={<BasicTables />} />
+            
             
 
             {/* Forms */}

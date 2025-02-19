@@ -34,7 +34,7 @@ const navItems: NavItem[] = [
    
     subItems: 
     [{ name: "Activity-Dash" , path: "/", pro: false } , 
-     { name: "Recharge History" , path: "/", pro: false }],
+     { name: "Recharge History" , path: "/rechargerTable", pro: false }],
   },
   {
     icon: <QueueDqsh/>,

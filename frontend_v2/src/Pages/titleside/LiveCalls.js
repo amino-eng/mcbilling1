@@ -17,7 +17,7 @@ export default function LiveCalls() {
             <th style={tableHeaderStyle}>CallerID</th>
             <th style={tableHeaderStyle}>Username</th>
             <th style={tableHeaderStyle}>Name</th>
-            <th style={tableHeaderStyle}>Description</th>
+            <th style={tableHeaderStyle}>Descriptions</th>
             <th style={tableHeaderStyle}>Status</th>
           </tr>
         </thead>

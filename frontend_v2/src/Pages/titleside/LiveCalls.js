@@ -15,7 +15,7 @@ export default function LiveCalls() {
         <thead>
           <tr style={{ backgroundColor: "#007bff", color: "white" }}>
             <th style={tableHeaderStyle}>CallerID</th>
-            <th style={tableHeaderStyle}>Username</th>
+            <th style={tableHeaderStyle}>Usernames</th>
             <th style={tableHeaderStyle}>Name</th>
             <th style={tableHeaderStyle}>Descriptions</th>
             <th style={tableHeaderStyle}>Status</th>

@@ -8,8 +8,8 @@ import Sda from "./Pages/titleside/Sda";
 import Clients from "./Pages/clients/clients";
 import Reports from "./Pages/Reports/Reports";
 import CallerID from "./Pages/clients/CallerID";
-import LiveCalls from "./Pages/clients/LiveCalls";
-import SipUsers from "./Pages/clients/SipUsers";
+import LiveCalls from "./Pages/titleside/LiveCalls";
+import SipUser from "./Pages/clients/SipUser";
 import SummaryPerDay from "./Pages/Reports/SummaryPerDay";
 import SummaryPerMonth from "./Pages/Reports/SummaryPerMonth";
 import ReportsDestination from "./Pages/Reports/ReportsDestination";
@@ -17,6 +17,8 @@ import InboundReports from "./Pages/Reports/InboundReports";
 import ActivityDash from "./Pages/Dashboard/ActivityDash"; 
 import RechargeHistory from "./Pages/Dashboard/RechargeHistory";
 import Profile from "./components/UserProfile/profile";
+import RestricNumber from "./Pages/clients/RestricNumber";
+
 
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
@@ -48,7 +50,8 @@ function App() {
               <Route path="/clients" element={<Clients />} />
               <Route path="/clients/caller-id" element={<CallerID />} />
               <Route path="/clients/live-calls" element={<LiveCalls />} />
-              <Route path="/clients/sip-users" element={<SipUsers />} />
+              <Route path="/clients/RestricNumber" element={<RestricNumber />} />
+              <Route path="/clients/sip-user" element={<SipUser />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/reports/summary-day" element={<SummaryPerDay />} />
               <Route path="/reports/summary-month" element={<SummaryPerMonth />} />

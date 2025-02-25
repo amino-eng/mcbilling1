@@ -7,22 +7,40 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import Sidebar from './layout/Sidebar';
 import Navbar from './layout/Navbar';
-import QueueDash from './Pages/titleside/QueueDash';
-import Pricing from './Pages/titleside/pricing';
+import QueueDash from './Pages/DIDs/QueueDash';
+import DIDs from './Pages/DIDs/DIDs';
+import IVRs from './Pages/DIDs/IVRs';
+import DIDDestination from './Pages/DIDs/DIDDestination';
+import DIDsUse from './Pages/DIDs/DIDsUse';
+import QueuesMembres from './Pages/DIDs/QueuesMembres';
+import QueuesDashboard from './Pages/DIDs/QueuesDashboard';
+import Holidays from './Pages/DIDs/Holidays';
 import Sda from './Pages/titleside/Sda';
 import Clients from './Pages/clients/clients';
 import Reports from './Pages/Reports/Reports';
 import CallerID from './Pages/clients/CallerID';
+import ATALinksys from './Pages/clients/ATALinksys';
+import Users from './Pages/clients/Users';
+import UserHistory from './Pages/clients/UserHistory';
 import LiveCalls from './Pages/titleside/LiveCalls';
 import SipUser from './Pages/clients/SipUser';
 import SummaryPerDay from './Pages/Reports/SummaryPerDay';
 import SummaryPerMonth from './Pages/Reports/SummaryPerMonth';
+import SummaryPerTrunk from './Pages/Reports/SummaryMonthTrunk';
+import SummaryMonthTrunk from './Pages/Reports/SummaryPerTrunk';
+import SummaryDayTrunk from './Pages/Reports/SummaryDayTrunk';
 import ReportsDestination from './Pages/Reports/ReportsDestination';
 import InboundReports from './Pages/Reports/InboundReports';
+import SummaryPerUser from './Pages/Reports/SummaryPerUser';
 import ActivityDash from './Pages/Dashboard/ActivityDash';
 import RechargeHistory from './Pages/Dashboard/RechargeHistory';
 import Profile from './components/UserProfile/profile';
 import RestricNumber from './Pages/clients/RestricNumber'; // Import the renamed component
+import DIDHistory from './Pages/DIDs/DIDHistory';
+import Refills from './Pages/Billing/Refills';
+import PaymentMethods from './Pages/Billing/PaymentMethods';
+import Voucher from './Pages/Billing/Voucher';
+import RefillProviders from './Pages/Billing/RefillRroviders';
 
 function App() {
   const user = {
@@ -76,22 +94,43 @@ function App() {
                   }
                 </div>
               } />
-              <Route path="/queue" element={<QueueDash />} />
+              
               <Route path="/profile" element={<Profile username={user.username} email={user.email} />} />
-              <Route path="/pricing" element={<Pricing />} />
+              
               <Route path="/Sda" element={<Sda />} />
               <Route path="/clients" element={<Clients />} />
               <Route path="/clients/caller-id" element={<CallerID />} />
               <Route path="/clients/live-calls" element={<LiveCalls />} />
+              <Route path="/clients/ATALinksys" element={<ATALinksys />} />
+              <Route path="/clients/Users" element={<Users />} />
               <Route path="/clients/RestricNumber" element={<RestricNumber />} /> {/* Use the renamed route */}
               <Route path="/clients/sip-user" element={<SipUser />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/reports/summary-day" element={<SummaryPerDay />} />
+              <Route path="/reports/summaryperuser" element={<SummaryPerUser />} />
+              <Route path="/reports/summarypertrunk" element={<SummaryPerTrunk />} />
+              <Route path="/reports/summaryMonthTrunk" element={<SummaryMonthTrunk />} />
+              <Route path="/reports/SummaryDayTrunk" element={<SummaryDayTrunk />} />
               <Route path="/reports/summary-month" element={<SummaryPerMonth />} />
               <Route path="/reports/destination" element={<ReportsDestination />} />
               <Route path="/reports/inbound" element={<InboundReports />} />
               <Route path="/dashboard/activitydash" element={<ActivityDash />} />
               <Route path="/dashboard/rechargehistory" element={<RechargeHistory />} />
+              <Route path="/DIDs/Queue" element={<QueueDash />} />
+              <Route path="/DIDs/DIDs" element={<DIDs />} />
+              <Route path="/DIDs/DIDDestination" element={<DIDDestination />} />
+              <Route path="/DIDs/DIDsUse" element={<DIDsUse />} />
+              <Route path="/DIDs/IVRs" element={<IVRs />} />
+              <Route path="/DIDs/QueuesMembres" element={<QueuesMembres/>} />
+              <Route path="/DIDs/QueuesDashboard" element={<QueuesDashboard/>} />
+              <Route path="/DIDs/Holidays" element={<Holidays/>} />
+              <Route path="/DIDs/DIDHistory" element={<DIDHistory/>} />
+              <Route path="/Billing/Refills" element={<Refills/>} />
+              <Route path="/Billing/PaymentMethods" element={<PaymentMethods/>} />
+              <Route path="/Billing/Voucher" element={<Voucher/>} />
+              <Route path="/Billing/RefillProviders" element={<RefillProviders/>} />
+
+              <Route path="/clients/UserHistory" element={<UserHistory/>} />
             </Routes>
           </div>
         </div>

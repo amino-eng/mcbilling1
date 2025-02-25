@@ -1,137 +1,281 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import './RestricNumber.css'; // Import the CSS file (if you're using a separate file)
 
 function RestricNumber() {
   const [phoneData, setPhoneData] = useState([]);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [restrictionType, setRestrictionType] = useState('');
-  const [showForm, setShowForm] = useState(false); // State to toggle form visibility
-  const [userRestrict, setUserRestrict] = useState([]); // State for user restrict data
+  const [showForm, setShowForm] = useState(false);
+  const [userRestrict, setUserRestrict] = useState([]);
+  const [selectedUser, setSelectedUser] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5); // Default items per page
+  const [sortDirection, setSortDirection] = useState('asc');
 
-  // Fetch the data for restrictions
   const fetchData = () => {
+    setLoading(true);
     axios.get('http://localhost:5000/api/admin/agent/affiche')
       .then((response) => {
-        setPhoneData(response.data.restrictions); // Set the restrictions with agent data
-        console.log(response.data); // You can check the data structure in the console
+        setPhoneData(response.data.restrictions);
       })
       .catch((error) => {
         console.error('Error fetching data:', error);
+        setError('Error fetching data');
+      })
+      .finally(() => {
+        setLoading(false);
       });
   };
 
-  // Fetch the user restrict data (agent names)
-// Fetch the user restrict data (agent names)
-const fetchUser = () => {
-  axios.get('http://localhost:5000/api/admin/agent/afficheuserRestrict')
-    .then((response) => {
-      // Accessing the 'users' array from the response data
-      if (Array.isArray(response.data.users)) {
-        setUserRestrict(response.data.users); 
-      } else {
-        console.error('Received data is not an array', response.data);
-      }
-    })
-    .catch((error) => {
-      console.error('Error fetching data:', error);
-    });
-};
+  const fetchUser = () => {
+    setLoading(true);
+    axios.get('http://localhost:5000/api/admin/agent/afficheuserRestrict')
+      .then((response) => {
+        if (Array.isArray(response.data.users)) {
+          setUserRestrict(response.data.users);
+        }
+      })
+      .catch((error) => {
+        console.error('Error fetching user data:', error);
+        setError('Error fetching user data');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
 
   useEffect(() => {
     fetchData();
     fetchUser();
   }, []);
 
-  // Handle adding a new restriction
   const handleAddRestriction = () => {
-    if (!phoneNumber || !restrictionType) {
-      alert('Please enter both phone number and restriction type.');
+    if (!phoneNumber || !restrictionType || !selectedUser) {
+      setError('Please enter phone number, restriction type, and select a user.');
       return;
     }
 
-    axios.post('http://localhost:5000/add-restriction', {
+    const data = {
       number: phoneNumber,
-      direction: restrictionType
-    })
+      direction: restrictionType,
+      id_user: selectedUser,
+    };
+
+    setLoading(true);
+    axios.post('http://localhost:5000/api/admin/agent/add', data)
       .then(() => {
-        alert('Restriction added successfully!');
-        setPhoneNumber('');
-        setRestrictionType('');
-        setShowForm(false); // Hide the form after submission
-        fetchData(); // Refresh data after adding restriction
+        toast.success('Restriction added successfully!');
+        resetForm();
+        fetchData();
       })
       .catch((error) => {
         console.error('Error adding restriction:', error);
+        toast.error('Error adding restriction');
+      })
+      .finally(() => {
+        setLoading(false);
       });
   };
 
+  const handleDeleteRestriction = (restrictionId) => {
+    if (window.confirm('Are you sure you want to delete this restriction?')) {
+      setLoading(true);
+      axios.delete(`http://localhost:5000/api/admin/agent/delete/${restrictionId}`)
+        .then(() => {
+          toast.success('Restriction deleted successfully!');
+          fetchData();
+        })
+        .catch((error) => {
+          console.error('Error deleting restriction:', error);
+          toast.error('Error deleting restriction');
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  };
+
+  const resetForm = () => {
+    setPhoneNumber('');
+    setRestrictionType('');
+    setSelectedUser('');
+    setShowForm(false);
+  };
+
+  // Filtered phone data based on the search term
+  const filteredPhoneData = phoneData.filter(item =>
+    item.agent.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.number.includes(searchTerm)
+  );
+
+  const sortedPhoneData = [...filteredPhoneData].sort((a, b) => {
+    const aValue = sortDirection === 'asc' ? a.agent.username : b.agent.username;
+    const bValue = sortDirection === 'asc' ? b.agent.username : a.agent.username;
+    return aValue.localeCompare(bValue);
+  });
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = sortedPhoneData.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedPhoneData.length / itemsPerPage);
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-      <div style={{ marginTop: '20px' }}>
+    <div className="container mt-4">
+      <ToastContainer />
+
+      <div className="d-flex justify-content-between mb-3">
+        <input
+          type="text"
+          className="form-control"
+          placeholder="Search by username or phone number"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
         <button
+          className="btn btn-primary"
           onClick={() => setShowForm(!showForm)}
-          style={{ padding: '6px 12px', background: 'blue', color: 'white', border: 'none', cursor: 'pointer' }}
         >
           {showForm ? 'Cancel' : 'Add Restriction'}
         </button>
       </div>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
-        <thead>
-          <tr>
-            <th style={{ border: '1px solid #ddd', padding: '8px' }}>Username</th>
-            <th style={{ border: '1px solid #ddd', padding: '8px' }}>Phone Number</th>
-            <th style={{ border: '1px solid #ddd', padding: '8px' }}>Direction</th>
-          </tr>
-        </thead>
-        <tbody>
-          {phoneData.length > 0 && phoneData.map((e, i) => (
-            <tr key={i}>
-              <td style={{ border: '1px solid #ddd', padding: '8px' }}>{e.agent.username}</td> {/* Display the agent username */}
-              <td style={{ border: '1px solid #ddd', padding: '8px' }}>{e.number}</td>
-              <td style={{ border: '1px solid #ddd', padding: '8px' }}>
-                {e.direction === 2 ? 'Inbound' : 'Outbound'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {loading && <div className="loading-spinner">Loading...</div>}
 
-      {/* Conditional rendering of the form */}
+      <div className="mb-3">
+        <label htmlFor="itemsPerPage" className="form-label">Items per page:</label>
+        <select
+          id="itemsPerPage"
+          className="form-select"
+          value={itemsPerPage}
+          onChange={(e) => setItemsPerPage(Number(e.target.value))}
+        >
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={20}>20</option>
+          <option value={30}>30</option>
+          <option value={40}>40</option>
+          <option value={50}>50</option>
+        </select>
+      </div>
+
+      <div className="table-responsive">
+        <table className="table table-striped table-bordered">
+          <thead>
+            <tr>
+              <th onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}>
+                Username {sortDirection === 'asc' ? '↑' : '↓'}
+              </th>
+              <th>Phone Number</th>
+              <th>Direction</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentItems.length > 0 ? (
+              currentItems.map((e, i) => (
+                <tr key={i}>
+                  <td>{e.agent.username}</td>
+                  <td>{e.number}</td>
+                  <td>{e.direction === 2 ? 'Inbound' : 'Outbound'}</td>
+                  <td>
+                    <button 
+                      className="btn btn-danger btn-sm"
+                      onClick={() => handleDeleteRestriction(e.id)}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4" className="text-center">No Restrictions Found</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="d-flex justify-content-between">
+        <button 
+          className="btn btn-secondary"
+          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </button>
+        <span>Page {currentPage} of {totalPages}</span>
+        <button 
+          className="btn btn-secondary"
+          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+          disabled={currentPage === totalPages}
+        >
+          Next
+        </button>
+      </div>
+
       {showForm && (
-        <div style={{ marginTop: '10px' }}>
-          <select
-            style={{ marginRight: '10px', padding: '5px' }}
-          >
-            {Array.isArray(userRestrict) && userRestrict.map((e, i) => {
-              return (
+        <div className="mt-3">
+          <div className="mb-3">
+            <label htmlFor="userSelect" className="form-label">Select User:</label>
+            <select
+              className="form-select"
+              id="userSelect"
+              value={selectedUser}
+              onChange={(e) => setSelectedUser(e.target.value)}
+            >
+              <option value="">Select a user</option>
+              {userRestrict.length > 0 && userRestrict.map((e, i) => (
                 <option key={i} value={e.id}>
-                  {e.username} {/* Display the username of each agent */}
+                  {e.username}
                 </option>
-              );
-            })}
-          </select>
-          
-          <input
-            type="text"
-            placeholder="Phone Number"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-            style={{ marginRight: '10px', padding: '5px' }}
-          />
-          <input
-            type="text"
-            placeholder="Restriction Type"
-            value={restrictionType}
-            onChange={(e) => setRestrictionType(e.target.value)}
-            style={{ marginRight: '10px', padding: '5px' }}
-          />
+              ))}
+            </select>
+          </div>
+
+          <div className="mb-3">
+            <label htmlFor="phoneNumber" className="form-label">Phone Number:</label>
+            <input
+              type="text"
+              className="form-control"
+              id="phoneNumber"
+              placeholder="Phone Number"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+            />
+          </div>
+
+          <div className="mb-3">
+            <label htmlFor="restrictionType" className="form-label">Restriction Type:</label>
+            <select
+              className="form-select"
+              id="restrictionType"
+              value={restrictionType}
+              onChange={(e) => setRestrictionType(e.target.value)}
+            >
+              <option value="">Select Restriction Type</option>
+              <option value="2">Inbound</option>
+              <option value="1">Outbound</option>
+            </select>
+          </div>
+
           <button
+            className="btn btn-success"
             onClick={handleAddRestriction}
-            style={{ padding: '6px 12px', background: 'green', color: 'white', border: 'none', cursor: 'pointer' }}
+            disabled={loading}
           >
             Confirm
           </button>
+
+          {error && <div className="text-danger mt-2">{error}</div>}
+          {success && <div className="text-success mt-2">{success}</div>}
         </div>
       )}
     </div>

@@ -9,7 +9,7 @@ const routeClient=require("./route/client")
 // cors
 app.use(cors())
 
-
+app.use(express.json())
 // Simple route to query the database
 app.use("/api/admin/agent",routeClient)
 

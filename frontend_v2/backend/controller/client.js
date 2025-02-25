@@ -1,5 +1,6 @@
 const connection = require("../config/dataBase");
 
+
 // Affichage de l'agent
 const getAgent = (agentId) => {
   return new Promise((resolve, reject) => {
@@ -13,22 +14,35 @@ const getAgent = (agentId) => {
     });
   });
 };
+//username
+exports.userRestrict = async (req, res) => {
+  try {
+    // Query to fetch all users (pkg_user)
+    const query = `SELECT * FROM pkg_user`; 
+    connection.query(query, async (err, users) => {
+      if (err) {
+        return res.json(err); // Send error if query fails
+      }
 
-exports.userRestrict = async (req, res)=> {
-    
-    try{
-        const query = `SELECT * FROM pkg_user `; 
-        connection.query(query,  (err, result) =>{
-            if (err){
-                res.json(err)
-                return
-            }
-            res.json(result)})
-    }
-catch(err){
-    res.json(err)
-}
-    }
+      // For each user, fetch agent data (you can expand this logic to include more user-related data if needed)
+      const usersWithAgentData = await Promise.all(users.map(async (user) => {
+        const agentData = await getAgent(user.id); // Fetch agent info for each user
+        return {
+          ...user,   // Include all user fields
+          agent: agentData[0]  // Assuming agentData is an array, take the first element
+        };
+      }));
+
+      // Send the users with their corresponding agent data as the response
+      res.json({
+        users: usersWithAgentData
+      });
+    });
+  } catch (err) {
+    console.error("Error fetching user data:", err);
+    res.json(err);  // Send error if something goes wrong
+  }
+};
 
 // Affichage des restrictions
 exports.affiche = async (req, res) => {

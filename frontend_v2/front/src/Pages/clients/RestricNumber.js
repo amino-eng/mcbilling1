@@ -6,9 +6,9 @@ function RestricNumber() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [restrictionType, setRestrictionType] = useState('');
   const [showForm, setShowForm] = useState(false); // State to toggle form visibility
-  const [userRestrict, setuserRestrict]=useState([])
+  const [userRestrict, setUserRestrict] = useState([]); // State for user restrict data
 
-  // Fetch the data from the backend
+  // Fetch the data for restrictions
   const fetchData = () => {
     axios.get('http://localhost:5000/api/admin/agent/affiche')
       .then((response) => {
@@ -20,21 +20,26 @@ function RestricNumber() {
       });
   };
 
-  const fetchUser = () => {
-    axios.get('http://localhost:5000/api/admin/agent/afficheuserRestrict')
-      .then((response) => {
-        setuserRestrict(response.data); 
-        console.log("agent",response.data); 
-      })
-      .catch((error) => {
-        console.error('Error fetching data:', error);
-      });
-  };
-  
+  // Fetch the user restrict data (agent names)
+// Fetch the user restrict data (agent names)
+const fetchUser = () => {
+  axios.get('http://localhost:5000/api/admin/agent/afficheuserRestrict')
+    .then((response) => {
+      // Accessing the 'users' array from the response data
+      if (Array.isArray(response.data.users)) {
+        setUserRestrict(response.data.users); 
+      } else {
+        console.error('Received data is not an array', response.data);
+      }
+    })
+    .catch((error) => {
+      console.error('Error fetching data:', error);
+    });
+};
 
   useEffect(() => {
     fetchData();
-    fetchUser()
+    fetchUser();
   }, []);
 
   // Handle adding a new restriction
@@ -95,15 +100,18 @@ function RestricNumber() {
       {/* Conditional rendering of the form */}
       {showForm && (
         <div style={{ marginTop: '10px' }}>
-          <select>
-            {userRestrict.map((e,i)=>{
-              return(
-                <option key={i}>
-                  {e.id}
+          <select
+            style={{ marginRight: '10px', padding: '5px' }}
+          >
+            {Array.isArray(userRestrict) && userRestrict.map((e, i) => {
+              return (
+                <option key={i} value={e.id}>
+                  {e.username} {/* Display the username of each agent */}
                 </option>
-              )
+              );
             })}
           </select>
+          
           <input
             type="text"
             placeholder="Phone Number"

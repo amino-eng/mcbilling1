@@ -25,6 +25,8 @@ import UserHistory from './Pages/clients/UserHistory';
 import LiveCalls from './Pages/titleside/LiveCalls';
 import SipUser from './Pages/clients/SipUser';
 import SummaryPerDay from './Pages/Reports/SummaryPerDay';
+import CDR from './Pages/Reports/CDR';
+import CDRFailed from './Pages/Reports/CDRFailed';
 import SummaryPerMonth from './Pages/Reports/SummaryPerMonth';
 import SummaryPerTrunk from './Pages/Reports/SummaryMonthTrunk';
 import SummaryMonthTrunk from './Pages/Reports/SummaryPerTrunk';
@@ -109,6 +111,8 @@ function App() {
               <Route path="/reports/summary-day" element={<SummaryPerDay />} />
               <Route path="/reports/summaryperuser" element={<SummaryPerUser />} />
               <Route path="/reports/summarypertrunk" element={<SummaryPerTrunk />} />
+              <Route path="/reports/CDR" element={<CDR />} />
+              <Route path="/reports/CDRFailed" element={<CDRFailed />} />
               <Route path="/reports/summaryMonthTrunk" element={<SummaryMonthTrunk />} />
               <Route path="/reports/SummaryDayTrunk" element={<SummaryDayTrunk />} />
               <Route path="/reports/summary-month" element={<SummaryPerMonth />} />

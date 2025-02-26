@@ -198,7 +198,10 @@ const Sidebar = () => {
           {openMenus.reports && (
             <ul className="nav flex-column mt-2">
               {[
+                { path: "/reports/CDR", icon: "bi-calendar-day", label: "CDR" },
+                { path: "/reports/CDRFailed", icon: "bi-calendar-day", label: "CDR Failed" },
                 { path: "/reports/summary-day", icon: "bi-calendar-day", label: "Summary Per Day" },
+                
                 { path: "/reports/summary-month", icon: "bi-calendar-month", label: "Summary Per Month" },
                 { path: "/reports/destination", icon: "bi-geo-alt", label: "Reports / Destination" },
                 { path: "/reports/inbound", icon: "bi-download", label: "Inbound Reports" },

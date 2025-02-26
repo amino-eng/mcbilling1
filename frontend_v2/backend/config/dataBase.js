@@ -1,9 +1,7 @@
 
 const mysql =require("mysql2")
 // Database connection configuration
-
-
-        
+  
     const connection = mysql.createConnection({
         host: '213.32.34.34',       // Replace with your database IP
         user: 'vicidial2',      // Replace with your database username

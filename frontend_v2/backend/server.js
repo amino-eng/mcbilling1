@@ -5,6 +5,7 @@ const app = express();
 const port = 5000;
 const {connect} = require("./config/dataBase")
 const routeClient=require("./route/client")
+const routeCDR=require("./route/rapport/CDRroute")
 
 // cors
 app.use(cors())
@@ -12,6 +13,7 @@ app.use(cors())
 app.use(express.json())
 // Simple route to query the database
 app.use("/api/admin/agent",routeClient)
+app.use("/api/admin/CDR",routeCDR)
 
 // Start the server
 app.listen(port, () => {

@@ -19,25 +19,7 @@ exports.afficher = async (req, res) => {
   }
 }
 
-// // Ajouter un enregistrement CDR
-exports.ajouter= (req, res) => {
-  console.log("Request Body:", req.body);
 
-  const { date, sip_user, callerID, number, destination, duration, username, buy_price, sell_price, uniqueid, plan, compaign, server } = req.body;
-  
-  if (!date || !sip_user || !callerID || !number || !destination || !duration || !username || !buy_price || !sell_price || !uniqueid || !plan || !compaign || !server ) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
-
-  const query = `INSERT INTO pkg_cdr (date, sip_user, callerID, number, destination, duration, username, buy_price, sell_price, uniqueid, plan) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-  connection.query(query, [date, sip_user, callerID, number, destination, duration, username, buy_price, sell_price, uniqueid, plan], (error, results) => {
-    if (error) {
-      console.error("Database error:", error);
-      return res.status(500).json({ error: "Database error" });
-    }
-    res.status(200).json({ message: "CDR record added successfully" });
-  });
-}
 
 // // Supprimer un enregistrement CDR
 exports.del= (req, res) => {

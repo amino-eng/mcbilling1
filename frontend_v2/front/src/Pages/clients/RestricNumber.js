@@ -101,6 +101,7 @@ function RestricNumber() {
     setError('');
   };
 
+< main
   const filteredPhoneData = useMemo(() => {
     return phoneData.filter(item =>
       (item.agent?.username?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
@@ -115,6 +116,18 @@ function RestricNumber() {
         : b.agent.username.localeCompare(a.agent.username);
     });
   }, [filteredPhoneData, sortDirection]);
+=======
+  const filteredPhoneData = phoneData.filter(item =>
+    (item.agent?.username?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    item.number.includes(searchTerm)
+  );
+
+  const sortedPhoneData = [...filteredPhoneData].sort((a, b) => {
+    return sortDirection === 'asc'
+      ? a.agent.username.localeCompare(b.agent.username)
+      : b.agent.username.localeCompare(a.agent.username);
+  });
+ main>
 
   const totalPages = Math.max(Math.ceil(sortedPhoneData.length / itemsPerPage), 1);
   const indexOfLastItem = currentPage * itemsPerPage;

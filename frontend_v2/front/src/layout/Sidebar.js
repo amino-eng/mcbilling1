@@ -122,6 +122,7 @@ const Sidebar = () => {
                 { path: "/clients/Users", icon: "bi-telephone-inbound", label: "Users" },
                 { path: "/clients/Users", icon: "bi-telephone-inbound", label: "ATA Linksys" },
                 { path: "/clients/UserHistory", icon: "bi-telephone-inbound", label: "UserHistory" },
+                { path: "/clients/Lax", icon: "bi-telephone-inbound", label: "Lax" },
                 { path: "/clients/ATALinksys", icon: "bi-telephone-inbound", label: "ATA Linksys" },
                 { path: "/clients/sip-users", icon: "bi-person-bounding-box", label: "SIP Users" },
                 { path: "/clients/RestricNumber", icon: "bi-slash-circle", label: "RestricNumber" }, // ✅ Updated Icon
@@ -167,9 +168,66 @@ const Sidebar = () => {
                   <i className="bi bi-credit-card me-2"></i> Refill Providers
                 </Link>
               </li>
+
+
+
+              
             </ul>
           )}
         </li>
+
+        <li className="nav-item">
+          <div
+            className="nav-link text-dark d-flex justify-content-between align-items-center bg-light rounded p-3 shadow-sm"
+            onClick={() => toggleMenu("Rates")}
+            style={{ cursor: "pointer", transition: "0.3s" }}
+          >
+            <span><i className="bi bi-speedometer2 me-2"></i> Rates</span>
+            <i className={`bi ${openMenus.Rates ? "bi-chevron-up" : "bi-chevron-down"}`}></i>
+          </div>
+
+          {openMenus.Rates && (
+            <ul className="nav flex-column mt-2">
+              <li className="nav-item">
+                <Link to="/Rates/PlanS" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+                  <i className="bi bi-bar-chart me-2"></i> plans
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link to="/Rates/Tariffs" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+                  <i className="bi bi-credit-card me-2"></i> Tariffs
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link to="/Rates/Prefixes" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+                  <i className="bi bi-credit-card me-2"></i> Prefixes
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link to="/Rates/UserCustomRates" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+                  <i className="bi bi-credit-card me-2"></i> User Custom Rates
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link to="/Rates/Offers" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+                  <i className="bi bi-credit-card me-2"></i> Offers
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link to="/Rates/OfferCDR" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+                  <i className="bi bi-credit-card me-2"></i> Offer CDR
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link to="/Rates/OfferUse" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+                  <i className="bi bi-credit-card me-2"></i> Offer Use
+                </Link>
+              </li>
+
+            </ul>
+          )}
+        </li>
+
         {[
           { path: "/clients/live-calls", icon: "bi-broadcast", label: "Live Calls" },
           
@@ -186,6 +244,7 @@ const Sidebar = () => {
         
 
         <li className="nav-item">
+
           <div
             className="nav-link text-dark d-flex justify-content-between align-items-center bg-light rounded p-3 shadow-sm"
             onClick={() => toggleMenu("reports")}
@@ -208,7 +267,8 @@ const Sidebar = () => {
                 { path: "/reports/summaryperuser", icon: "bi-download", label: "Summary Per User" },
                 { path: "/reports/summarypertrunk", icon: "bi-download", label: "Summary Per Trunk" },
                 { path: "/reports/SummaryMonthTrunk", icon: "bi-download", label: "Summary Month Trunk" },
-                { path: "/reports/SummaryDayTrunk", icon: "bi-download", label: "Summary Day Trunk" }
+                { path: "/reports/SummaryDayTrunk", icon: "bi-download", label: "Summary Day Trunk" },
+                { path: "/reports/CallArchive", icon: "bi-download", label: "Call Archive" }
 
               ].map((item, index) => (
                 <li className="nav-item" key={index}>
@@ -220,6 +280,37 @@ const Sidebar = () => {
             </ul>
           )}
         </li>
+        <li className="nav-item">
+          <div
+            className="nav-link text-dark d-flex justify-content-between align-items-center bg-light rounded p-3 shadow-sm"
+            onClick={() => toggleMenu("Routes")}
+            style={{ cursor: "pointer", transition: "0.3s" }}
+          >
+            <span><i className="bi bi-graph-up me-2"></i> Routes</span>
+            <i className={`bi ${openMenus.Routes ? "bi-chevron-up" : "bi-chevron-down"}`}></i>
+          </div>
+
+          {openMenus.Routes && (
+            <ul className="nav flex-column mt-2">
+              {[
+                { path: "/Routes/Providers", icon: "bi-calendar-day", label: "Providers" },
+                { path: "/Routes/Trunks", icon: "bi-calendar-day", label: "Trunks" },
+                { path: "/Routes/TrunkGroups", icon: "bi-calendar-day", label: "Trunk Groups" },
+                { path: "/Routes/ProviderRates", icon: "bi-calendar-month", label: "Provider Rates" },
+                { path: "/Routes/Servers", icon: "bi-geo-alt", label: "Servers" },
+                { path: "/Routes/TrunkErrors", icon: "bi-download", label: "Trunk Errors" }
+               
+
+              ].map((item, index) => (
+                <li className="nav-item" key={index}>
+                  <Link to={item.path} className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+                    <i className={`bi ${item.icon} me-2`}></i> {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </li> 
       </ul>
     </div>
   );

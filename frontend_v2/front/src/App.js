@@ -24,6 +24,7 @@ import Users from './Pages/clients/Users';
 import UserHistory from './Pages/clients/UserHistory';
 import LiveCalls from './Pages/titleside/LiveCalls';
 import SipUser from './Pages/clients/SipUser';
+import Lax from './Pages/clients/Lax';
 import SummaryPerDay from './Pages/Reports/SummaryPerDay';
 import CDR from './Pages/Reports/CDR';
 import CDRFailed from './Pages/Reports/CDRFailed';
@@ -34,6 +35,7 @@ import SummaryDayTrunk from './Pages/Reports/SummaryDayTrunk';
 import ReportsDestination from './Pages/Reports/ReportsDestination';
 import InboundReports from './Pages/Reports/InboundReports';
 import SummaryPerUser from './Pages/Reports/SummaryPerUser';
+import CallArchive from './Pages/Reports/callArchive';
 import ActivityDash from './Pages/Dashboard/ActivityDash';
 import RechargeHistory from './Pages/Dashboard/RechargeHistory';
 import Profile from './components/UserProfile/profile';
@@ -43,6 +45,18 @@ import Refills from './Pages/Billing/Refills';
 import PaymentMethods from './Pages/Billing/PaymentMethods';
 import Voucher from './Pages/Billing/Voucher';
 import RefillProviders from './Pages/Billing/RefillRroviders';
+import Plans from './Pages/Rates/Plans';
+import Tariffs from './Pages/Rates/Tariffs';
+import Prefixes from './Pages/Rates/Prefixes';
+import UserCostomRates from './Pages/Rates/UserCustomRates';
+import Offers from './Pages/Rates/offers';
+import OfferCDR from './Pages/Rates/OffersCDR';
+import Providers from './Pages/Routes/Providers';
+import TrunkGroups from './Pages/Routes/TrunkGroups';
+import ProviderRates from './Pages/Routes/ProviderRates';
+import Servers from './Pages/Routes/Servers';
+import Trunks from './Pages/Routes/Trunks';
+import TrunkErrors from './Pages/Routes/TrunkErrors';
 
 function App() {
   const user = {
@@ -107,6 +121,7 @@ function App() {
               <Route path="/clients/Users" element={<Users />} />
               <Route path="/clients/RestricNumber" element={<RestricNumber />} /> {/* Use the renamed route */}
               <Route path="/clients/sip-user" element={<SipUser />} />
+              <Route path="/clients/Lax" element={<Lax />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/reports/summary-day" element={<SummaryPerDay />} />
               <Route path="/reports/summaryperuser" element={<SummaryPerUser />} />
@@ -118,6 +133,7 @@ function App() {
               <Route path="/reports/summary-month" element={<SummaryPerMonth />} />
               <Route path="/reports/destination" element={<ReportsDestination />} />
               <Route path="/reports/inbound" element={<InboundReports />} />
+              <Route path="/reports/CallArchive" element={<CallArchive />} />
               <Route path="/dashboard/activitydash" element={<ActivityDash />} />
               <Route path="/dashboard/rechargehistory" element={<RechargeHistory />} />
               <Route path="/DIDs/Queue" element={<QueueDash />} />
@@ -133,6 +149,22 @@ function App() {
               <Route path="/Billing/PaymentMethods" element={<PaymentMethods/>} />
               <Route path="/Billing/Voucher" element={<Voucher/>} />
               <Route path="/Billing/RefillProviders" element={<RefillProviders/>} />
+              <Route path="/Rates/Plans" element={<Plans/>} />
+              <Route path="/Rates/Tariffs" element={<Tariffs/>} />
+              <Route path="/Rates/Prefixes" element={<Prefixes/>} />
+              <Route path="/Rates/UserCostomRates" element={<UserCostomRates/>} />
+              <Route path="/Rates/Offers" element={<Offers/>} />
+              <Route path="/Rates/OfferCDR" element={<OfferCDR/>} />
+              <Route path="/Rates/OfferUse" element={<OfferCDR/>} />
+              <Route path="/Routes/Providers" element={<Providers/>} />
+              <Route path="/Routes/TrunkGroups" element={<TrunkGroups/>} />
+              <Route path="/Routes/ProviderRates" element={<ProviderRates/>} />
+              <Route path="/Routes/Servers" element={<Servers/>} />
+              <Route path="/Routes/Trunks" element={<Trunks/>} />
+              <Route path="/Routes/TrunkErrors" element={<TrunkErrors/>} />
+              
+              
+
 
               <Route path="/clients/UserHistory" element={<UserHistory/>} />
             </Routes>

@@ -15,7 +15,7 @@ function RestricNumber() {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage] = useState(5);
   const [sortDirection, setSortDirection] = useState('asc');
 
   useEffect(() => {
@@ -77,23 +77,6 @@ function RestricNumber() {
     }
   };
 
-< main
-  const handleDeleteRestriction = (restrictionId) => {
-      setLoading(true);
-      axios.delete(`http://localhost:5000/api/admin/agent/delete/${restrictionId}`)
-        .then(() => {
-          toast.success('Restriction deleted successfully!');
-          fetchData();
-        })
-        .catch((error) => {
-          console.error('Error deleting restriction:', error);
-          toast.error('Error deleting restriction');
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    
-=======
   const handleDeleteRestriction = async (restrictionId) => {
     if (!window.confirm('Are you sure you want to delete this restriction?')) return;
 
@@ -108,7 +91,6 @@ function RestricNumber() {
     } finally {
       setLoading(false);
     }
- main>
   };
 
   const resetForm = () => {
@@ -120,7 +102,7 @@ function RestricNumber() {
   };
 
   const filteredPhoneData = phoneData.filter(item =>
-    item.agent.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.agent?.username?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     item.number.includes(searchTerm)
   );
 
@@ -130,10 +112,10 @@ function RestricNumber() {
       : b.agent.username.localeCompare(a.agent.username);
   });
 
+  const totalPages = Math.max(Math.ceil(sortedPhoneData.length / itemsPerPage), 1);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = sortedPhoneData.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(sortedPhoneData.length / itemsPerPage);
 
   return (
     <div className="container mt-4">

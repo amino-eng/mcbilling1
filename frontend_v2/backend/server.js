@@ -3,10 +3,12 @@ const mysql = require('mysql2');
 const cors =require ("cors")
 const app = express();
 const port = 5000;
-const {connect} = require("./config/dataBase")
-const routeClient=require("./route/client")
-const routeCDR=require("./route/rapport/CDRroute")
-const routeSummaryPerDay=require("./route/rapport/SummaryPerDay")
+const {connect} = require("./config/dataBase");
+const routeClient=require("./route/client");
+const routeCDR=require("./route/rapport/CDRroute");
+const routeSummaryPerDay=require("./route/rapport/SummaryPerDay");
+const routeSummaryPerMonth=require("./route/rapport/SummaryPerMonth");
+
 
 // cors
 app.use(cors())
@@ -16,6 +18,8 @@ app.use(express.json())
 app.use("/api/admin/agent",routeClient)
 app.use("/api/admin/CDR",routeCDR)
 app.use("/api/admin/SummaryPerDay",routeSummaryPerDay)
+app.use("/api/admin/SummaryPerMonth",routeSummaryPerMonth)
+app.use(cors());
 
 // Start the server
 app.listen(port, () => {

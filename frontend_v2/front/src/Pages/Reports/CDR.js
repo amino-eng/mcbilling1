@@ -6,14 +6,12 @@ import styled from "styled-components";
 // Styled Components (unchanged)
 const TableContainer = styled.div`
   width: 100%;
-  height: 70vh;
   margin: 0;
   background: white;
   border-radius: 8px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
   padding: 20px;
-  overflow-x: auto;
-  overflow-y: auto;
+  
 `;
 const Title = styled.h2`
   text-align: center;

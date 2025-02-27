@@ -64,7 +64,7 @@ exports.getById = async (req, res) => {
   const userId = req.params.id;
 
   try {
-    const query = "SELECT * FROM `pkg_cdr` WHERE id=?";
+    const query = "SELECT * FROM pkg_cdr WHERE id = ?";
     connection.query(query, [userId], (err, result) => {
       if (err) {
         console.error("Error fetching user data:", err);

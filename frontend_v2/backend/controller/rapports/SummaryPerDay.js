@@ -15,7 +15,7 @@ exports.getAll = (req, res) => {
 // Afficher un enregistrement par ID
 exports.getById = (req, res) => {
     const { id } = req.params;
-    const query = "SELECT * FROM pkg_cdr_summary_day WHERE id = ?";
+    const query = "SELECT * FROM pkg_cdr_summary_day";
     connection.query(query, [id], (err, result) => {
         if (err) {
             console.error("Erreur lors de la récupération des données :", err);

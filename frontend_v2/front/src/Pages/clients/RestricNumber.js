@@ -77,6 +77,23 @@ function RestricNumber() {
     }
   };
 
+< main
+  const handleDeleteRestriction = (restrictionId) => {
+      setLoading(true);
+      axios.delete(`http://localhost:5000/api/admin/agent/delete/${restrictionId}`)
+        .then(() => {
+          toast.success('Restriction deleted successfully!');
+          fetchData();
+        })
+        .catch((error) => {
+          console.error('Error deleting restriction:', error);
+          toast.error('Error deleting restriction');
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    
+=======
   const handleDeleteRestriction = async (restrictionId) => {
     if (!window.confirm('Are you sure you want to delete this restriction?')) return;
 
@@ -91,6 +108,7 @@ function RestricNumber() {
     } finally {
       setLoading(false);
     }
+ main>
   };
 
   const resetForm = () => {

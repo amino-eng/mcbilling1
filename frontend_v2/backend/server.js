@@ -9,7 +9,7 @@ const routeCDR=require("./route/rapport/CDRroute");
 const routeSummaryPerDay=require("./route/rapport/SummaryPerDay");
 const routeSummaryPerMonth=require("./route/rapport/SummaryPerMonth");
 const routeCDRFailed = require("./route/rapport/CDRFailed");
-
+const routeusers = require("./route/client/users");
 
 // cors
 app.use(cors())
@@ -21,7 +21,9 @@ app.use("/api/admin/CDR",routeCDR)
 app.use("/api/admin/SummaryPerDay",routeSummaryPerDay)
 app.use("/api/admin/SummaryPerMonth",routeSummaryPerMonth)
 app.use("/api/admin/CdrFailed", routeCDRFailed);
-app.use(cors());
+app.use("/api/admin/users", routeusers);
+
+
 
 // Start the server
 app.listen(port, () => {

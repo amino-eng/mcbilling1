@@ -56,51 +56,51 @@ const Sidebar = () => {
           {openMenus.DIDs && (
             <ul className="nav flex-column mt-2">
               <li className="nav-item">
-                <Link to="/DIDs/Queue" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
-                  <i className="bi bi-bar-chart me-2"></i> QueueDash
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/DIDs/DIDs" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
-                  <i className="bi bi-credit-card me-2"></i> DIDs
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/DIDs/DIDDestination" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
-                  <i className="bi bi-credit-card me-2"></i> DID Destination
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/DIDs/DIDsUser" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
-                  <i className="bi bi-credit-card me-2"></i> DIDs User
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/DIDs/IVRs" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
-                  <i className="bi bi-credit-card me-2"></i> IVRs
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/DIDs/QueuesMembres" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
-                  <i className="bi bi-credit-card me-2"></i> Queues Membres
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/DIDs/QueuesDashboard" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
-                  <i className="bi bi-credit-card me-2"></i> QueuesDashboard
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/DIDs/Holidays" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
-                  <i className="bi bi-credit-card me-2"></i> Holidays
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/DIDs/DIDHistory" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
-                  <i className="bi bi-credit-card me-2"></i>  DID History
-                </Link>
-              </li>
-              
+  <Link to="/DIDs/Queue" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+    <i className="bi bi-list-ol me-2"></i> QueueDash
+  </Link>
+</li>
+<li className="nav-item">
+  <Link to="/DIDs/DIDs" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+    <i className="bi bi-telephone me-2"></i> DIDs
+  </Link>
+</li>
+<li className="nav-item">
+  <Link to="/DIDs/DIDDestination" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+    <i className="bi bi-signpost me-2"></i> DID Destination
+  </Link>
+</li>
+<li className="nav-item">
+  <Link to="/DIDs/DIDsUser" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+    <i className="bi bi-person me-2"></i> DIDs User
+  </Link>
+</li>
+<li className="nav-item">
+  <Link to="/DIDs/IVRs" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+    <i className="bi bi-sliders me-2"></i> IVRs
+  </Link>
+</li>
+<li className="nav-item">
+  <Link to="/DIDs/QueuesMembres" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+    <i className="bi bi-people me-2"></i> Queues Membres
+  </Link>
+</li>
+<li className="nav-item">
+  <Link to="/DIDs/QueuesDashboard" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+    <i className="bi bi-speedometer2 me-2"></i> QueuesDashboard
+  </Link>
+</li>
+<li className="nav-item">
+  <Link to="/DIDs/Holidays" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+    <i className="bi bi-calendar-event me-2"></i> Holidays
+  </Link>
+</li>
+<li className="nav-item">
+  <Link to="/DIDs/DIDHistory" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+    <i className="bi bi-clock-history me-2"></i> DID History
+  </Link>
+</li>
+     
             </ul>
           )}
         </li>
@@ -118,14 +118,15 @@ const Sidebar = () => {
           {openMenus.clients && (
             <ul className="nav flex-column mt-2">
               {[
-                { path: "/clients/caller-id", icon: "bi-telephone-inbound", label: "Caller ID" },
-                { path: "/clients/Users", icon: "bi-telephone-inbound", label: "Users" },
-                { path: "/clients/Users", icon: "bi-telephone-inbound", label: "ATA Linksys" },
-                { path: "/clients/UserHistory", icon: "bi-telephone-inbound", label: "UserHistory" },
-                { path: "/clients/Lax", icon: "bi-telephone-inbound", label: "Lax" },
-                { path: "/clients/ATALinksys", icon: "bi-telephone-inbound", label: "ATA Linksys" },
-                { path: "/clients/sip-users", icon: "bi-person-bounding-box", label: "SIP Users" },
-                { path: "/clients/RestricNumber", icon: "bi-slash-circle", label: "RestricNumber" }, // ✅ Updated Icon
+                { path: "/clients/caller-id", icon: "bi-phone", label: "Caller ID" },
+                { path: "/clients/Users", icon: "bi-people", label: "Users" },
+                { path: "/clients/Users", icon: "bi-router", label: "ATA Linksys" },
+                { path: "/clients/UserHistory", icon: "bi-clock-history", label: "UserHistory" },
+                { path: "/clients/Lax", icon: "bi-building", label: "Lax" },
+                { path: "/clients/ATALinksys", icon: "bi-hdd-network", label: "ATA Linksys" },
+                { path: "/clients/sip-users", icon: "bi-telephone-forward", label: "SIP Users" },
+                { path: "/clients/RestricNumber", icon: "bi-ban", label: "RestricNumber" },
+                 // ✅ Updated Icon
               ].map((item, index) => (
                 <li className="nav-item" key={index}>
                   <Link to={item.path} className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
@@ -137,43 +138,40 @@ const Sidebar = () => {
           )}
         </li>
         <li className="nav-item">
-          <div
-            className="nav-link text-dark d-flex justify-content-between align-items-center bg-light rounded p-3 shadow-sm"
-            onClick={() => toggleMenu("Billing")}
-            style={{ cursor: "pointer", transition: "0.3s" }}
-          >
-            <span><i className="bi bi-speedometer2 me-2"></i> Billing</span>
-            <i className={`bi ${openMenus.Billing ? "bi-chevron-up" : "bi-chevron-down"}`}></i>
-          </div>
+        <div
+  className="nav-link text-dark d-flex justify-content-between align-items-center bg-light rounded p-3 shadow-sm"
+  onClick={() => toggleMenu("Billing")}
+  style={{ cursor: "pointer", transition: "0.3s" }}
+>
+  <span><i className="bi bi-wallet2 me-2"></i> Billing</span>
+  <i className={`bi ${openMenus.Billing ? "bi-chevron-up" : "bi-chevron-down"}`}></i>
+</div>
 
-          {openMenus.Billing && (
-            <ul className="nav flex-column mt-2">
-              <li className="nav-item">
-                <Link to="/Billing/Refills" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
-                  <i className="bi bi-bar-chart me-2"></i> Refills
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/Billing/PaymentMethods" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
-                  <i className="bi bi-credit-card me-2"></i> PaymentMethods
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/Billing/Voucher" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
-                  <i className="bi bi-credit-card me-2"></i> Voucher
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/Billing/RefillProviders" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
-                  <i className="bi bi-credit-card me-2"></i> Refill Providers
-                </Link>
-              </li>
+{openMenus.Billing && (
+  <ul className="nav flex-column mt-2">
+    <li className="nav-item">
+      <Link to="/Billing/Refills" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+        <i className="bi bi-cash-stack me-2"></i> Refills
+      </Link>
+    </li>
+    <li className="nav-item">
+      <Link to="/Billing/PaymentMethods" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+        <i className="bi bi-credit-card me-2"></i> Payment Methods
+      </Link>
+    </li>
+    <li className="nav-item">
+      <Link to="/Billing/Voucher" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+        <i className="bi bi-ticket-perforated me-2"></i> Voucher
+      </Link>
+    </li>
+    <li className="nav-item">
+      <Link to="/Billing/RefillProviders" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+        <i className="bi bi-shop me-2"></i> Refill Providers
+      </Link>
+    </li>
+  </ul>
+)}
 
-
-
-              
-            </ul>
-          )}
         </li>
 
         <li className="nav-item">

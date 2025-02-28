@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Table, Button, Alert, Spinner, Modal } from "react-bootstrap";
+import { Table, Button, Alert, Spinner, Modal, Pagination } from "react-bootstrap";
 import { FaEuroSign, FaPercent, FaCheck, FaTimes } from "react-icons/fa"; // Icons for euro and percentage
 
 const SummaryPerDay = () => {
@@ -10,6 +10,8 @@ const SummaryPerDay = () => {
     const [confirmDelete, setConfirmDelete] = useState(null); // ID of the item to delete
     const [showModal, setShowModal] = useState(false); // Manage modal visibility
     const [deletedMessage, setDeletedMessage] = useState(""); // Deletion confirmation message
+    const [currentPage, setCurrentPage] = useState(1); // Current page number
+    const itemsPerPage = 10; // Maximum items per page
 
     // Function to fetch data
     const fetchData = async () => {
@@ -46,6 +48,26 @@ const SummaryPerDay = () => {
         fetchData();
     }, []);
 
+    // Calculate data for current page
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
+
+    // Generate pagination items
+    const totalPages = Math.ceil(data.length / itemsPerPage);
+    const paginationItems = [];
+    for (let i = 1; i <= totalPages; i++) {
+        paginationItems.push(
+            <Pagination.Item 
+                key={i} 
+                active={i === currentPage} 
+                onClick={() => setCurrentPage(i)}
+            >
+                {i}
+            </Pagination.Item>
+        );
+    }
+
     return (
         <div className="container mt-4">
             <h2 className="text-center mb-4 text-primary">Summary of Data by Day</h2>
@@ -79,8 +101,8 @@ const SummaryPerDay = () => {
                                 <Spinner animation="border" />
                             </td>
                         </tr>
-                    ) : data.length > 0 ? (
-                        data.map((item) => (
+                    ) : currentItems.length > 0 ? (
+                        currentItems.map((item) => (
                             <tr key={item.id} className="table-row">
                                 <td>{item.day}</td>
                                 <td>{item.sessiontime}</td>
@@ -110,6 +132,21 @@ const SummaryPerDay = () => {
                     )}
                 </tbody>
             </Table>
+
+            {/* Pagination */}
+            {data.length > itemsPerPage && (
+                <Pagination className="justify-content-center mt-3">
+                    <Pagination.Prev 
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} 
+                        disabled={currentPage === 1} 
+                    />
+                    {paginationItems}
+                    <Pagination.Next 
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} 
+                        disabled={currentPage === totalPages} 
+                    />
+                </Pagination>
+            )}
 
             {/* Confirmation Modal for Deletion */}
             <Modal show={showModal} onHide={() => setShowModal(false)}>

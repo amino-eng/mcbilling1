@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Button, Modal, Card, Row, Col, Table, Spinner } from "react-bootstrap";
+import {
+  Button,
+  Modal,
+  Card,
+  Row,
+  Col,
+  Table,
+  Spinner,
+  Pagination,
+} from "react-bootstrap";
 import { FaCheck, FaTimes } from "react-icons/fa";
 
 const SummaryPerMonth = () => {
@@ -9,6 +18,8 @@ const SummaryPerMonth = () => {
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1); // État pour la page actuelle
+  const itemsPerPage = 10; // Nombre d'éléments par page
 
   // Fetch data from the backend when the component mounts
   useEffect(() => {
@@ -62,16 +73,28 @@ const SummaryPerMonth = () => {
       item.lucro.toFixed(2),
       `${item.asr.toFixed(2)} %`,
     ]);
-
     const csvData =
       [headers.join(",")].concat(rows.map((row) => row.join(","))).join("\n");
-
     const blob = new Blob([csvData], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.download = "summary_per_month.csv";
     link.click();
+  };
+
+  // Calculer les données pour la page actuelle
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Générer les numéros de page
+  const totalPages = Math.ceil(data.length / itemsPerPage);
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  // Gérer le clic sur une page
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
   };
 
   if (loading) {
@@ -90,11 +113,11 @@ const SummaryPerMonth = () => {
     <div className="container mt-4">
       <h1 className="text-center mb-4 text-primary">Résumé Par Mois</h1>
       <div className="text-end mt-3">
-                <Button variant="success" onClick={exportToCSV}>
-                  Export to CSV
-                </Button>
-              </div>
-              
+        <Button variant="success" onClick={exportToCSV}>
+          Export to CSV
+        </Button>
+      </div>
+
       {/* Card for main content with shadow */}
       <Card className="shadow-lg border-0">
         <Card.Body>
@@ -115,7 +138,7 @@ const SummaryPerMonth = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.map((item) => (
+                  {currentItems.map((item) => (
                     <tr key={item.id}>
                       <td>
                         {`${item.month.toString().slice(0, 4)}-${item.month
@@ -146,11 +169,25 @@ const SummaryPerMonth = () => {
                   ))}
                 </tbody>
               </Table>
-              
             </Col>
           </Row>
         </Card.Body>
       </Card>
+
+      {/* Pagination */}
+      <div className="d-flex justify-content-center mt-3">
+        <Pagination>
+          {pageNumbers.map((number) => (
+            <Pagination.Item
+              key={number}
+              active={number === currentPage}
+              onClick={() => handlePageChange(number)}
+            >
+              {number}
+            </Pagination.Item>
+          ))}
+        </Pagination>
+      </div>
 
       {/* Modal for confirming delete */}
       <Modal show={showModal} onHide={() => setShowModal(false)} centered>

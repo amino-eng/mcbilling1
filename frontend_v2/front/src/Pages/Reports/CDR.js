@@ -238,22 +238,22 @@ const CDRTable = () => {
             .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
             .map((cdr) => (
               <TableRow key={cdr.id}>
-                <TableCell>{new Date(cdr.starttime).toLocaleString()}</TableCell>
-                <TableCell>{users[cdr.id_user] || ""}</TableCell> {/* Username */}
-                <TableCell>{cdr.callerid}</TableCell>
-                <TableCell>{cdr.calledstation}</TableCell>
-                <TableCell>{cdr.id_prefix}</TableCell>
-                <TableCell>{cdr.sessiontime} seconds</TableCell>
-                <TableCell>{cdr.real_sessiontime} seconds</TableCell>
-                <TableCell>{cdr.id_user || "test"}</TableCell>
-                <TableCell>{pkgTrunks[cdr.id_trunk] || cdr.id_trunk}</TableCell> {/* Trunkcode */}
-                <TableCell>{trunks[cdr.type] || ""}</TableCell> 
-                <TableCell>{cdr.buycost} €</TableCell>
-                <TableCell>{cdr.sessionbill} €</TableCell>
-                <TableCell>{cdr.uniqueid}</TableCell>
-                <TableCell>{cdr.id_plan}</TableCell>
-                <TableCell>{cdr.id_campaign || "N/A"}</TableCell>
-                <TableCell>{cdr.id_server}</TableCell>
+              <TableCell>{new Date(cdr.starttime).toLocaleString()}</TableCell>
+              <TableCell>{cdr.src}</TableCell>
+              <TableCell>{cdr.callerid}</TableCell>
+              <TableCell>{cdr.calledstation}</TableCell>
+              <TableCell>{cdr.id_prefix}</TableCell>
+              <TableCell>{cdr.sessiontime} seconds</TableCell>
+              <TableCell>{cdr.real_sessiontime} seconds</TableCell>
+              <TableCell>{cdr.username}</TableCell>
+              <TableCell>{cdr.trunkcode}</TableCell>
+              <TableCell>{cdr.type}</TableCell>
+              <TableCell>{cdr.buycost} €</TableCell>
+              <TableCell>{cdr.sessionbill} €</TableCell>
+              <TableCell>{cdr.uniqueid}</TableCell>
+              <TableCell>{cdr.id_plan}</TableCell>
+              <TableCell>{cdr.id_campaign || "vide"}</TableCell>
+              <TableCell>{cdr.server_name}</TableCell>
                 <TableCell>
                   <Button onClick={() => handleDelete(cdr.id)}>
                     {confirmDelete === cdr.id ? "Confirm?" : "Delete"}

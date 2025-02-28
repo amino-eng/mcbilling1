@@ -3,9 +3,30 @@ const router = express.Router();
 const connection = require("../../config/dataBase");
 
 // Affichage des enregistrements CDR
+
 exports.afficher = async (req, res) => {
   try {
-    const query = "SELECT * FROM pkg_cdr";
+    const query = `
+      SELECT 
+    cdr.*, 
+    user.username, 
+    trunk.trunkcode, 
+    server.name AS server_name 
+FROM 
+    pkg_cdr AS cdr 
+LEFT JOIN 
+    pkg_user AS user 
+    ON cdr.id_user = user.id 
+LEFT JOIN 
+    pkg_trunk AS trunk 
+    ON cdr.id_trunk = trunk.id 
+LEFT JOIN 
+    pkg_servers AS server 
+    ON cdr.id_server = server.id
+      
+
+    `;
+
     connection.query(query, (err, results) => {
       if (err) {
         console.error("Error fetching CDR data:", err);
@@ -17,9 +38,7 @@ exports.afficher = async (req, res) => {
     console.error("Error fetching data:", error);
     res.status(500).send("Internal server error");
   }
-}
-
-
+};
 
 // // Supprimer un enregistrement CDR
 exports.del= (req, res) => {

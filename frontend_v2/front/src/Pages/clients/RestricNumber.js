@@ -70,8 +70,8 @@ function RestricNumber() {
       resetForm();
       fetchData();
     } catch (error) {
-      console.error('Erreur lors de l\'ajout de la restriction:', error);
-      toast.error('Erreur lors de l\'ajout de la restriction.');
+      console.error("Erreur lors de l'ajout de la restriction:", error);
+      toast.error("Erreur lors de l'ajout de la restriction.");
     } finally {
       setLoading(false);
     }
@@ -101,9 +101,8 @@ function RestricNumber() {
     setError('');
   };
 
-< main
   const filteredPhoneData = useMemo(() => {
-    return phoneData.filter(item =>
+    return phoneData.filter((item) =>
       (item.agent?.username?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       item.number.includes(searchTerm)
     );
@@ -112,22 +111,10 @@ function RestricNumber() {
   const sortedPhoneData = useMemo(() => {
     return [...filteredPhoneData].sort((a, b) => {
       return sortDirection === 'asc'
-        ? a.agent.username.localeCompare(b.agent.username)
-        : b.agent.username.localeCompare(a.agent.username);
+        ? a.agent?.username?.localeCompare(b.agent?.username || '')
+        : b.agent?.username?.localeCompare(a.agent?.username || '');
     });
   }, [filteredPhoneData, sortDirection]);
-=======
-  const filteredPhoneData = phoneData.filter(item =>
-    (item.agent?.username?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-    item.number.includes(searchTerm)
-  );
-
-  const sortedPhoneData = [...filteredPhoneData].sort((a, b) => {
-    return sortDirection === 'asc'
-      ? a.agent.username.localeCompare(b.agent.username)
-      : b.agent.username.localeCompare(a.agent.username);
-  });
- main>
 
   const totalPages = Math.max(Math.ceil(sortedPhoneData.length / itemsPerPage), 1);
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -170,7 +157,7 @@ function RestricNumber() {
             {currentItems.length > 0 ? (
               currentItems.map((e, i) => (
                 <tr key={i}>
-                  <td>{e.agent.username}</td>
+                  <td>{e.agent?.username}</td>
                   <td>{e.number}</td>
                   <td>{e.direction === 2 ? 'Entrant' : 'Sortant'}</td>
                   <td>
@@ -190,20 +177,34 @@ function RestricNumber() {
       </div>
 
       <div className="d-flex justify-content-between">
-        <button className="btn btn-secondary" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+        <button
+          className="btn btn-secondary"
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+        >
           Précédent
         </button>
         <span>Page {currentPage} sur {totalPages}</span>
-        <button className="btn btn-secondary" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>
+        <button
+          className="btn btn-secondary"
+          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+          disabled={currentPage === totalPages}
+        >
           Suivant
         </button>
       </div>
 
       {showForm && (
         <div className="mt-3">
-          <select className="form-select" value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)}>
+          <select
+            className="form-select"
+            value={selectedUser}
+            onChange={(e) => setSelectedUser(e.target.value)}
+          >
             <option value="">Sélectionner un utilisateur</option>
-            {userRestrict.map((e, i) => <option key={i} value={e.id}>{e.username}</option>)}
+            {userRestrict.map((e, i) => (
+              <option key={i} value={e.id}>{e.username}</option>
+            ))}
           </select>
 
           <input
@@ -214,7 +215,11 @@ function RestricNumber() {
             onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
           />
 
-          <select className="form-select mt-2" value={restrictionType} onChange={(e) => setRestrictionType(e.target.value)}>
+          <select
+            className="form-select mt-2"
+            value={restrictionType}
+            onChange={(e) => setRestrictionType(e.target.value)}
+          >
             <option value="">Type de restriction</option>
             <option value="2">Entrant</option>
             <option value="1">Sortant</option>

@@ -6,7 +6,6 @@ import "react-toastify/dist/ReactToastify.css";
 
 function CdrFailedTable() {
   const [cdrFailedData, setCdrFailedData] = useState([]);
-  const [visibleColumns, setVisibleColumns] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -16,14 +15,20 @@ function CdrFailedTable() {
   const allColumns = [
     { label: "Date", key: "starttime" },
     { label: "SIP User", key: "src" },
-    { label: "Caller ID", key: "callerID" },
     { label: "Number", key: "calledstation" },
-    { label: "Destination", key: "destination" },
     { label: "Username", key: "username" },
     { label: "Trunk", key: "trunkcode" },
     { label: "SIP Code", key: "hangupcause" },
     { label: "Server", key: "server" },
   ];
+
+  // State for column visibility
+  const [visibleColumns, setVisibleColumns] = useState(
+    allColumns.reduce((acc, col) => {
+      acc[col.key] = true; // Toutes les colonnes sont visibles par défaut
+      return acc;
+    }, {})
+  );
 
   useEffect(() => {
     fetchCdrFailedData();
@@ -37,13 +42,6 @@ function CdrFailedTable() {
       );
       const data = response.data.cdr_failed;
       setCdrFailedData(data);
-
-      // Filter non-empty columns
-      const nonEmptyColumns = allColumns.filter((col) =>
-        data.some((row) => row[col.key] && row[col.key].toString().trim() !== "")
-      );
-
-      setVisibleColumns(nonEmptyColumns);
     } catch (error) {
       console.error("Error fetching data:", error);
       setError("Unable to retrieve data.");
@@ -58,12 +56,17 @@ function CdrFailedTable() {
     const csvRows = [];
 
     // Ajouter les en-têtes au CSV
-    const headers = visibleColumns.map((col) => col.label).join(",");
+    const headers = allColumns
+      .filter((col) => visibleColumns[col.key])
+      .map((col) => col.label)
+      .join(",");
     csvRows.push(headers);
 
     // Ajouter les données au CSV
     cdrFailedData.forEach((row) => {
-      const values = visibleColumns.map((col) => `"${row[col.key] || ""}"`);
+      const values = allColumns
+        .filter((col) => visibleColumns[col.key])
+        .map((col) => `"${row[col.key] || ""}"`);
       csvRows.push(values.join(","));
     });
 
@@ -91,6 +94,48 @@ function CdrFailedTable() {
     }
   };
 
+  // Composant Dropdown pour la visibilité des colonnes
+  const ColumnVisibilityDropdown = ({ visibleColumns, setVisibleColumns, allColumns }) => {
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    const toggleColumnVisibility = (key) => {
+      setVisibleColumns((prev) => ({
+        ...prev,
+        [key]: !prev[key],
+      }));
+    };
+
+    return (
+      <div className="dropdown" style={{ display: "inline-block", marginLeft: "10px" }}>
+        <button
+          className="btn btn-secondary dropdown-toggle"
+          type="button"
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+        >
+          Columns
+        </button>
+        {isDropdownOpen && (
+          <div
+            className="dropdown-menu show"
+            style={{ display: "block", padding: "10px" }}
+          >
+            {allColumns.map((col) => (
+              <div key={col.key} className="form-check">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={visibleColumns[col.key]}
+                  onChange={() => toggleColumnVisibility(col.key)}
+                />
+                <label className="form-check-label">{col.label}</label>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="container mt-4">
       <ToastContainer />
@@ -104,11 +149,16 @@ function CdrFailedTable() {
         </div>
       ) : (
         <>
-          {/* Bouton pour exporter en CSV */}
+          {/* Bouton pour exporter en CSV et menu déroulant des colonnes */}
           <div className="mb-3 text-end">
-            <button className="btn btn-success" onClick={exportToCSV}>
+            <button className="btn btn-success me-2" onClick={exportToCSV}>
               Export to CSV
             </button>
+            <ColumnVisibilityDropdown
+              visibleColumns={visibleColumns}
+              setVisibleColumns={setVisibleColumns}
+              allColumns={allColumns}
+            />
           </div>
 
           {/* Tableau des données */}
@@ -116,11 +166,13 @@ function CdrFailedTable() {
             <table className="table table-bordered table-striped shadow-sm text-center">
               <thead className="bg-dark text-white">
                 <tr>
-                  {visibleColumns.map((col, index) => (
-                    <th key={index} className="p-3">
-                      {col.label}
-                    </th>
-                  ))}
+                  {allColumns
+                    .filter((col) => visibleColumns[col.key]) // Filtrer les colonnes visibles
+                    .map((col, index) => (
+                      <th key={index} className="p-3">
+                        {col.label}
+                      </th>
+                    ))}
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -128,11 +180,13 @@ function CdrFailedTable() {
                 {cdrFailedData.length > 0 ? (
                   cdrFailedData.map((cdr, index) => (
                     <tr key={index}>
-                      {visibleColumns.map((col, idx) => (
-                        <td key={idx} className="p-2">
-                          {cdr[col.key] || <span className="text-muted">—</span>}
-                        </td>
-                      ))}
+                      {allColumns
+                        .filter((col) => visibleColumns[col.key]) // Filtrer les colonnes visibles
+                        .map((col, idx) => (
+                          <td key={idx} className="p-2">
+                            {cdr[col.key] || <span className="text-muted">—</span>}
+                          </td>
+                        ))}
                       <td>
                         <button
                           className="btn btn-danger btn-sm"
@@ -148,7 +202,7 @@ function CdrFailedTable() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={visibleColumns.length + 1} className="text-muted">
+                    <td colSpan={allColumns.filter((col) => visibleColumns[col.key]).length + 1} className="text-muted">
                       No data found
                     </td>
                   </tr>

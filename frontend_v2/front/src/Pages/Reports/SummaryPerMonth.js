@@ -12,14 +12,69 @@ import {
 } from "react-bootstrap";
 import { FaCheck, FaTimes } from "react-icons/fa";
 
+// Composant pour gérer la visibilité des colonnes
+const ColumnVisibilityDropdown = ({ visibleColumns, setVisibleColumns }) => {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const toggleColumnVisibility = (key) => {
+    setVisibleColumns((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  return (
+    <div className="dropdown" style={{ display: "inline-block", marginLeft: "10px" }}>
+      <button
+        className="btn btn-secondary dropdown-toggle"
+        type="button"
+        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+      >
+        Columns
+      </button>
+      {isDropdownOpen && (
+        <div
+          className="dropdown-menu show"
+          style={{ display: "block", padding: "10px" }}
+        >
+          {Object.keys(visibleColumns).map((key) => (
+            <div key={key} className="form-check">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                checked={visibleColumns[key]}
+                onChange={() => toggleColumnVisibility(key)}
+              />
+              <label className="form-check-label">{key}</label>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const SummaryPerMonth = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1); // État pour la page actuelle
-  const itemsPerPage = 10; // Nombre d'éléments par page
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // State for column visibility
+  const [visibleColumns, setVisibleColumns] = useState({
+    Month: true,
+    SessionTime: true,
+    TotalCalls: true,
+    FailedCalls: true,
+    BuyCost: true,
+    SessionBill: true,
+    Profit: true,
+    ASR: true,
+    Actions: true,
+  });
 
   // Fetch data from the backend when the component mounts
   useEffect(() => {
@@ -113,9 +168,13 @@ const SummaryPerMonth = () => {
     <div className="container mt-4">
       <h1 className="text-center mb-4 text-primary">Résumé Par Mois</h1>
       <div className="text-end mt-3">
-        <Button variant="success" onClick={exportToCSV}>
+        <Button variant="success" onClick={exportToCSV} className="me-2">
           Export to CSV
         </Button>
+        <ColumnVisibilityDropdown
+          visibleColumns={visibleColumns}
+          setVisibleColumns={setVisibleColumns}
+        />
       </div>
 
       {/* Card for main content with shadow */}
@@ -126,45 +185,49 @@ const SummaryPerMonth = () => {
               <Table striped bordered hover responsive className="text-center">
                 <thead className="bg-primary text-white">
                   <tr>
-                    <th>Month</th>
-                    <th>Session Time</th>
-                    <th>Total Calls</th>
-                    <th>Failed Calls</th>
-                    <th>Buy Cost (€)</th>
-                    <th>Session Bill</th>
-                    <th>Profit (Lucro)</th>
-                    <th>ASR (%)</th>
-                    <th>Actions</th>
+                    {visibleColumns.Month && <th>Month</th>}
+                    {visibleColumns.SessionTime && <th>Session Time</th>}
+                    {visibleColumns.TotalCalls && <th>Total Calls</th>}
+                    {visibleColumns.FailedCalls && <th>Failed Calls</th>}
+                    {visibleColumns.BuyCost && <th>Buy Cost (€)</th>}
+                    {visibleColumns.SessionBill && <th>Session Bill</th>}
+                    {visibleColumns.Profit && <th>Profit (Lucro)</th>}
+                    {visibleColumns.ASR && <th>ASR (%)</th>}
+                    {visibleColumns.Actions && <th>Actions</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {currentItems.map((item) => (
                     <tr key={item.id}>
-                      <td>
-                        {`${item.month.toString().slice(0, 4)}-${item.month
-                          .toString()
-                          .slice(4)}`}
-                      </td>
-                      <td>{item.sessiontime.toFixed(2)}</td>
-                      <td>{item.nbcall.toFixed(2)}</td>
-                      <td>{item.nbcall_fail.toFixed(2)}</td>
-                      <td>{item.buycost.toFixed(2)} €</td>
-                      <td>{item.sessionbill.toFixed(2)}</td>
-                      <td>{item.lucro.toFixed(2)}</td>
-                      <td>{item.asr.toFixed(2)} %</td>
-                      <td>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          className="shadow-sm"
-                          onClick={() => {
-                            setConfirmDelete(item.id);
-                            setShowModal(true);
-                          }}
-                        >
-                          Delete
-                        </Button>
-                      </td>
+                      {visibleColumns.Month && (
+                        <td>
+                          {`${item.month.toString().slice(0, 4)}-${item.month
+                            .toString()
+                            .slice(4)}`}
+                        </td>
+                      )}
+                      {visibleColumns.SessionTime && <td>{item.sessiontime.toFixed(2)}</td>}
+                      {visibleColumns.TotalCalls && <td>{item.nbcall.toFixed(2)}</td>}
+                      {visibleColumns.FailedCalls && <td>{item.nbcall_fail.toFixed(2)}</td>}
+                      {visibleColumns.BuyCost && <td>{item.buycost.toFixed(2)} €</td>}
+                      {visibleColumns.SessionBill && <td>{item.sessionbill.toFixed(2)}</td>}
+                      {visibleColumns.Profit && <td>{item.lucro.toFixed(2)}</td>}
+                      {visibleColumns.ASR && <td>{item.asr.toFixed(2)} %</td>}
+                      {visibleColumns.Actions && (
+                        <td>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            className="shadow-sm"
+                            onClick={() => {
+                              setConfirmDelete(item.id);
+                              setShowModal(true);
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

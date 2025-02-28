@@ -12,9 +12,7 @@ const Sidebar = () => {
 
   return (
     <div className="d-flex flex-column bg-white text-dark vh-100 shadow p-4" style={{ width: "300px" }}>
-      <h4 className="mb-5 text-center text-primary fw-bold">
-        <i className="bi bi-grid-fill me-2"></i> MCBILLING
-      </h4>
+      
 
       <ul className="nav flex-column gap-3">
         <li className="nav-item">

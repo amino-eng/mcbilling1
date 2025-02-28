@@ -110,7 +110,7 @@ exports.delete= async (req,res)=>{
    
         const restrictionId = req.params.id;
         
-        const sql = 'DELETE FROM pkg_restrict_phone WHERE id = ?';
+        const sql = 'DELETE FROM restrictions WHERE id = ?';
         
         connection.query(sql, [restrictionId], (err, result) => {
           if (err) {
@@ -125,9 +125,3 @@ exports.delete= async (req,res)=>{
           res.status(200).json({ message: 'Restriction supprimée avec succès' });
         });
       }
-  
-
-
-
-
-      //callerID

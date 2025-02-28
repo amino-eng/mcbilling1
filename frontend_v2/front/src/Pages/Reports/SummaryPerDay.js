@@ -14,10 +14,12 @@ const SummaryPerDay = () => {
     // Function to fetch data
     const fetchData = async () => {
         setLoading(true);
-        setError("");  
+        setError("");
         try {
-            const response = await axios.get("http://localhost:5000/api/admin/SummaryPerDay");
-            setData(response.data.data);  
+            const response = await axios.get(
+                "http://localhost:5000/api/admin/SummaryPerDay"
+            );
+            setData(response.data.data);
         } catch (err) {
             console.error("Error fetching data:", err);
             setError("Unable to fetch data. Please check if the server is running.");
@@ -29,16 +31,63 @@ const SummaryPerDay = () => {
     const handleDelete = async () => {
         try {
             // Send delete request for the item by ID
-            await axios.delete(`http://localhost:5000/api/admin/SummaryPerDay/${confirmDelete}`);
-            
+            await axios.delete(
+                `http://localhost:5000/api/admin/SummaryPerDay/${confirmDelete}`
+            );
+
             // Filter data to remove the item from the local array
-            setData(data.filter(item => item.id !== confirmDelete));
+            setData(data.filter((item) => item.id !== confirmDelete));
             setShowModal(false); // Close modal after deletion
             setDeletedMessage("Item has been successfully deleted.");
         } catch (err) {
             console.error("Error deleting item:", err);
             setError("Unable to delete item. Please check if the server is running.");
         }
+    };
+
+    // Function to export table data to CSV
+    const exportToCSV = () => {
+        const csvRows = [];
+
+        // Add headers
+        const headers = [
+            "Day",
+            "Session Time",
+            "ALOC Calls",
+            "Nb Call",
+            "Nb Call Fail",
+            "Buy Cost",
+            "Session Bill",
+            "Lucro",
+            "ASR",
+        ];
+        csvRows.push(headers.join(","));
+
+        // Add data rows
+        data.forEach((item) => {
+            const values = [
+                item.day,
+                item.sessiontime,
+                item.aloc_all_calls,
+                item.nbcall,
+                item.nbcall_fail,
+                item.buycost,
+                item.sessionbill,
+                item.lucro,
+                item.asr,
+            ];
+            csvRows.push(values.join(","));
+        });
+
+        // Create CSV file
+        const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "summary_per_day.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     // Load data on mount
@@ -53,9 +102,23 @@ const SummaryPerDay = () => {
             {error && <Alert variant="danger">{error}</Alert>}
             {deletedMessage && <Alert variant="success">{deletedMessage}</Alert>}
 
-            <Button variant="primary" onClick={fetchData} disabled={loading} className="mb-3">
-                {loading ? <Spinner as="span" animation="border" size="sm" /> : "Refresh Data"}
-            </Button>
+            <div className="d-flex justify-content-between mb-3">
+                <Button
+                    variant="primary"
+                    onClick={fetchData}
+                    disabled={loading}
+                    className="me-2"
+                >
+                    {loading ? (
+                        <Spinner as="span" animation="border" size="sm" />
+                    ) : (
+                        "Refresh Data"
+                    )}
+                </Button>
+                <Button variant="success" onClick={exportToCSV}>
+                    Export to CSV
+                </Button>
+            </div>
 
             <Table striped bordered hover responsive className="table-custom mt-3">
                 <thead>
@@ -92,10 +155,13 @@ const SummaryPerDay = () => {
                                 <td>{item.lucro}</td>
                                 <td>{item.asr} %</td> {/* Percentage icon */}
                                 <td>
-                                    <Button 
-                                        variant="danger" 
-                                        size="sm" 
-                                        onClick={() => { setConfirmDelete(item.id); setShowModal(true); }}
+                                    <Button
+                                        variant="danger"
+                                        size="sm"
+                                        onClick={() => {
+                                            setConfirmDelete(item.id);
+                                            setShowModal(true);
+                                        }}
                                         className="btn-delete"
                                     >
                                         Delete
@@ -105,7 +171,9 @@ const SummaryPerDay = () => {
                         ))
                     ) : (
                         <tr>
-                            <td colSpan="10" className="text-center">No data available</td>
+                            <td colSpan="10" className="text-center">
+                                No data available
+                            </td>
                         </tr>
                     )}
                 </tbody>
@@ -117,7 +185,10 @@ const SummaryPerDay = () => {
                     <Modal.Title>Confirmation of Deletion</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <p>Are you sure you want to delete this record? This action cannot be undone.</p>
+                    <p>
+                        Are you sure you want to delete this record? This action cannot
+                        be undone.
+                    </p>
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowModal(false)}>
@@ -131,14 +202,15 @@ const SummaryPerDay = () => {
 
             {/* CSS Styles Inline */}
             <style jsx>{`
-                .table-custom th, .table-custom td {
+                .table-custom th,
+                .table-custom td {
                     text-align: center;
                     vertical-align: middle;
                     font-size: 14px;
                 }
 
                 .table-primary {
-                    background-color:rgb(168, 170, 245);
+                    background-color: rgb(168, 170, 245);
                     color: white;
                     font-weight: bold;
                 }
@@ -149,7 +221,7 @@ const SummaryPerDay = () => {
                 }
 
                 .btn-delete:hover {
-                    background-color:rgb(39, 27, 207);
+                    background-color: rgb(39, 27, 207);
                     color: white;
                 }
 

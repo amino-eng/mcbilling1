@@ -72,18 +72,6 @@ function App() {
   const [error, setError] = useState(null);
 
   // 🔹 useEffect to fetch data from the backend on component mount
-  useEffect(() => {
-    axios.get('http://localhost:3000/api/data')
-      .then((response) => {
-        setData(response.data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Error fetching data', error);
-        setError('Error fetching data');
-        setLoading(false);
-      });
-  }, []);
 
   return (
     <Router>

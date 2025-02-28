@@ -7,7 +7,7 @@ const connection = require("../../config/dataBase");
 exports.afficher = async (req, res) => {
   try {
     const query = `
-      SELECT 
+      SELECT
     cdr.*, 
     user.username, 
     trunk.trunkcode, 

@@ -173,7 +173,6 @@ function CdrFailedTable() {
                         {col.label}
                       </th>
                     ))}
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -187,17 +186,7 @@ function CdrFailedTable() {
                             {cdr[col.key] || <span className="text-muted">—</span>}
                           </td>
                         ))}
-                      <td>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => {
-                            setConfirmDeleteId(cdr.id);
-                            setShowModal(true);
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </td>
+                      
                     </tr>
                   ))
                 ) : (

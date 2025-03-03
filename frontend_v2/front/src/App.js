@@ -122,7 +122,11 @@ function App() {
               <Route path="/clients/ATALinksys" element={<ATALinksys />} />
               <Route path="/clients/Users" element={<Users />} />
               <Route path="/clients/RestricNumber" element={<RestricNumber />} /> {/* Use the renamed route */}
+ main
               <Route path="/clients/SipUser" element={<SipUser />} />
+
+              <Route path="/clients/sipUser" element={<SipUser />} />
+ main
               <Route path="/clients/Lax" element={<Lax />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/reports/summary-day" element={<SummaryPerDay />} />

@@ -148,7 +148,6 @@ const CDRTable = () => {
     Plan: true,
     Campaign: true,
     Server: true,
-    Action: true,
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -381,7 +380,6 @@ const CDRTable = () => {
             {visibleColumns.Plan && <TableHeader>Plan</TableHeader>}
             {visibleColumns.Campaign && <TableHeader>Campaign</TableHeader>}
             {visibleColumns.Server && <TableHeader>Server</TableHeader>}
-            {visibleColumns.Action && <TableHeader>Action</TableHeader>}
           </tr>
         </thead>
         <tbody>
@@ -405,13 +403,7 @@ const CDRTable = () => {
                 {visibleColumns.Plan && <TableCell>{cdr.id_plan}</TableCell>}
                 {visibleColumns.Campaign && <TableCell>{cdr.id_campaign || "vide"}</TableCell>}
                 {visibleColumns.Server && <TableCell>{cdr.server_name}</TableCell>}
-                {visibleColumns.Action && (
-                  <TableCell>
-                    <Button onClick={() => handleDelete(cdr.id)}>
-                      {confirmDelete === cdr.id ? "Confirm?" : "Delete"}
-                    </Button>
-                  </TableCell>
-                )}
+                
               </TableRow>
             ))}
         </tbody>

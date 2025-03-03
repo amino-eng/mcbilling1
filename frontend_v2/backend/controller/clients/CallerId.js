@@ -1,13 +1,27 @@
 // ./controller/clients/CallerIdController.js
 const connection = require("../../config/dataBase");
 
+// Fonction pour récupérer les informations d'un agent à partir de son id_user
+const getAgent = (idUser) => {
+  return new Promise((resolve, reject) => {
+    const query = "SELECT * FROM agents WHERE id = ?";
+    connection.query(query, [idUser], (err, results) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(results);
+      }
+    });
+  });
+};
+
 // Afficher les informations de pkg_callerid
 exports.afficherCallerId = async (req, res) => {
   try {
     const query = `
       SELECT 
         cid, 
-         id,
+        id,
         name, 
         description, 
         id_user,
@@ -80,4 +94,39 @@ exports.supprimerCallerId = (req, res) => {
 
     res.status(200).json({ message: "Enregistrement supprimé avec succès" });
   });
+};
+
+// Afficher les restrictions avec les informations des agents
+exports.affiche = async (req, res) => {
+  try {
+    const query = "SELECT * FROM pkg_restrict_phone";
+    
+    connection.query(query, async (err, results) => {
+      if (err) {
+        console.error("Erreur lors de l'exécution de la requête:", err.stack);
+        return res.status(500).send("Erreur lors de la récupération des données");
+      }
+
+      console.log("Résultats de la requête:", results);
+
+      // Récupération des données des agents pour chaque restriction
+      const restrictionsWithAgentData = await Promise.all(results.map(async (restriction) => {
+        try {
+          const agentData = await getAgent(restriction.id_user);
+          return {
+            ...restriction, // Inclure toutes les données de restriction
+            agent: agentData[0] || null // Prendre le premier élément s'il existe, sinon null
+          };
+        } catch (error) {
+          console.error("Erreur lors de la récupération de l'agent:", error);
+          return { ...restriction, agent: null };
+        }
+      }));
+
+      res.json({ restrictions: restrictionsWithAgentData });
+    });
+  } catch (error) {
+    console.error("Erreur lors de la récupération des données:", error);
+    res.status(500).send("Erreur interne du serveur");
+  }
 };

@@ -193,7 +193,6 @@ const SummaryPerMonth = () => {
                     {visibleColumns.SessionBill && <th>Session Bill</th>}
                     {visibleColumns.Profit && <th>Profit (Lucro)</th>}
                     {visibleColumns.ASR && <th>ASR (%)</th>}
-                    {visibleColumns.Actions && <th>Actions</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -213,21 +212,7 @@ const SummaryPerMonth = () => {
                       {visibleColumns.SessionBill && <td>{item.sessionbill.toFixed(2)}</td>}
                       {visibleColumns.Profit && <td>{item.lucro.toFixed(2)}</td>}
                       {visibleColumns.ASR && <td>{item.asr.toFixed(2)} %</td>}
-                      {visibleColumns.Actions && (
-                        <td>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            className="shadow-sm"
-                            onClick={() => {
-                              setConfirmDelete(item.id);
-                              setShowModal(true);
-                            }}
-                          >
-                            Delete
-                          </Button>
-                        </td>
-                      )}
+                     
                     </tr>
                   ))}
                 </tbody>
@@ -252,23 +237,7 @@ const SummaryPerMonth = () => {
         </Pagination>
       </div>
 
-      {/* Modal for confirming delete */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title className="text-danger">Confirmation of Deletion</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>Are you sure you want to delete this record? This action cannot be undone.</p>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancel <FaTimes />
-          </Button>
-          <Button variant="danger" onClick={handleDelete}>
-            Confirm <FaCheck />
-          </Button>
-        </Modal.Footer>
-      </Modal>
+     
     </div>
   );
 };

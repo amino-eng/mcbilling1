@@ -6,7 +6,9 @@ const mysql =require("mysql2")
         host: '213.32.34.34',       // Replace with your database IP
         user: 'vicidial2',      // Replace with your database username
         password: 'vicidial2',  // Replace with your database password
-        database: 'mbilling',       // Replace with your database name
+        database: 'mbilling',   // Replace with your database name
+        port:3306
+           
       });
     
     connection.connect((err) => {

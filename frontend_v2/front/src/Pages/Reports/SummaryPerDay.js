@@ -220,7 +220,6 @@ const SummaryPerDay = () => {
             {visibleColumns.Session_Bill && <th>Session Bill</th>}
             {visibleColumns.Lucro && <th>Lucro</th>}
             {visibleColumns.ASR && <th>ASR <FaPercent /></th>}
-            {visibleColumns.Actions && <th>Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -242,21 +241,7 @@ const SummaryPerDay = () => {
                 {visibleColumns.Session_Bill && <td>{item.sessionbill}</td>}
                 {visibleColumns.Lucro && <td>{item.lucro}</td>}
                 {visibleColumns.ASR && <td>{item.asr} %</td>}
-                {visibleColumns.Actions && (
-                  <td>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => {
-                        setConfirmDelete(item.id);
-                        setShowModal(true);
-                      }}
-                      className="btn-delete"
-                    >
-                      Delete
-                    </Button>
-                  </td>
-                )}
+                
               </tr>
             ))
           ) : (
@@ -284,26 +269,7 @@ const SummaryPerDay = () => {
         </Pagination>
       )}
 
-      {/* Confirmation Modal for Deletion */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirmation of Deletion</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>
-            Are you sure you want to delete this record? This action cannot
-            be undone.
-          </p>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancel <FaTimes />
-          </Button>
-          <Button variant="danger" onClick={handleDelete}>
-            Confirm <FaCheck />
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      
 
       {/* CSS Styles Inline */}
       <style jsx>{`

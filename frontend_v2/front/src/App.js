@@ -72,6 +72,18 @@ function App() {
   const [error, setError] = useState(null);
 
   // 🔹 useEffect to fetch data from the backend on component mount
+  useEffect(() => {
+    axios.get('http://localhost:3000/api/data')
+      .then((response) => {
+        setData(response.data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error fetching data', error);
+        setError('Error fetching data');
+        setLoading(false);
+      });
+  }, []);
 
   return (
     <Router>
@@ -110,7 +122,7 @@ function App() {
               <Route path="/clients/ATALinksys" element={<ATALinksys />} />
               <Route path="/clients/Users" element={<Users />} />
               <Route path="/clients/RestricNumber" element={<RestricNumber />} /> {/* Use the renamed route */}
-              <Route path="/clients/sip-user" element={<SipUser />} />
+              <Route path="/clients/sipUser" element={<SipUser />} />
               <Route path="/clients/Lax" element={<Lax />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/reports/summary-day" element={<SummaryPerDay />} />

@@ -12,6 +12,8 @@ const routeCDRFailed = require("./route/rapport/CDRFailed");
 const routeusers = require("./route/client/users");
 const routeUserHistory = require("./route/client/UserHistory");
 const routeCallerId = require("./route/client/CallerId");
+const routeSIPUsers = require("./route/client/SIPUsers");
+
 
 
 // cors
@@ -25,10 +27,10 @@ app.use("/api/admin/SummaryPerDay",routeSummaryPerDay)
 app.use("/api/admin/SummaryPerMonth",routeSummaryPerMonth)
 app.use("/api/admin/CdrFailed", routeCDRFailed);
 app.use("/api/admin/users", routeusers);
-
-
 app.use("/api/admin/UserHistory", routeUserHistory)
 app.use("/api/admin/CallerId", routeCallerId);
+app.use("/api/admin/SIPUsers", routeSIPUsers);
+
 
 
 // Start the server

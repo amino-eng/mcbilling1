@@ -6,21 +6,30 @@ const connection = require("../../config/dataBase");
 exports.afficher = async (req, res) => {
     try {
       const query = `
-        SELECT
-          cdr_archive.id, 
-          cdr_archive.starttime AS call_date,  -- Use 'starttime' as the call date
-          cdr_archive.sessiontime AS duration,  -- Use 'sessiontime' as the duration
-          cdr_archive.terminatecauseid AS status,  -- Use 'terminatecauseid' as the status
-          user.username, 
-          trunk.trunkcode
-        FROM 
-          pkg_cdr_archive AS cdr_archive 
-        LEFT JOIN 
-          pkg_user AS user 
-          ON cdr_archive.id_user = user.id 
-        LEFT JOIN 
-          pkg_trunk AS trunk 
-          ON cdr_archive.id_trunk = trunk.id;
+     SELECT 
+   cdr_archive.id, 
+   cdr_archive.starttime AS Call_date,  
+   cdr_archive.sessiontime AS duration,  
+   cdr_archive.real_sessiontime AS real_duration,  
+   cdr_archive.terminatecauseid AS status,  
+   user.username, 
+   trunk.trunkcode,  
+   cdr_archive.sipiax AS destination,
+   cdr_archive.calledstation AS number,
+   cdr_archive.src AS sip_user,
+   cdr_archive.buycost AS buy_price,
+   cdr_archive.sessionbill AS sell_price,
+   cdr_archive.uniqueid AS unique_id  
+FROM 
+   pkg_cdr_archive AS cdr_archive 
+LEFT JOIN 
+   pkg_user AS user 
+   ON cdr_archive.id_user = user.id 
+LEFT JOIN 
+   pkg_trunk AS trunk 
+   ON cdr_archive.id_trunk = trunk.id  -- Make sure to join on the correct column
+LIMIT 0, 25;
+
       `;
   
       connection.query(query, (err, results) => {

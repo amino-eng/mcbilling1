@@ -1,11 +1,13 @@
+
 const express = require("express");
+const router = express.Router();
 const {
-  afficherUtilisateurs,
-  afficherGroupes,
-  afficherPlans
+    afficherUtilisateurs,
+    afficherGroupes,
+    afficherPlans,
+    ajouterUtilisateur 
 } = require("../../controller/clients/users");
 
-const router = express.Router();
 
 // Afficher tous les utilisateurs avec leurs informations associées
 router.get("/users", afficherUtilisateurs);
@@ -15,5 +17,7 @@ router.get("/groups", afficherGroupes);
 
 // Afficher tous les plans
 router.get("/plans", afficherPlans);
+
+router.post("/ajouter", ajouterUtilisateur);
 
 module.exports = router;

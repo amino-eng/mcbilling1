@@ -19,7 +19,7 @@ function Users() {
     password: '',
     group: '',
     plan: '',
-    language: 'English',
+    language: 'fr',
     status: 'Active',
     country: 'United States/Canada',
     description: ''
@@ -112,22 +112,60 @@ function Users() {
     setNewUser(prevState => ({ ...prevState, [name]: value }));
   };
 
-  const handleNewUserSubmit = (e) => {
+  const handleNewUserSubmit = async (e) => {
     e.preventDefault();
-    // Here you would typically send the new user data to your API
-    setUsers(prevUsers => [...prevUsers, { ...newUser, id: users.length + 1 }]);
-    setShowForm(false);
-    setNewUser({
-      username: '',
-      password: '',
-      group: '',
-      plan: '',
-      language: 'English',
-      status: 'Active',
-      country: 'United States/Canada',
-      description: ''
-    });
+  
+    // Create a user object to send
+    const userData = {
+      username: newUser.username,
+      password: newUser.password,
+      id_group: newUser.group, // Ensure this matches backend expectations
+      id_plan: newUser.plan,
+      language: newUser.language,
+      active: newUser.status === 'Active' ? 1 : 0,
+      email: newUser.email, 
+      id_user:newUser.id
+    };
+  
+    try {
+      const response = await fetch('http://localhost:5000/api/admin/users/ajouter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+      console.log(userData
+      );
+      
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+  
+      const result = await response.json();
+      console.log('User added:', result);
+  
+      // Update local state with the new user
+      setUsers(prevUsers => [...prevUsers, { ...newUser, id: result.userId }]);
+  
+      // Hide form and reset user state
+      setShowForm(false);
+      setNewUser({
+        username: '',
+        password: '',
+        group: '',
+        plan: '',
+        language: 'English',
+        status: 'Active',
+        description: ''
+      });
+  
+    } catch (error) {
+      console.error('Error adding user:', error);
+    }
   };
+  
 
   if (loading) {
     return <div className="alert alert-info text-center">Chargement des utilisateurs...</div>;
@@ -165,6 +203,7 @@ function Users() {
           <Form onSubmit={handleNewUserSubmit}>
             <Tabs defaultActiveKey="General" className='mb-3'>
               <Tab eventKey="General" title="General">
+               
                 <Form.Group controlId="formUsername">
                   <Form.Label>Username</Form.Label>
                   <Form.Control type="text" name="username" value={newUser.username} onChange={handleNewUserChange} required />
@@ -180,11 +219,11 @@ function Users() {
                   <Form.Select
                     name="group"
                     value={newUser.group}
-                    onChange={handleNewUserChange}
+                    onChange={handleNewUserChange} required
                   >
                     <option value="">Select a group</option>
                     {groups.map(group => (
-                      <option key={group.id} value={group.name}>
+                      <option key={group.id} value={group.id}>
                         {group.name}
                       </option>
                     ))}
@@ -196,7 +235,7 @@ function Users() {
                   <Form.Select
                     name="plan"
                     value={newUser.plan}
-                    onChange={handleNewUserChange}
+                    onChange={handleNewUserChange} required
                   >
                     <option value="">Select a plan</option>
                     {plans.map(plan => (
@@ -209,22 +248,22 @@ function Users() {
 
                 <Form.Group controlId="formLanguage">
                   <Form.Label>Language</Form.Label>
-                  <Form.Control as="select" name="language" value={newUser.language} onChange={handleNewUserChange}>
-                    <option value="English">Undefined</option>
-                    <option value="French">English</option>
-                    <option value="Spanish">Spanish</option>
-                    <option value="Italian">Portuguese</option>
-                    <option value="Russian">Russian</option>
+                  <Form.Control as="select" name="language"  onChange={handleNewUserChange} required>
+                    <option value="fr">Frensh</option>
+                    <option value="en">English</option>
+                    <option value="sp">Spanish</option>
+                    <option value="it">Portuguese</option>
+                    <option value="rs">Russian</option>
                   </Form.Control>
                 </Form.Group>
 
                 <Form.Group controlId="formUsername">
                   <Form.Label>Prefix rules</Form.Label>
-                  <Form.Control type="text" name="username" value={newUser.username} onChange={handleNewUserChange} required />
+                  <Form.Control type="text" name="username" value={newUser.username} onChange={handleNewUserChange} />
                 </Form.Group>
                 <Form.Group controlId="formUsername">
                   <Form.Label>Status</Form.Label>
-                  <Form.Control as="select" name="status" value={newUser.status} onChange={handleNewUserChange}>
+                  <Form.Control as="select" name="status" value={newUser.status} onChange={handleNewUserChange} required>
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                     <option value="Pending">Pending</option>
@@ -235,7 +274,7 @@ function Users() {
 
                 <Form.Group controlId="formUsername">
                   <Form.Label>country</Form.Label>
-                  <Form.Control as="Select" name="country" value={newUser.country} on change={handleNewUserChange}>
+                  <Form.Control as="Select" name="country" value={newUser.country} on change={handleNewUserChange} >
                     <option value="United States/Canada">United States/Canada</option>
                     <option value="United Kingdom">United Kingdom</option>
                     <option value="Australia">Australia</option>
@@ -255,143 +294,259 @@ function Users() {
 
                 <Form.Group controlId="formUsername">
                   <Form.Label>Activate offer </Form.Label>
-                  <Form.Control as="Select" name="Activate offer" value={newUser.country} on change={handleNewUserChange}>
+                  <Form.Control as="Select" name="Activate offer" value={newUser.country} on change={handleNewUserChange} >
                     <option value="Undefined">Undefined</option>
                   </Form.Control>
                 </Form.Group>
                 <Form.Group controlId="formUsername">
                   <Form.Label>Description</Form.Label>
-                  <Form.Control type="text" name="username" value={newUser.username} onChange={handleNewUserChange} required />
+                  <Form.Control type="text" name="username" value={newUser.username} onChange={handleNewUserChange}  />
                 </Form.Group>
               </Tab>
 <Tab eventKey="personal Data " title="Personal">
   <Form.Group 
     controlId="formUsercomany">
                   <Form.Label>Company website</Form.Label>
-                  <Form.Control type="text" name="company" value={newUser.company} onChange={handleNewUserChange} required />         
+                  <Form.Control type="text" name="company" value={newUser.company} onChange={handleNewUserChange}  />         
   </Form.Group>
 
   <Form.Group 
-    controlId="formUsercomany">
+    controlId="formUsercomanyn">
                   <Form.Label>Company name</Form.Label>
-                  <Form.Control type="text" name="company" value={newUser.company} onChange={handleNewUserChange} required />         
+                  <Form.Control type="text" name="companyn" value={newUser.companyn} onChange={handleNewUserChange}  />         
   </Form.Group>
 
   <Form.Group 
-    controlId="formUsercommercial">
+    controlId="formUsercommercialco">
                   <Form.Label>Commercial name</Form.Label>
-                  <Form.Control type="text" name="commercial" value={newUser.company} onChange={handleNewUserChange} required />         
+                  <Form.Control type="text" name="commercialco" value={newUser.companyco} onChange={handleNewUserChange}  />         
   </Form.Group>
 
   <Form.Group 
     controlId="formUserstate">
                   <Form.Label>State number</Form.Label>
-                  <Form.Control type="text" name="state" value={newUser.company} onChange={handleNewUserChange} required />         
+                  <Form.Control type="text" name="state" value={newUser.state} onChange={handleNewUserChange}  />         
   </Form.Group>
 
  
   <Form.Group 
     controlId="formUserfirstname">
                   <Form.Label>First name</Form.Label>
-                  <Form.Control type="text" name="lastname" value={newUser.firstname} onChange={handleNewUserChange} required />         
+                  <Form.Control type="text" name="lastname" value={newUser.firstname} onChange={handleNewUserChange}  />         
   </Form.Group>
 
   
   <Form.Group 
     controlId="formUsercity">
                   <Form.Label>City</Form.Label>
-                  <Form.Control type="text" name="lastname" value={newUser.city} onChange={handleNewUserChange} required />         
+                  <Form.Control type="text" name="lastname" value={newUser.city} onChange={handleNewUserChange}  />         
   </Form.Group>
 
   
   <Form.Group 
     controlId="formUseradresse">
                   <Form.Label>Adresse</Form.Label>
-                  <Form.Control type="text" name="Adresse" value={newUser.adresse} onChange={handleNewUserChange} required />         
+                  <Form.Control type="text" name="Adresse" value={newUser.adresse} onChange={handleNewUserChange}  />         
   </Form.Group>
 
   
   <Form.Group 
     controlId="formUserState">
                   <Form.Label>State</Form.Label>
-                  <Form.Control type="text" name="State" value={newUser.State} onChange={handleNewUserChange} required />         
+                  <Form.Control type="text" name="State" value={newUser.State} onChange={handleNewUserChange}  />         
   </Form.Group>
 
 
   <Form.Group 
     controlId="formUserNeighborhood">
                   <Form.Label>Neighborhood</Form.Label>
-                  <Form.Control type="text" name="Neighborhood" value={newUser.Neighborhood} onChange={handleNewUserChange} required />         
+                  <Form.Control type="text" name="Neighborhood" value={newUser.Neighborhood} onChange={handleNewUserChange}  />         
   </Form.Group>
 
   <Form.Group 
     controlId="formUserZipcode">
                   <Form.Label>Zip code</Form.Label>
-                  <Form.Control type="text" name="Zipcode" value={newUser.Zipcode} onChange={handleNewUserChange} required />         
+                  <Form.Control type="text" name="Zipcode" value={newUser.Zipcode} onChange={handleNewUserChange}  />         
   </Form.Group>
 
   <Form.Group 
     controlId="formUserPhone">
                   <Form.Label>Phone</Form.Label>
-                  <Form.Control type="text" name="Phone" value={newUser.Phone} onChange={handleNewUserChange} required />         
+                  <Form.Control type="text" name="Phone" value={newUser.Phone} onChange={handleNewUserChange}  />         
   </Form.Group>
 
   <Form.Group 
     controlId="formUserMobile">
                   <Form.Label>Mobile</Form.Label>
-                  <Form.Control type="text" name="Mobile" value={newUser.Mobile} onChange={handleNewUserChange} required />         
+                  <Form.Control type="text" name="Mobile" value={newUser.Mobile} onChange={handleNewUserChange}  />         
   </Form.Group>
 
   <Form.Group 
     controlId="formUserEmail">
                   <Form.Label>Email</Form.Label>
-                  <Form.Control type="text" name="Email" value={newUser.Email} onChange={handleNewUserChange} required />         
+                  <Form.Control type="text" name="Email" value={newUser.Email} onChange={handleNewUserChange}  />         
   </Form.Group>
 
   <Form.Group 
     controlId="formUserEmail2 ">
                   <Form.Label>Email 2</Form.Label>
-                  <Form.Control type="text" name="Email" value={newUser.Email} onChange={handleNewUserChange} required />         
+                  <Form.Control type="text" name="Email" value={newUser.Email} onChange={handleNewUserChange}  />         
   </Form.Group>
 
   <Form.Group 
     controlId="formUserDOC">
                   <Form.Label>DOC</Form.Label>
-                  <Form.Control type="text" name="DOC" value={newUser.DOC} onChange={handleNewUserChange} required />         
+                  <Form.Control type="text" name="DOC" value={newUser.DOC} onChange={handleNewUserChange}  />         
   </Form.Group>
 
   <Form.Group 
     controlId="formUserVAT">
                   <Form.Label>VAT</Form.Label>
-                  <Form.Control type="text" name="DOC" value={newUser.VAT} onChange={handleNewUserChange} required />         
+                  <Form.Control type="text" name="DOC" value={newUser.VAT} onChange={handleNewUserChange}/>         
   </Form.Group>
 
   <Form.Group 
     controlId="formUserContractvalue">
                   <Form.Label>Contract value</Form.Label>
-                  <Form.Control type="text" name="Contract value" value={newUser.Contractvalue} onChange={handleNewUserChange} required />     
+                  <Form.Control type="text" name="Contract_value" value={newUser.Contractvalue} onChange={handleNewUserChange}  />     
                       
   </Form.Group>
 
   <Form.Group 
     controlId="formUserDIST">
                   <Form.Label>DIST</Form.Label>
-                  <Form.Control type="text" name="DIST" value={newUser.DIST} onChange={handleNewUserChange} required />         
+                  <Form.Control type="text" name="DIST" value={newUser.DIST} onChange={handleNewUserChange}  />         
   </Form.Group>
-  
-  
-  
-
-  
 </Tab>
             
             <Tab eventKey="Supplementary info " title="Supplementary info">
             <Form.Group 
-            controlId="formUserDIST">
+            controlId="formUsertype">
                   <Form.Label>Type paid</Form.Label>
-                  <Form.Control type="text" name="DIST" value={newUser.DIST} onChange={handleNewUserChange} required />
+                  <Form.Control as="Select" name="Activate offer" value={newUser.country} on change={handleNewUserChange}>
+                    <option value="Undefined">Prepaid</option>
+                    <option value="Undefined">Postpaid</option>
+                  </Form.Control>
             </Form.Group>
+            
+            <Form.Group 
+            controlId="formUsercredit">
+                  <Form.Label>Credit notification daily</Form.Label>
+                  <Form.Control as="Select" name="Activate offer" value={newUser.country} on change={handleNewUserChange}>
+                    <option value="Undefined">No </option>
+                    <option value="Undefined">Yes</option>
+                  </Form.Control>
+            </Form.Group>
+            
+            <Form.Group 
+            controlId="formUserlimit">
+                  <Form.Label>Credit limit</Form.Label>
+                  <Form.Control type="text" name="DIST" value={newUser.DIST} onChange={handleNewUserChange}  />
+            </Form.Group>
+            
+            <Form.Group 
+            controlId="formUsercreditnot">
+                  <Form.Label>Credit notification</Form.Label>
+                  <Form.Control type="text" name="creditnot" value={newUser.creditnot} onChange={handleNewUserChange}  />
+            </Form.Group>
+            
+            <Form.Group 
+            controlId="formUsersevices">
+                  <Form.Label>Services email notification</Form.Label>
+                  <Form.Control as="Select" name="services" value={newUser.country} on change={handleNewUserChange}>
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                  </Form.Control>
+            </Form.Group>
+           
+            <Form.Group 
+            controlId="formUserDID">
+                  <Form.Label>DID email notification</Form.Label>
+                  <Form.Control as="Select" name="services" value={newUser.country} on change={handleNewUserChange}>
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                  </Form.Control>
+            </Form.Group>
+           
+            <Form.Group 
+            controlId="formUserenable">
+                  <Form.Label>Enable expire</Form.Label>
+                  <Form.Control as="Select" name="services" value={newUser.country} on change={handleNewUserChange}>
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                  </Form.Control>
+            </Form.Group>
+           
+            <Form.Group controlId="formUserExpirationDate">
+           <Form.Label>Expiration Date</Form.Label>
+           <Form.Control 
+              type="date" 
+              name="expirationDate" 
+              value={newUser.expirationDate} 
+              onChange={handleNewUserChange} 
+               
+             />
+           </Form.Group>
+           
+           <Form.Group 
+            controlId="formUsercall">
+                  <Form.Label>Call limit</Form.Label>
+                  <Form.Control type="text" name="call" value={newUser.call} onChange={handleNewUserChange}  >         
 
+                  </Form.Control>
+            </Form.Group>
+            
+            <Form.Group 
+            controlId="formUserrecord">
+                  <Form.Label>Record call format</Form.Label>
+                  <Form.Control as="Select" name="services" value={newUser.country} on change={handleNewUserChange}>
+                    <option value="No">gsm</option>
+                    <option value="Yes">wav</option>
+                    <option value="Yes">wav49</option>
+                  </Form.Control>
+            </Form.Group>
+            
+            <Form.Group 
+            controlId="formUserca">
+                  <Form.Label>call</Form.Label>
+                  <Form.Control as="Select" name="services" value={newUser.country} on change={handleNewUserChange}>
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                  </Form.Control>
+            </Form.Group>
+           
+            <Form.Group 
+            controlId="formUserDIsk">
+                  <Form.Label>Disk space</Form.Label>
+                  <Form.Control type="text" name="DIsk" value={newUser.DIsk} onChange={handleNewUserChange}  >         
+
+                  </Form.Control>
+            </Form.Group>
+           
+            <Form.Group 
+            controlId="formUsersip">
+                  <Form.Label>SIP account limit</Form.Label>
+                  <Form.Control type="text" name="sip" value={newUser.sip} onChange={handleNewUserChange}  >         
+
+                  </Form.Control>
+            </Form.Group>
+           
+            <Form.Group 
+            controlId="formUserpin">
+                  <Form.Label>CallingCard PIN</Form.Label>
+                  <Form.Control type="text" name="pin" value={newUser.pin} onChange={handleNewUserChange}  >         
+
+                  </Form.Control>
+            </Form.Group>
+            
+            <Form.Group 
+            controlId="formUserrestriction">
+                  <Form.Label>Restriction</Form.Label>
+                  <Form.Control as="Select" name="restriction" value={newUser.restriction} on change={handleNewUserChange}>
+                    <option value="No">Inactive</option>
+                    <option value="Yes">Cannot call to restricted numbers</option>
+                  </Form.Control>
+                  </Form.Group>
               </Tab>
                </Tabs>
               

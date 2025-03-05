@@ -16,7 +16,7 @@ FROM
     pkg_cdr AS cdr 
 LEFT JOIN 
     pkg_user AS user 
-    ON cdr.id_user = user.id 
+    ON cdr.id_user = user.id_user 
 LEFT JOIN 
     pkg_trunk AS trunk 
     ON cdr.id_trunk = trunk.id 

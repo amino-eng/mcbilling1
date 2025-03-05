@@ -53,18 +53,18 @@ exports.afficherSIPUsers = async (req, res) => {
 
 // Add SIP User
 exports.ajouterSIPUser = (req, res) => {
-  const { name, accountcode, host, status, allow } = req.body;
+  const { id_user, name, accountcode, host, status, allow } = req.body;
 
-  if (!name || !accountcode || !host || !status || !allow) {
-    return res.status(400).json({ error: "All fields are required" });
-  }
+  // Validate required fields
 
+
+  // Proceed with the insert operation
   const query = `
-    INSERT INTO pkg_sip (name, accountcode, host, status, allow) 
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO pkg_sip (id_user, name, accountcode, host, status, allow) 
+    VALUES (?, ?, ?, ?, ?, ?)
   `;
 
-  connection.query(query, [name, accountcode, host, status, allow], (error, results) => {
+  connection.query(query, [id_user, name, accountcode, host, status, allow], (error, results) => {
     if (error) {
       console.error("Database error:", error);
       return res.status(500).json({ error: "Database error" });
@@ -100,6 +100,38 @@ exports.sipUsers = async (req, res) => {
       res.json(err);  // Send error if something goes wrong
     }
   };
+
+  //trunkgroups
+  exports.trunkGroups = async (req, res) => {
+    try {
+        // Query to fetch all trunk groups (pkg_trunk_group)
+        const query = `SELECT * FROM pkg_trunk_group`; 
+        connection.query(query, async (err, trunkGroups) => {
+            if (err) {
+                return res.json(err); // Send error if query fails
+            }
+
+            // Fetch additional data (if needed)
+            const trunkGroupsWithDetails = await Promise.all(trunkGroups.map(async (trunk) => {
+                const userData = await getAgent(trunk.id_user);
+                return {
+                    ...trunk,  // Include all trunk group fields
+                    username: userData?.username || null, // Include username if available
+                    description: trunk.description // Include description
+                };
+            }));
+
+            // Send the trunk groups with their corresponding usernames and descriptions
+            res.json({
+                trunkGroups: trunkGroupsWithDetails
+            });
+        });
+    } catch (err) {
+        console.error("Error fetching trunk group data:", err);
+        res.json(err);  // Send error if something goes wrong
+    }
+};
+
 
 // Delete SIP User
 exports.supprimerSIPUser = (req, res) => {

@@ -86,7 +86,7 @@ const CallArchive = () => {
         Export CSV
       </Button>
       <Button variant="info" onClick={() => setShowModal(true)} className="mb-3">
-         Columns
+         Column
       </Button>
 
       <Table striped bordered hover>

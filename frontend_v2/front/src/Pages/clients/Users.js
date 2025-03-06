@@ -298,9 +298,9 @@ function Users() {
                     <option value="Undefined">Undefined</option>
                   </Form.Control>
                 </Form.Group>
-                <Form.Group controlId="formUsername">
+                <Form.Group controlId="formDesc">
                   <Form.Label>Description</Form.Label>
-                  <Form.Control type="text" name="username" value={newUser.username} onChange={handleNewUserChange}  />
+                  <Form.Control type="text" name="Desc" value={newUser.Desc} onChange={handleNewUserChange}  />
                 </Form.Group>
               </Tab>
 <Tab eventKey="personal Data " title="Personal">

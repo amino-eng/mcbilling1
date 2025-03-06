@@ -17,8 +17,7 @@ const routeSummaryPerUser = require("./route/rapport/SummaryPerUser");
 
 const routeSummaryMonthUser = require("./route/rapport/SummaryMonthUser");  
 const routeCallArchive = require("./route/rapport/CallArchive"); 
-
-
+const routePayMeth = require("./route/billing/PayMeth");
 
 
 // cors
@@ -38,6 +37,8 @@ app.use("/api/admin/SIPUsers", routeSIPUsers);
 app.use("/api/admin/SummaryPerUser", routeSummaryPerUser);
 app.use("/api/admin/CallArchive", routeCallArchive); 
 app.use("/api/admin/SummaryMonthUser", routeSummaryMonthUser);
+app.use("/api/admin/PayMeth", routePayMeth);
+;
 
 
 

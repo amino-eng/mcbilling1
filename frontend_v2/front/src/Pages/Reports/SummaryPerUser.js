@@ -107,10 +107,10 @@ const SummaryPerUser = () => {
               <td>{userSummary.aloc_all_calls}</td>
               <td>{userSummary.nbcall}</td>  {/* Answered calls */}
               <td>{userSummary.nbcall_fail}</td>  {/* Failed calls */}
-              <td>{roundToTwoDecimal(userSummary.buycost)}</td>  {/* Rounded Buy Price */}
-              <td>{roundToTwoDecimal(userSummary.sessionbill)}</td>  {/* Rounded Sell Price */}
+              <td>{roundToTwoDecimal(userSummary.buycost)}€</td>  {/* Rounded Buy Price */}
+              <td>{roundToTwoDecimal(userSummary.sessionbill)}€</td>  {/* Rounded Sell Price */}
               <td>{roundToTwoDecimal(userSummary.lucro)}</td>  {/* Rounded Markup */}
-              <td>{roundToTwoDecimal(userSummary.asr)}</td>  {/* Rounded ASR */}
+              <td>{roundToTwoDecimal(userSummary.asr)}%</td>  {/* Rounded ASR */}
             </tr>
           ))}
         </tbody>

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAll, getById, add, del } = require('../../controller/rapports/SummaryPerUser');
+const { getAll, getById, add, del } = require('../../controller/rapports/SummaryMonthUser');
 
 // Route to get all user summaries
 router.get("/", getAll);

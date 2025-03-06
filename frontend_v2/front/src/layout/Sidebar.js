@@ -118,15 +118,11 @@ const Sidebar = () => {
             <ul className="nav flex-column mt-2">
               {[
                 { path: "/clients/caller-id", icon: "bi-phone", label: "Caller ID" },
-                { path: "/clients/Users", icon: "bi-people", label: "Users" },
-                
+                { path: "/clients/Users", icon: "bi-people", label: "Users" },               
                 { path: "/clients/UserHistory", icon: "bi-clock-history", label: "UserHistory" },
                 { path: "/clients/Lax", icon: "bi-building", label: "Lax" },
                 { path: "/clients/ATALinksys", icon: "bi-hdd-network", label: "ATA Linksys" },
-
-                { path: "/clients/SipUser", icon: "bi-telephone-forward", label: "SIP Users" },
-                { path: "/clients/sipUser", icon: "bi-telephone-forward", label: "SIP Users" },
- 
+                { path: "/clients/SipUser", icon: "bi-telephone-forward", label: "SIP Users" },                 
                 { path: "/clients/RestricNumber", icon: "bi-ban", label: "RestricNumber" },
                  // ✅ Updated Icon
               ].map((item, index) => (
@@ -261,11 +257,14 @@ const Sidebar = () => {
         { path: "/reports/summary-month", icon: "bi-calendar-month", label: "Summary Per Month" },
         { path: "/reports/destination", icon: "bi-geo-alt", label: "Reports / Destination" },
         { path: "/reports/inbound", icon: "bi-arrow-down-circle", label: "Inbound Reports" },
+        { path: "/reports/SummarymonthUser", icon: "bi-calendar-month", label: "Summary Month User" },
         { path: "/reports/summaryperuser", icon: "bi-person-lines-fill", label: "Summary Per User" },
         { path: "/reports/summarypertrunk", icon: "bi-diagram-3", label: "Summary Per Trunk" },
         { path: "/reports/SummaryMonthTrunk", icon: "bi-calendar3", label: "Summary Month Trunk" },
         { path: "/reports/SummaryDayTrunk", icon: "bi-calendar3-week", label: "Summary Day Trunk" },
-        { path: "/reports/CallArchive", icon: "bi-archive", label: "Call Archive" }
+        { path: "/reports/CallArchive", icon: "bi-archive", label: "Call Archive" },
+        { path: "/reports/SummaryDayUser", icon: "bi-calendar3-week", label: "Summary Day User" }
+        
       ].map((item, index) => (
         <li className="nav-item" key={index}>
           <Link to={item.path} className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">

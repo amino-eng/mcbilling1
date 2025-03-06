@@ -29,13 +29,15 @@ import SummaryPerDay from './Pages/Reports/SummaryPerDay';
 import CDR from './Pages/Reports/CDR';
 import CDRFailed from './Pages/Reports/CDRFailed';
 import SummaryPerMonth from './Pages/Reports/SummaryPerMonth';
+import SummaryMonthUser from './Pages/Reports/SummaryMonthUser';
+import SummaryDayUser from './Pages/Reports/SummaryDayUser';
 import SummaryPerTrunk from './Pages/Reports/SummaryMonthTrunk';
 import SummaryMonthTrunk from './Pages/Reports/SummaryPerTrunk';
 import SummaryDayTrunk from './Pages/Reports/SummaryDayTrunk';
 import ReportsDestination from './Pages/Reports/ReportsDestination';
 import InboundReports from './Pages/Reports/InboundReports';
 import SummaryPerUser from './Pages/Reports/SummaryPerUser';
-import CallArchive from './Pages/Reports/CallArchive';
+import CallArchive from './Pages/Reports/callArchive';
 import ActivityDash from './Pages/Dashboard/ActivityDash';
 import RechargeHistory from './Pages/Dashboard/RechargeHistory';
 import Profile from './components/UserProfile/profile';
@@ -141,6 +143,8 @@ function App() {
               <Route path="/reports/summaryMonthTrunk" element={<SummaryMonthTrunk />} />
               <Route path="/reports/SummaryDayTrunk" element={<SummaryDayTrunk />} />
               <Route path="/reports/summary-month" element={<SummaryPerMonth />} />
+              <Route path="/reports/summaryMonthUser" element={<SummaryMonthUser />} />
+              <Route path="/reports/SummaryDayUser" element={<SummaryDayUser />} />
               <Route path="/reports/destination" element={<ReportsDestination />} />
               <Route path="/reports/inbound" element={<InboundReports />} />
               <Route path="/reports/CallArchive" element={<CallArchive />} />

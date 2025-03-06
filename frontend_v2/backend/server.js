@@ -13,9 +13,9 @@ const routeusers = require("./route/client/users");
 const routeUserHistory = require("./route/client/UserHistory");
 const routeCallerId = require("./route/client/CallerId");
 const routeSIPUsers = require("./route/client/SIPUsers");
-
 const routeSummaryPerUser = require("./route/rapport/SummaryPerUser");
 
+const routeSummaryMonthUser = require("./route/rapport/SummaryMonthUser");  
 const routeCallArchive = require("./route/rapport/CallArchive"); 
 
 
@@ -35,10 +35,9 @@ app.use("/api/admin/users", routeusers);
 app.use("/api/admin/UserHistory", routeUserHistory)
 app.use("/api/admin/CallerId", routeCallerId);
 app.use("/api/admin/SIPUsers", routeSIPUsers);
-
 app.use("/api/admin/SummaryPerUser", routeSummaryPerUser);
-
 app.use("/api/admin/CallArchive", routeCallArchive); 
+app.use("/api/admin/SummaryMonthUser", routeSummaryMonthUser);
 
 
 

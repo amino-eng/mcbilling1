@@ -1,342 +1,173 @@
-import React, { useState, useEffect } from "react";
-import {
-  Button,
-  Table,
-  Form,
-  Alert,
-  InputGroup,
-  Pagination,
-  Dropdown,
-  Card,
-  Modal,
-} from "react-bootstrap";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { Table, Button, Modal, Form } from "react-bootstrap";
+import ReactPaginate from "react-paginate";
+import { CSVLink } from "react-csv";
 
-function RefillApp() {
-  const [refills, setRefills] = useState([]);
-  const [selectedRefill, setSelectedRefill] = useState(null);
-  const [refillId, setRefillId] = useState("");
-  const [error, setError] = useState("");
-  const [hiddenColumns, setHiddenColumns] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [usernames, setUsernames] = useState([]);
-  const [newRefill, setNewRefill] = useState({
-    id_user: 0,
-    credit: "",
+const CallerIdTable = () => {
+  const [callerIds, setCallerIds] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [newCallerId, setNewCallerId] = useState({
+    callerid: "",
+    username: "",
+    name: "",
     description: "",
-    payment: false,
+    status: "",
   });
-  const [showAddModal, setShowAddModal] = useState(false);
 
-  const columns = ["credit", "username", "date", "description", "payment"];
-
-  // Fetch all refills
-  const fetchRefills = async () => {
-    try {
-      const response = await fetch("http://localhost:5000/api/admin/Refills/affiche");
-      if (!response.ok) throw new Error("Failed to fetch refills");
-      const data = await response.json();
-      setRefills(data.refills);
-    } catch (err) {
-      setError("Error fetching refills");
-    }
-  };
-
-  // Fetch refill by ID
-  const fetchRefillById = async (id) => {
-    try {
-      const response = await fetch(`/api/refills/${id}`);
-      if (!response.ok) {
-        if (response.status === 404) throw new Error("Refill not found");
-        throw new Error("Failed to fetch refill");
-      }
-      const data = await response.json();
-      setSelectedRefill(data.refill);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  // Fetch usernames
-  const fetchUsernames = async () => {
-    try {
-      const response = await axios.get("http://localhost:5000/api/admin/users/users");
-      setUsernames(response.data.users);
-    } catch (error) {
-      console.error("Erreur lors du chargement des usernames", error);
-    }
-  };
-
-  // Export table data to CSV
-  const exportToCSV = () => {
-    const header = columns.filter((col) => !hiddenColumns.includes(col));
-    const rows = refills.map((refill) => ({
-      credit: refill.credit,
-      username: refill.username,
-      date: new Date(refill.date).toLocaleDateString(),
-      description: refill.description,
-      payment: refill.payment === 1 ? "yes" : "no",
-    }));
-
-    const csvContent =
-      [header.join(",")].concat(
-        rows.map((row) =>
-          header.map((col) => row[col]).join(",")
-        )
-      ).join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "refills.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // Handle form submission for fetching by ID
-  const handleFetchById = (e) => {
-    e.preventDefault();
-    if (refillId.trim() === "") {
-      setError("Please enter a valid ID");
-      return;
-    }
-    fetchRefillById(refillId);
-  };
-
-  // Toggle column visibility
-  const toggleColumn = (column) => {
-    setHiddenColumns((prev) =>
-      prev.includes(column)
-        ? prev.filter((col) => col !== column)
-        : [...prev, column]
-    );
-  };
-
-  // Pagination Logic
-  const totalPages = Math.ceil(refills.length / rowsPerPage);
-  const paginatedRefills = refills.slice(
-    (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
-  );
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage((prev) => prev + 1);
-    }
-  };
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage((prev) => prev - 1);
-    }
-  };
-
-  const handleRowsPerPageChange = (e) => {
-    setRowsPerPage(Number(e.target.value));
-    setCurrentPage(1); // Reset to the first page
-  };
-
-  // Handle input change for new refill
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewRefill({ ...newRefill, [name]: value });
-  };
-
-  // Handle add refill
-  const handleAddRefill = async () => {
-    try {
-      const response = await axios.post("http://localhost:5000/api/admin/refills/add", newRefill);
-      if (response.status === 201) {
-        fetchRefills(); // Recharger les refills après l'ajout
-        setNewRefill({ username: "", credit: "", description: "", payment: false });
-        setShowAddModal(false);
-      }
-    } catch (error) {
-      console.error("Erreur lors de l'ajout du refill", error);
-    }
-  };
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 5;
 
   useEffect(() => {
-    fetchRefills();
-    fetchUsernames();
+    fetchCallerIds();
   }, []);
 
+  const fetchCallerIds = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/admin/CallerId/affiche");
+      setCallerIds(response.data.callerid);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des données :", error);
+    }
+  };
+
+  const handleAddCallerId = async () => {
+    try {
+      await axios.post("http://localhost:5000/api/admin/CallerId/ajouter", newCallerId);
+      fetchCallerIds();
+      setShowModal(false);
+    } catch (error) {
+      console.error("Erreur lors de l'ajout :", error);
+    }
+  };
+
+  const handleDeleteCallerId = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/admin/CallerId/delete/:id/${id}`);
+      fetchCallerIds();
+    } catch (error) {
+      console.error("Erreur lors de la suppression :", error);
+    }
+  };
+
+  // Gestion de la pagination
+  const offset = currentPage * itemsPerPage;
+  const currentData = callerIds.slice(offset, offset + itemsPerPage);
+  const pageCount = Math.ceil(callerIds.length / itemsPerPage);
+
+  const handlePageClick = ({ selected }) => {
+    setCurrentPage(selected);
+  };
+
+  // Générer les données CSV
+  const csvData = [
+    ["Caller ID", "Nom", "Description", "Utilisateur", "Statut"],
+    ...callerIds.map((caller) => [
+      caller.cid,
+      caller.name,
+      caller.description,
+      caller.id_user,
+      caller.activated ? "Actif" : "Inactif",
+    ]),
+  ];
+
   return (
-    <div className="container py-5">
-      {/* Page Header */}
-      <h1 className="text-center mb-5">Refills</h1>
-
-      {/* Error Message */}
-      {error && <Alert variant="danger">{error}</Alert>}
-
-      {/* Column Visibility Dropdown */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <Dropdown>
-          <Dropdown.Toggle variant="secondary" id="dropdown-basic">
-            Toggle Columns
-          </Dropdown.Toggle>
-          <Dropdown.Menu>
-            {columns.map((col) => (
-              <Dropdown.Item
-                key={col}
-                onClick={() => toggleColumn(col)}
-                className="d-flex align-items-center"
-              >
-                {hiddenColumns.includes(col) ? (
-                  <>
-                    <FaEye className="me-2 text-success" /> Show {col}
-                  </>
-                ) : (
-                  <>
-                    <FaEyeSlash className="me-2 text-danger" /> Hide {col}
-                  </>
-                )}
-              </Dropdown.Item>
-            ))}
-          </Dropdown.Menu>
-        </Dropdown>
-
-        {/* Export to CSV */}
-        <Button variant="warning" onClick={exportToCSV}>
-          Export to CSV
-        </Button>
-      </div>
-
-      {/* Rows Per Page */}
-      <Form.Group controlId="rowsPerPage" className="mb-4">
-        <Form.Label>Rows per Page:</Form.Label>
-        <Form.Select
-          value={rowsPerPage}
-          onChange={handleRowsPerPageChange}
-          className="w-auto"
-        >
-          {[5, 10, 15, 20].map((size) => (
-            <option key={size} value={size}>
-              {size}
-            </option>
+    <div className="container mt-4">
+      <h2>Liste des Caller IDs</h2>
+      <Button variant="primary" onClick={() => setShowModal(true)} className="me-2">
+        Ajouter
+      </Button>
+      <CSVLink data={csvData} filename="callerid_export.csv" className="btn btn-success">
+        Exporter CSV
+      </CSVLink>
+      <Table striped bordered hover className="mt-3">
+        <thead>
+          <tr>
+            <th>Caller ID</th>
+            <th>Nom</th>
+            <th>Description</th>
+            <th>Utilisateur</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {currentData.map((caller) => (
+            <tr key={caller.id}>
+              <td>{caller.cid}</td>
+              <td>{caller.name}</td>
+              <td>{caller.description}</td>
+              <td>{caller.id_user}</td>
+              <td>{caller.activated ? "Actif" : "Inactif"}</td>
+              <td>
+                <Button variant="danger" onClick={() => handleDeleteCallerId(caller.id)}>Supprimer</Button>
+              </td>
+            </tr>
           ))}
-        </Form.Select>
-      </Form.Group>
+        </tbody>
+      </Table>
 
-      {/* Add Refill Button and Modal */}
-      <div className="mb-4">
-        <Button variant="primary" onClick={() => setShowAddModal(true)}>
-          Ajouter
-        </Button>
+      {/* Pagination */}
+      <ReactPaginate
+        previousLabel={"← Précédent"}
+        nextLabel={"Suivant →"}
+        breakLabel={"..."}
+        pageCount={pageCount}
+        marginPagesDisplayed={2}
+        pageRangeDisplayed={3}
+        onPageChange={handlePageClick}
+        containerClassName={"pagination justify-content-center"}
+        pageClassName={"page-item"}
+        pageLinkClassName={"page-link"}
+        previousClassName={"page-item"}
+        previousLinkClassName={"page-link"}
+        nextClassName={"page-item"}
+        nextLinkClassName={"page-link"}
+        breakClassName={"page-item"}
+        breakLinkClassName={"page-link"}
+        activeClassName={"active"}
+      />
 
-        <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
-          <Modal.Header closeButton>
-            <Modal.Title>Ajouter un Refill</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Form>
-              <Form.Group className="mb-3">
-                <Form.Label>Username</Form.Label>
-                <Dropdown>
-                  <Dropdown.Toggle variant="secondary" id="dropdown-basic">
-                    {newRefill.username || "Sélectionner un utilisateur"}
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu>
-                    {usernames.map((user) => (
-                      <Dropdown.Item
-                        key={user.id}
-                        onClick={() => setNewRefill({ ...newRefill, username: user.username })}
-                      >
-                        {user.username}
-                      </Dropdown.Item>
-                    ))}
-                  </Dropdown.Menu>
-                </Dropdown>
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Credit</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="credit"
-                  value={newRefill.credit}
-                  onChange={handleInputChange}
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Description</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="description"
-                  value={newRefill.description}
-                  onChange={handleInputChange}
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Check
-                  type="checkbox"
-                  label="Payment"
-                  name="payment"
-                  checked={newRefill.payment}
-                  onChange={(e) => setNewRefill({ ...newRefill, payment: e.target.checked })}
-                />
-              </Form.Group>
-            </Form>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowAddModal(false)}>
-              Fermer
-            </Button>
-            <Button variant="primary" onClick={handleAddRefill}>
-              Ajouter
-            </Button>
-          </Modal.Footer>
-        </Modal>
-      </div>
-
-      {/* Refill List */}
-      <Card className="shadow-sm">
-        <Card.Body>
-          <Card.Title>All Refills</Card.Title>
-          <Table striped bordered hover responsive>
-            <thead>
-              <tr>
-                {columns.map(
-                  (col) =>
-                    !hiddenColumns.includes(col) && <th key={col}>{col}</th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedRefills.map((refill) => (
-                <tr key={refill.id}>
-                  {!hiddenColumns.includes("credit") && <td>{refill.credit}</td>}
-                  {!hiddenColumns.includes("username") && <td>{refill.username}</td>}
-                  {!hiddenColumns.includes("date") && (
-                    <td>{new Date(refill.date).toLocaleDateString()}</td>
-                  )}
-                  {!hiddenColumns.includes("description") && <td>{refill.description}</td>}
-                  {!hiddenColumns.includes("payment") && (
-                    <td>{refill.payment === 1 ? "yes" : "no"}</td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </Card.Body>
-      </Card>
-
-      {/* Pagination Controls */}
-      <Pagination className="justify-content-center mt-4" size="lg">
-        <Pagination.Prev
-          onClick={handlePreviousPage}
-          disabled={currentPage === 1}
-        />
-        <Pagination.Item>{`Page ${currentPage} of ${totalPages}`}</Pagination.Item>
-        <Pagination.Next
-          onClick={handleNextPage}
-          disabled={currentPage === totalPages}
-        />
-      </Pagination>
+      {/* Modal d'ajout */}
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Ajouter Caller ID</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group>
+              <Form.Label>Caller ID</Form.Label>
+              <Form.Control type="text" value={newCallerId.callerid} onChange={(e) => setNewCallerId({ ...newCallerId, callerid: e.target.value })} />
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>Nom</Form.Label>
+              <Form.Control type="text" value={newCallerId.name} onChange={(e) => setNewCallerId({ ...newCallerId, name: e.target.value })} />
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>Utilisateur</Form.Label>
+              <Form.Control type="text" value={newCallerId.username} onChange={(e) => setNewCallerId({ ...newCallerId, username: e.target.value })} />
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>Description</Form.Label>
+              <Form.Control type="text" value={newCallerId.description} onChange={(e) => setNewCallerId({ ...newCallerId, description: e.target.value })} />
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>Statut</Form.Label>
+              <Form.Control as="select" value={newCallerId.status} onChange={(e) => setNewCallerId({ ...newCallerId, status: e.target.value })}>
+                <option value="1">Actif</option>
+                <option value="0">Inactif</option>
+              </Form.Control>
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>Fermer</Button>
+          <Button variant="primary" onClick={handleAddCallerId}>Ajouter</Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
-}
+};
 
-export default RefillApp;
+export default CallerIdTable;

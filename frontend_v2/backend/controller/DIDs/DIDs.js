@@ -32,12 +32,12 @@ exports.afficher = (req, res) => {
 exports.ajouter = (req, res) => {
   const { did_number, country, active, id_user } = req.body;
 
-  if (!did_number || !country || active === undefined || !id_user) {
-    return res.status(400).json({ error: "Tous les champs sont obligatoires" });
-  }
+  // if (!did_number || !country || active === undefined || !id_user) {
+  //   return res.status(400).json({ error: "Tous les champs sont obligatoires" });
+  // }
 
   const query = `
-    INSERT INTO pkg_did (did_number, country, active, id_user) 
+    INSERT INTO pkg_did (did, country, activated, id_user) 
     VALUES (?, ?, ?, ?)
   `;
 

@@ -23,7 +23,7 @@ function RefillApp() {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [usernames, setUsernames] = useState([]);
   const [newRefill, setNewRefill] = useState({
-    id_user: 0,
+    id_user: 1,
     credit: "",
     description: "",
     payment: false,

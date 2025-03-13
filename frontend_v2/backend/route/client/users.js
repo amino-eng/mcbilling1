@@ -5,7 +5,8 @@ const {
     afficherUtilisateurs,
     afficherGroupes,
     afficherPlans,
-    ajouterUtilisateur 
+    ajouterUtilisateur ,
+    supprimerUtilisateur
 } = require("../../controller/clients/users");
 
 
@@ -19,5 +20,7 @@ router.get("/groups", afficherGroupes);
 router.get("/plans", afficherPlans);
 
 router.post("/ajouter", ajouterUtilisateur);
+//supprimerUtilisateur  
 
+router.delete("/supprimer/:id", supprimerUtilisateur);
 module.exports = router;

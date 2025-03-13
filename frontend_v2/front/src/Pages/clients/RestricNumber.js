@@ -56,13 +56,16 @@ function RestricNumber() {
       setError('Veuillez remplir tous les champs.');
       return;
     }
-
+  
     const data = {
       number: phoneNumber,
       direction: restrictionType,
       id_user: selectedUser,
+      date: new Date().toISOString().slice(0, 10) // Format the date as 'YYYY-MM-DD'
     };
-
+  
+    console.log('Data being sent:', data); // Log the data to inspect it
+  
     setLoading(true);
     try {
       await axios.post('http://localhost:5000/api/admin/agent/add', data);
@@ -70,7 +73,7 @@ function RestricNumber() {
       resetForm();
       fetchData();
     } catch (error) {
-      console.error("Erreur lors de l'ajout de la restriction:", error);
+      console.error("Erreur lors de l'ajout de la restriction:", error.response?.data || error);
       toast.error("Erreur lors de l'ajout de la restriction.");
     } finally {
       setLoading(false);
@@ -120,7 +123,8 @@ function RestricNumber() {
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = sortedPhoneData.slice(indexOfFirstItem, indexOfLastItem);
-
+  console.log(phoneData);
+  
   return (
     <div className="container mt-4">
       <ToastContainer />
@@ -150,6 +154,7 @@ function RestricNumber() {
               </th>
               <th>Numéro</th>
               <th>Direction</th>
+              <th>Date</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -160,6 +165,7 @@ function RestricNumber() {
                   <td>{e.agent?.username}</td>
                   <td>{e.number}</td>
                   <td>{e.direction === 2 ? 'Entrant' : 'Sortant'}</td>
+                  <td>{e.date}</td>
                   <td>
                     <button className="btn btn-danger btn-sm" onClick={() => handleDeleteRestriction(e.id)}>
                       Supprimer
@@ -224,6 +230,13 @@ function RestricNumber() {
             <option value="2">Entrant</option>
             <option value="1">Sortant</option>
           </select>
+
+          <input
+            type="date"
+            className="form-control mt-2"
+            value={new Date().toISOString().split('T')[0]}
+            readOnly
+            ></input>
 
           <button className="btn btn-success mt-2" onClick={handleAddRestriction} disabled={loading}>
             Confirmer

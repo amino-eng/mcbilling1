@@ -8,8 +8,10 @@ import {
   Pagination,
   Dropdown,
   Card,
+  Modal,
 } from "react-bootstrap";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import axios from "axios";
 
 function RefillApp() {
   const [refills, setRefills] = useState([]);
@@ -19,6 +21,14 @@ function RefillApp() {
   const [hiddenColumns, setHiddenColumns] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [usernames, setUsernames] = useState([]);
+  const [newRefill, setNewRefill] = useState({
+    id_user: 0,
+    credit: "",
+    description: "",
+    payment: false,
+  });
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const columns = ["credit", "username", "date", "description", "payment"];
 
@@ -46,6 +56,16 @@ function RefillApp() {
       setSelectedRefill(data.refill);
     } catch (err) {
       setError(err.message);
+    }
+  };
+
+  // Fetch usernames
+  const fetchUsernames = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/admin/users/users");
+      setUsernames(response.data.users);
+    } catch (error) {
+      console.error("Erreur lors du chargement des usernames", error);
     }
   };
 
@@ -119,8 +139,29 @@ function RefillApp() {
     setCurrentPage(1); // Reset to the first page
   };
 
+  // Handle input change for new refill
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewRefill({ ...newRefill, [name]: value });
+  };
+
+  // Handle add refill
+  const handleAddRefill = async () => {
+    try {
+      const response = await axios.post("http://localhost:5000/api/admin/refills/add", newRefill);
+      if (response.status === 201) {
+        fetchRefills(); // Recharger les refills après l'ajout
+        setNewRefill({ username: "", credit: "", description: "", payment: false });
+        setShowAddModal(false);
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'ajout du refill", error);
+    }
+  };
+
   useEffect(() => {
     fetchRefills();
+    fetchUsernames();
   }, []);
 
   return (
@@ -130,10 +171,6 @@ function RefillApp() {
 
       {/* Error Message */}
       {error && <Alert variant="danger">{error}</Alert>}
-
-   
-
-     
 
       {/* Column Visibility Dropdown */}
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -183,6 +220,76 @@ function RefillApp() {
           ))}
         </Form.Select>
       </Form.Group>
+
+      {/* Add Refill Button and Modal */}
+      <div className="mb-4">
+        <Button variant="primary" onClick={() => setShowAddModal(true)}>
+          Ajouter
+        </Button>
+
+        <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Ajouter un Refill</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              <Form.Group className="mb-3">
+                <Form.Label>Username</Form.Label>
+                <Dropdown>
+                  <Dropdown.Toggle variant="secondary" id="dropdown-basic">
+                    {newRefill.username || "Sélectionner un utilisateur"}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>
+                    {usernames.map((user) => (
+                      <Dropdown.Item
+                        key={user.id}
+                        onClick={() => setNewRefill({ ...newRefill, username: user.username })}
+                      >
+                        {user.username}
+                      </Dropdown.Item>
+                    ))}
+                  </Dropdown.Menu>
+                </Dropdown>
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Credit</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="credit"
+                  value={newRefill.credit}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Description</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="description"
+                  value={newRefill.description}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Check
+                  type="checkbox"
+                  label="Payment"
+                  name="payment"
+                  checked={newRefill.payment}
+                  onChange={(e) => setNewRefill({ ...newRefill, payment: e.target.checked })}
+                />
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+              Fermer
+            </Button>
+            <Button variant="primary" onClick={handleAddRefill}>
+              Ajouter
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      </div>
 
       {/* Refill List */}
       <Card className="shadow-sm">

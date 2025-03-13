@@ -83,3 +83,19 @@ exports.getById = async (req, res) => {
     res.status(500).send("Internal server error");
   }
 };
+// add a reffil 
+
+    exports.add = (req, res) => {
+      const { id_user,credit,description,payment } = req.body;
+  
+      const query = "INSERT INTO pkg_refill SET ?";
+  
+      connection.query(query, { id_user,credit,description,payment }, (err, result) => {
+        if (err) {
+          console.error("Error inserting Refill record:", err);
+          return res.status(500).json({ error: "Database error" });
+        }
+  
+        res.status(201).json({ message: "Refill record created successfully", id: result.insertId });
+      });
+    };

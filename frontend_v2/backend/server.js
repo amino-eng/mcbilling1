@@ -22,6 +22,11 @@ const routeCallArchive = require("./route/rapport/CallArchive");
 const routePayMeth = require("./route/billing/PayMeth");
 
 const routeRefills = require("./route/Billing/Refills");
+const routeDIDDestination = require("./route/DIDs/DIDDestination");
+const routeDIDUse = require("./route/DIDs/DIDUse");
+const routeIVRs = require("./route/DIDs/IVRs");
+
+
 
 
 
@@ -50,6 +55,12 @@ app.use("/api/admin/PayMeth", routePayMeth);
 
 app.use("/api/admin/SummaryDayUser", routeSummaryDayUser);
 app.use("/api/admin/Refills", routeRefills); 
+app.use("/api/admin/DIDDestination", routeDIDDestination);
+app.use("/api/admin/DIDUse", routeDIDUse);
+app.use("/api/admin/IVRs", routeIVRs);
+
+
+
 
 
 

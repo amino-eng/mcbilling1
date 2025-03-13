@@ -70,8 +70,8 @@ const Sidebar = () => {
   </Link>
 </li>
 <li className="nav-item">
-  <Link to="/DIDs/DIDsUser" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
-    <i className="bi bi-person me-2"></i> DIDs User
+  <Link to="/DIDs/DIDsUse" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+    <i className="bi bi-person me-2"></i> DIDs Use
   </Link>
 </li>
 <li className="nav-item">

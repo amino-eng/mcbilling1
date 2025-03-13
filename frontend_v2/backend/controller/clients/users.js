@@ -257,3 +257,21 @@ exports.ajouterUtilisateur = (req, res) => {
         });
     });
 };
+// delete user
+
+exports.supprimerUtilisateur = (req, res) => {
+    const { id } = req.params;
+
+    console.log("Received userId:", id);
+
+    const deleteQuery = "DELETE FROM pkg_user WHERE id = ?";
+
+    connection.query(deleteQuery, [Number(id)], (err, results) => {
+        if (err) {
+            console.error("Erreur lors de la suppression de l'utilisateur :", err);
+            return res.status(500).json(err);
+        }
+
+        res.status(200).json({ message: "Utilisateur supprimé avec succès" });
+    });
+};

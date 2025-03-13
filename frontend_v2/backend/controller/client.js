@@ -20,10 +20,10 @@ exports.addRestriction = (req, res) => {
     console.log('Request Body:', req.body);
   
     // Désctructuration des champs reçus
-    const { number, direction, id_user } = req.body;
+    const { number, direction, id_user, date } = req.body;
   
     // Validation des champs
-    if (!number || !direction || !id_user) {
+    if (!number || !direction || !id_user || !date) {
       return res.status(400).json({ error: 'Missing required fields' });
     
     }
@@ -33,8 +33,8 @@ exports.addRestriction = (req, res) => {
   
     // Logique pour ajouter la restriction dans la base de données
     // Par exemple, on peut insérer la restriction dans la base de données
-    const query = `INSERT INTO pkg_restrict_phone (id_user, number, direction) VALUES (?, ?, ?)`;
-    connection.query(query, [id_user, number, direction], (error, results) => {
+    const query = `INSERT INTO pkg_restrict_phone (id_user, number, direction, date) VALUES (?, ?, ?, ?)`;
+    connection.query(query, [id_user, number, direction, date], (error, results) => {
       if (error) {
         console.error('Database error:', error);
         return res.status(500).json({ error: 'Database error' });

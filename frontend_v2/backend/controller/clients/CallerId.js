@@ -1,4 +1,3 @@
-// ./controller/clients/CallerIdController.js
 const connection = require("../../config/dataBase");
 
 // Fonction pour récupérer les informations d'un agent à partir de son id_user
@@ -20,16 +19,19 @@ exports.afficherCallerId = async (req, res) => {
   try {
     const query = `
       SELECT 
-        cid, 
-        id,
-        name, 
-        description, 
-        id_user,
-        activated 
+        c.id,
+        c.cid, 
+        c.name, 
+        c.description, 
+        c.id_user,
+        u.username,  
+        c.activated 
       FROM 
-        pkg_callerid
+        pkg_callerid c
+      LEFT JOIN 
+        pkg_user u ON c.id_user = u.id  
       ORDER BY 
-        id DESC
+        c.id DESC;
     `;
 
     connection.query(query, (err, results) => {
@@ -59,7 +61,7 @@ exports.ajouterCallerId = (req, res) => {
   }
 
   const query = `
-    INSERT INTO pkg_callerid (callerid, username, name, description, status) 
+    INSERT INTO pkg_callerid (cid, id_user, name, description, activated) 
     VALUES (?, ?, ?, ?, ?)
   `;
 
@@ -70,6 +72,45 @@ exports.ajouterCallerId = (req, res) => {
     }
     res.status(201).json({ message: "Enregistrement ajouté avec succès" });
   });
+};
+
+// Modifier un enregistrement dans pkg_callerid
+exports.modifierCallerId = (req, res) => {
+  const callerId = req.params.id;
+  const { cid, id_user, name, description, activated } = req.body;
+
+  if (!cid || !id_user || !name || !description || !activated) {
+    return res.status(400).json({ error: "Tous les champs sont obligatoires" });
+  }
+
+  const query = `
+    UPDATE pkg_callerid 
+    SET 
+      cid = ?, 
+      id_user = ?, 
+      name = ?, 
+      description = ?, 
+      activated = ? 
+    WHERE 
+      id = ?
+  `;
+
+  connection.query(
+    query,
+    [cid, id_user, name, description, activated, callerId],
+    (error, results) => {
+      if (error) {
+        console.error("Erreur de base de données:", error);
+        return res.status(500).json({ error: "Erreur de base de données" });
+      }
+
+      if (results.affectedRows === 0) {
+        return res.status(404).json({ message: "Enregistrement non trouvé" });
+      }
+
+      res.status(200).json({ message: "Enregistrement modifié avec succès" });
+    }
+  );
 };
 
 // Supprimer un enregistrement de pkg_callerid
@@ -109,13 +150,12 @@ exports.affiche = async (req, res) => {
 
       console.log("Résultats de la requête:", results);
 
-      // Récupération des données des agents pour chaque restriction
       const restrictionsWithAgentData = await Promise.all(results.map(async (restriction) => {
         try {
           const agentData = await getAgent(restriction.id_user);
           return {
-            ...restriction, // Inclure toutes les données de restriction
-            agent: agentData[0] || null // Prendre le premier élément s'il existe, sinon null
+            ...restriction,
+            agent: agentData[0] || null
           };
         } catch (error) {
           console.error("Erreur lors de la récupération de l'agent:", error);

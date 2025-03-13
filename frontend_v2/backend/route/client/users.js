@@ -6,7 +6,8 @@ const {
     afficherGroupes,
     afficherPlans,
     ajouterUtilisateur ,
-    supprimerUtilisateur
+    supprimerUtilisateur,
+    modifierUtilisateur
 } = require("../../controller/clients/users");
 
 
@@ -23,4 +24,7 @@ router.post("/ajouter", ajouterUtilisateur);
 //supprimerUtilisateur  
 
 router.delete("/supprimer/:id", supprimerUtilisateur);
+
+// Nouvelle route pour la modification
+router.put("/modifier/:id", modifierUtilisateur);
 module.exports = router;

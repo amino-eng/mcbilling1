@@ -1,57 +1,157 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Table, Button, Modal, Form } from "react-bootstrap";
+import { Table, Button, Modal, Form, Dropdown, Alert } from "react-bootstrap";
 import ReactPaginate from "react-paginate";
 import { CSVLink } from "react-csv";
+import { FaCheckCircle, FaTimesCircle, FaEdit } from "react-icons/fa";
 
 const CallerIdTable = () => {
   const [callerIds, setCallerIds] = useState([]);
-  const [showModal, setShowModal] = useState(false);
+  const [usernames, setUsernames] = useState([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [newCallerId, setNewCallerId] = useState({
     callerid: "",
     username: "",
     name: "",
     description: "",
-    status: "",
+    status: "1",
   });
+  const [editCallerId, setEditCallerId] = useState({
+    id: "",
+    callerid: "",
+    username: "",
+    name: "",
+    description: "",
+    status: "1",
+  });
+  const [error, setError] = useState("");
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 5;
+  const [currentPage, setCurrentPage] = useState(0);
 
+  // Fetch Caller IDs and Usernames on component mount
   useEffect(() => {
     fetchCallerIds();
+    fetchUsernames();
   }, []);
 
+  // Fetch all Caller IDs
   const fetchCallerIds = async () => {
     try {
       const response = await axios.get("http://localhost:5000/api/admin/CallerId/affiche");
       setCallerIds(response.data.callerid);
     } catch (error) {
       console.error("Erreur lors de la récupération des données :", error);
+      setError("Erreur lors de la récupération des données.");
     }
   };
 
+  // Fetch all Usernames
+  const fetchUsernames = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/admin/users/users");
+      setUsernames(response.data.users);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des utilisateurs :", error);
+      setError("Erreur lors de la récupération des utilisateurs.");
+    }
+  };
+
+  // Handle adding a new Caller ID
   const handleAddCallerId = async () => {
+    if (!newCallerId.callerid || !newCallerId.username || !newCallerId.name) {
+      setError("Veuillez remplir tous les champs obligatoires.");
+      return;
+    }
+
     try {
-      await axios.post("http://localhost:5000/api/admin/CallerId/ajouter", newCallerId);
-      fetchCallerIds();
-      setShowModal(false);
+      const response = await axios.post("http://localhost:5000/api/admin/CallerId/ajouter", newCallerId);
+      if (response.status === 201) {
+        fetchCallerIds(); // Refresh the list
+        setNewCallerId({ callerid: "", username: "", name: "", description: "", status: "1" }); // Reset form
+        setShowAddModal(false); // Close modal
+        setError(""); // Clear error
+      }
     } catch (error) {
-      console.error("Erreur lors de l'ajout :", error);
+      console.error("Erreur lors de l'ajout du Caller ID :", error.response?.data || error.message);
+      setError("Erreur lors de l'ajout du Caller ID.");
     }
   };
 
+  // Handle editing a Caller ID
+  const handleEditCallerId = async () => {
+    console.log("Editing Caller ID:", editCallerId); // Debugging log
+    if (!editCallerId.callerid || !editCallerId.username || !editCallerId.name) {
+      setError("Veuillez remplir tous les champs obligatoires.");
+      return;
+    }
+
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/api/admin/CallerId/modifier/${editCallerId.id}`,
+        {
+          cid: editCallerId.callerid, // Ensure the field names match backend expectations
+          id_user: editCallerId.username, // Make sure this is correct
+          name: editCallerId.name,
+          description: editCallerId.description,
+          activated: editCallerId.status
+        }
+      );
+      if (response.status === 200) {
+        fetchCallerIds(); // Refresh the list
+        setShowEditModal(false); // Close modal
+        setEditCallerId({ id: "", callerid: "", username: "", name: "", description: "", status: "1" }); // Reset edit form
+        setError(""); // Clear error
+      }
+    } catch (error) {
+      console.error("Erreur lors de la modification du Caller ID :", error.response?.data || error.message);
+      setError("Erreur lors de la modification du Caller ID.");
+    }
+  };
+
+  // Handle input changes in the add form
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewCallerId({ ...newCallerId, [name]: value });
+  };
+
+  // Handle input changes in the edit form
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditCallerId({ ...editCallerId, [name]: value });
+  };
+
+  // Handle deleting a Caller ID
   const handleDeleteCallerId = async (id) => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce Caller ID ?")) {
+      return; // Cancel deletion if the user clicks "No"
+    }
+
     try {
-      await axios.delete(`http://localhost:5000/api/admin/CallerId/delete/:id/${id}`);
-      fetchCallerIds();
+      await axios.delete(`http://localhost:5000/api/admin/CallerId/delete/${id}`);
+      fetchCallerIds(); // Refresh the list
+      setError(""); // Clear error
     } catch (error) {
-      console.error("Erreur lors de la suppression :", error);
+      console.error("Erreur lors de la suppression :", error.response?.data || error.message);
+      setError("Erreur lors de la suppression. Veuillez réessayer.");
     }
   };
 
-  // Gestion de la pagination
+  // Open edit modal and populate fields with selected Caller ID data
+  const openEditModal = (caller) => {
+    setEditCallerId({
+      id: caller.id,
+      callerid: caller.cid,
+      username: caller.username,
+      name: caller.name,
+      description: caller.description,
+      status: caller.activated.toString(),
+    });
+    setShowEditModal(true);
+  };
+
+  // Pagination logic
   const offset = currentPage * itemsPerPage;
   const currentData = callerIds.slice(offset, offset + itemsPerPage);
   const pageCount = Math.ceil(callerIds.length / itemsPerPage);
@@ -60,27 +160,36 @@ const CallerIdTable = () => {
     setCurrentPage(selected);
   };
 
-  // Générer les données CSV
+  // CSV data for export
   const csvData = [
-    ["Caller ID", "Nom", "Description", "Utilisateur", "Statut"],
+    ["Caller ID", "Nom", "Utilisateur", "Description", "Statut"],
     ...callerIds.map((caller) => [
       caller.cid,
       caller.name,
+      caller.username,
       caller.description,
-      caller.id_user,
-      caller.activated ? "Actif" : "Inactif",
+      caller.activated == 1 ? "Actif" : "Inactif",
     ]),
   ];
 
   return (
     <div className="container mt-4">
       <h2>Liste des Caller IDs</h2>
-      <Button variant="primary" onClick={() => setShowModal(true)} className="me-2">
+
+      {/* Error Alert */}
+      {error && <Alert variant="danger">{error}</Alert>}
+
+      {/* Add Caller ID Button */}
+      <Button variant="primary" onClick={() => setShowAddModal(true)} className="me-2">
         Ajouter
       </Button>
+
+      {/* Export to CSV Button */}
       <CSVLink data={csvData} filename="callerid_export.csv" className="btn btn-success">
         Exporter CSV
       </CSVLink>
+
+      {/* Caller IDs Table */}
       <Table striped bordered hover className="mt-3">
         <thead>
           <tr>
@@ -96,12 +205,23 @@ const CallerIdTable = () => {
           {currentData.map((caller) => (
             <tr key={caller.id}>
               <td>{caller.cid}</td>
-              <td>{caller.id_user}</td>
               <td>{caller.name}</td>
+              <td>{caller.username}</td>
               <td>{caller.description}</td>
-              <td>{caller.activated ? "Actif" : "Inactif"}</td>
               <td>
-                <Button variant="danger" onClick={() => handleDeleteCallerId(caller.id)}>Supprimer</Button>
+                {caller.activated == 1 ? (
+                  <FaCheckCircle color="green" size={20} title="Actif" />
+                ) : (
+                  <FaTimesCircle color="red" size={20} title="Inactif" />
+                )}
+              </td>
+              <td>
+                <Button variant="warning" onClick={() => openEditModal(caller)} className="me-2">
+                  <FaEdit />
+                </Button>
+                <Button variant="danger" onClick={() => handleDeleteCallerId(caller.id)}>
+                  Supprimer
+                </Button>
               </td>
             </tr>
           ))}
@@ -129,8 +249,8 @@ const CallerIdTable = () => {
         activeClassName={"active"}
       />
 
-      {/* Modal d'ajout */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
+      {/* Add Caller ID Modal */}
+      <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Ajouter Caller ID</Modal.Title>
         </Modal.Header>
@@ -138,32 +258,148 @@ const CallerIdTable = () => {
           <Form>
             <Form.Group>
               <Form.Label>Caller ID</Form.Label>
-              <Form.Control type="text" value={newCallerId.callerid} onChange={(e) => setNewCallerId({ ...newCallerId, callerid: e.target.value })} />
+              <Form.Control
+                type="text"
+                name="callerid"
+                value={newCallerId.callerid}
+                onChange={handleInputChange}
+                required
+              />
             </Form.Group>
             <Form.Group>
               <Form.Label>Nom</Form.Label>
-              <Form.Control type="text" value={newCallerId.name} onChange={(e) => setNewCallerId({ ...newCallerId, name: e.target.value })} />
+              <Form.Control
+                type="text"
+                name="name"
+                value={newCallerId.name}
+                onChange={handleInputChange}
+                required
+              />
             </Form.Group>
             <Form.Group>
               <Form.Label>Utilisateur</Form.Label>
-              <Form.Control type="text" value={newCallerId.username} onChange={(e) => setNewCallerId({ ...newCallerId, username: e.target.value })} />
+              <Dropdown>
+                <Dropdown.Toggle variant="secondary" id="dropdown-basic">
+                  {newCallerId.username || "Sélectionner un utilisateur"}
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  {usernames.map((user) => (
+                    <Dropdown.Item
+                      key={user.id}
+                      onClick={() => setNewCallerId({ ...newCallerId, username: user.id })}
+                    >
+                      {user.username}
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown.Menu>
+              </Dropdown>
             </Form.Group>
             <Form.Group>
               <Form.Label>Description</Form.Label>
-              <Form.Control type="text" value={newCallerId.description} onChange={(e) => setNewCallerId({ ...newCallerId, description: e.target.value })} />
+              <Form.Control
+                type="text"
+                name="description"
+                value={newCallerId.description}
+                onChange={handleInputChange}
+              />
             </Form.Group>
             <Form.Group>
               <Form.Label>Statut</Form.Label>
-              <Form.Control as="select" value={newCallerId.status} onChange={(e) => setNewCallerId({ ...newCallerId, status: e.target.value })}>
+              <Form.Select
+                name="status"
+                value={newCallerId.status}
+                onChange={handleInputChange}
+              >
                 <option value="1">Actif</option>
                 <option value="0">Inactif</option>
-              </Form.Control>
+              </Form.Select>
             </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>Fermer</Button>
-          <Button variant="primary" onClick={handleAddCallerId}>Ajouter</Button>
+          <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+            Fermer
+          </Button>
+          <Button variant="primary" onClick={handleAddCallerId}>
+            Ajouter
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Edit Caller ID Modal */}
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Modifier Caller ID</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group>
+              <Form.Label>Caller ID</Form.Label>
+              <Form.Control
+                type="text"
+                name="callerid"
+                value={editCallerId.callerid}
+                onChange={handleEditInputChange}
+                required
+              />
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>Nom</Form.Label>
+              <Form.Control
+                type="text"
+                name="name"
+                value={editCallerId.name}
+                onChange={handleEditInputChange}
+                required
+              />
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>Utilisateur</Form.Label>
+              <Dropdown>
+                <Dropdown.Toggle variant="secondary" id="dropdown-basic">
+                  {editCallerId.username || "Sélectionner un utilisateur"}
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  {usernames.map((user) => (
+                    <Dropdown.Item
+                      key={user.id}
+                      onClick={() => setEditCallerId({ ...editCallerId, username: user.username })}
+                    >
+                      {user.username}
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown.Menu>
+              </Dropdown>
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>Description</Form.Label>
+              <Form.Control
+                type="text"
+                name="description"
+                value={editCallerId.description}
+                onChange={handleEditInputChange}
+              />
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>Statut</Form.Label>
+              <Form.Select
+                name="status"
+                value={editCallerId.status}
+                onChange={handleEditInputChange}
+              >
+                <option value="1">Actif</option>
+                <option value="0">Inactif</option>
+              </Form.Select>
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+            Fermer
+          </Button>
+          <Button variant="primary" onClick={handleEditCallerId}>
+            Enregistrer
+          </Button>
         </Modal.Footer>
       </Modal>
     </div>

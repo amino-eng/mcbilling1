@@ -86,8 +86,8 @@ const CallerIdTable = () => {
           <tr>
             <th>Caller ID</th>
             <th>Nom</th>
-            <th>Description</th>
             <th>Utilisateur</th>
+            <th>Description</th>
             <th>Statut</th>
             <th>Actions</th>
           </tr>
@@ -96,9 +96,9 @@ const CallerIdTable = () => {
           {currentData.map((caller) => (
             <tr key={caller.id}>
               <td>{caller.cid}</td>
+              <td>{caller.id_user}</td>
               <td>{caller.name}</td>
               <td>{caller.description}</td>
-              <td>{caller.id_user}</td>
               <td>{caller.activated ? "Actif" : "Inactif"}</td>
               <td>
                 <Button variant="danger" onClick={() => handleDeleteCallerId(caller.id)}>Supprimer</Button>

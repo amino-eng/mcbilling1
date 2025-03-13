@@ -1,5 +1,5 @@
 const express = require('express');
-const { afficher, ajouter, del } = require('../../controller/billling/PayMeth');
+const { afficher, ajouter, del } = require('../../controller/Billing/PayMeth');
 const router = express.Router();
 
 // Afficher toutes les méthodes de paiement

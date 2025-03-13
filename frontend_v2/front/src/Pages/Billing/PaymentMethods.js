@@ -20,17 +20,7 @@ export default function PaymentMethods() {
     <div className="container mt-4">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>Liste des méthodes de paiement</h2>
-        <div>
-          {/* Bouton pour ouvrir la modale */}
-          <button
-            className="btn btn-success me-2"
-            data-bs-toggle="modal"
-            data-bs-target="#newPaymentModal"
-          >
-            + Nouveau
-          </button>
-          <button className="btn btn-primary">📥 Exporter CSV</button>
-        </div>
+        
       </div>
 
       {/* Tableau */}

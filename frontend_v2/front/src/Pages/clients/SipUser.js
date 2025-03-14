@@ -73,8 +73,8 @@ const SIPUsers = () => {
 
         if (type === 'checkbox') {
             setFormData(prev => {
-                const codecs = checked 
-                    ? [...prev.codecs, value] 
+                const codecs = checked
+                    ? [...prev.codecs, value]
                     : prev.codecs.filter(codec => codec !== value);
                 return { ...prev, codecs };
             });
@@ -170,7 +170,7 @@ const SIPUsers = () => {
                     ))}
                 </tbody>
             </Table>
-            
+
             {/* Add SIP User Modal */}
             <Modal show={show} onHide={() => setShow(false)} size="lg">
                 <Modal.Header closeButton>
@@ -197,12 +197,19 @@ const SIPUsers = () => {
                                 </Form.Group>
                                 <Form.Group>
                                     <Form.Label>Name</Form.Label>
+
                                     <Form.Control 
                                         type="text" 
                                         name="name" 
                                         value={formData.name} 
                                         onChange={handleChange} 
                                         
+                                    <Form.Control
+                                        type="text"
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleChange}
+                                        required
                                     />
                                 </Form.Group>
                                 <Form.Group>
@@ -222,6 +229,7 @@ const SIPUsers = () => {
                                     <Form.Control as="select" name="disable" onChange={handleChange}>
                                         <option value="no">all</option>
                                         
+                                        <option value="all">all</option>
                                     </Form.Control>
                                 </Form.Group>
                                 <Form.Group>
@@ -229,13 +237,13 @@ const SIPUsers = () => {
                                     <div className="row">
                                         {['g729', 'g726', 'ulaw', 'speex', 'h264', 'g723', 'opus', 'g722', 'h263p', 'vp8', 'gsm', 'alaw', 'ilbc', 'h263'].map(codec => (
                                             <div className="col-4" key={codec}>
-                                                <Form.Check 
-                                                    type="checkbox" 
-                                                    label={codec} 
-                                                    name="codecs" 
-                                                    value={codec} 
-                                                    onChange={handleChange} 
-                                                    checked={formData.codecs.includes(codec)} 
+                                                <Form.Check
+                                                    type="checkbox"
+                                                    label={codec}
+                                                    name="codecs"
+                                                    value={codec}
+                                                    onChange={handleChange}
+                                                    checked={formData.codecs.includes(codec)}
                                                 />
                                             </div>
                                         ))}
@@ -271,12 +279,12 @@ const SIPUsers = () => {
                             <Tab eventKey="nat" title="NAT">
                                 <Form.Group>
                                     <Form.Label>NAT</Form.Label>
-                                    <Form.Control 
-                                        type="text" 
-                                        name="nat" 
-                                        onChange={handleChange} 
-                                        placeholder="force_rport,comedia" 
-                                        required 
+                                    <Form.Control
+                                        type="text"
+                                        name="nat"
+                                        onChange={handleChange}
+                                        placeholder="force_rport,comedia"
+                                        required
                                     />
                                 </Form.Group>
                                 <Form.Group>
@@ -364,21 +372,13 @@ const SIPUsers = () => {
                                     <Form.Label>Forward Type</Form.Label>
                                     <Form.Control as="select" name="forwardType" onChange={handleChange} required>
                                         <option value="undefined">Undefined</option>
-                                        <option value="SIP">SIP</option>
-                                        <option value="IVR">IVR</option>
-                                        <option value="Queue">Queue</option>
-                                        <option value="Group">Group</option>
-                                        <option value="Number">Number</option>
-                                        <option value="Hangup">Hangup</option>
-                                        <option value="Custom">Custom</option>
+                                        <option value="fax">Fax</option>
+                                        <option value="noanswer">No Answer</option>
+                                        <option value="busy">Busy</option>
                                     </Form.Control>
                                 </Form.Group>
-                                <Form.Group>
-                                    <Form.Label>Dial Timeout</Form.Label>
-                                    <Form.Control type="number" name="dial_timeout" onChange={handleChange} defaultValue={60} required />
-                                </Form.Group>
                             </Tab>
-                            <Tab eventKey="voicemail" title="VoiceMail">
+                            <Tab eventKey="voicemail" title="Voicemail">
                                 <Form.Group>
                                     <Form.Label>Enable Voicemail</Form.Label>
                                     <Form.Control as="select" name="enableVoicemail" onChange={handleChange} required>
@@ -388,28 +388,23 @@ const SIPUsers = () => {
                                 </Form.Group>
                                 <Form.Group>
                                     <Form.Label>Email</Form.Label>
-                                    <Form.Control type="email" name="email" onChange={handleChange} required placeholder="e.g., example@example.com" />
+                                    <Form.Control type="email" name="email" onChange={handleChange} />
                                 </Form.Group>
                                 <Form.Group>
-                                    <Form.Label>Password</Form.Label>
-                                    <Form.Control type="text" name="voicemail_password" onChange={handleChange} required />
-                                </Form.Group>
-                            </Tab>
-                            <Tab eventKey="asterisk" title="Asterisk Extra Config">
-                                <Form.Group>
-                                    <Form.Label>Parameters</Form.Label>
-                                    <Form.Control as="textarea" name="Parameters" onChange={handleChange} required />
-                                </Form.Group>
-                            </Tab>
-                            <Tab eventKey="sipshowpeer" title="SipShowPeer">
-                                <Form.Group>
-                                    <Form.Control as="textarea" name="sipshowpeer" onChange={handleChange} required />
+                                    <Form.Label>Voicemail Password</Form.Label>
+                                    <Form.Control type="password" name="voicemail_password" onChange={handleChange} />
                                 </Form.Group>
                             </Tab>
                         </Tabs>
-                        <Button variant="primary" type="submit" className="mt-3">
-                            Submit
-                        </Button>
+
+                        <div className="mt-3 text-center">
+                            <Button variant="secondary" onClick={() => setShow(false)}>
+                                Close
+                            </Button>
+                            <Button variant="primary" type="submit" className="ms-2">
+                                Submit
+                            </Button>
+                        </div>
                     </Form>
                 </Modal.Body>
             </Modal>

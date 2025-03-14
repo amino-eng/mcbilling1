@@ -120,7 +120,7 @@ const Sidebar = () => {
                 { path: "/clients/caller-id", icon: "bi-phone", label: "Caller ID" },
                 { path: "/clients/Users", icon: "bi-people", label: "Users" },               
                 { path: "/clients/UserHistory", icon: "bi-clock-history", label: "UserHistory" },
-                { path: "/clients/Lax", icon: "bi-building", label: "Lax" },
+                { path: "/clients/Iax", icon: "bi-building", label: "Iax" },
                 { path: "/clients/ATALinksys", icon: "bi-hdd-network", label: "ATA Linksys" },
                 { path: "/clients/SipUser", icon: "bi-telephone-forward", label: "SIP Users" },                 
                 { path: "/clients/RestricNumber", icon: "bi-ban", label: "RestricNumber" },

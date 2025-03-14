@@ -13,6 +13,7 @@ const routeusers = require("./route/client/users");
 const routeUserHistory = require("./route/client/UserHistory");
 const routeCallerId = require("./route/client/CallerId");
 const routeSIPUsers = require("./route/client/SIPUsers");
+const routeIax = require("./route/client/Iax");
 const routeSummaryPerUser = require("./route/rapport/SummaryPerUser");
 const routeSummaryDayUser = require("./route/rapport/SummaryDayUser");
 const routeSummaryMonthUser = require("./route/rapport/SummaryMonthUser");  
@@ -56,6 +57,8 @@ app.use("/api/admin/DIDs", DIDs);
 app.use("/api/admin/DIDDestination", routeDIDDestination);
 app.use("/api/admin/DIDUse", routeDIDUse);
 app.use("/api/admin/IVRs", routeIVRs);
+app.use("/api/admin/Iax", routeIax);
+
 
 
 

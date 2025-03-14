@@ -1,54 +1,58 @@
-import axios from "axios";
-import React, { useEffect, useState } from "react";
-import { Table, Alert, Col, Row, Container, Dropdown, Modal, Button, Form, Tabs, Tab, FormGroup } from 'react-bootstrap';
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { Table, Alert, Button, Form, Modal, Tabs, Tab, Container } from 'react-bootstrap';
 
 const IvrTable = () => {
   const [ivrs, setIvrs] = useState([]);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   const [visibleColumns, setVisibleColumns] = useState({
     ID: false,
     Utilisateur: true,
     Nom: true,
-    "Début Semaine": false,
-    "Début Samedi": false,
-    "Début Dimanche": false,
+    'Début Semaine': false,
+    'Début Samedi': false,
+    'Début Dimanche': false,
   });
 
   const [showColumnSelector, setShowColumnSelector] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false); // State to control modal visibility
-  const [name, setName] = useState("");
-  const [selectedOption, setSelectedOption] = useState("");
-  const [destination, setDestination] = useState("");
-  const [description, setDescription] = useState("");
-  const[users,setUsers]=useState([])
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [name, setName] = useState('');
+  const [userId, setUserId] = useState('');
+  const [monFriStart, setMonFriStart] = useState('09:00-12:00|14:00-20:00');
+  const [satStart, setSatStart] = useState('09:00-12:00');
+  const [sunStart, setSunStart] = useState('09:00-12:00');
+  const [useHolidays, setUseHolidays] = useState('00:00');
   const [options, setOptions] = useState([
-    { value: "Undefined", label: "Undefined" },
-    { value: "SIP", label: "SIP" },
-    { value: "IVR", label: "IVR" },
-    { value: "Queue", label: "Queue" },
-    { value: "Group", label: "Group" },
-    { value: "Number", label: "Number" },
-    { value: "Repeat_ivr", label: "Repeat_ivr" },
-    { value: "Hangup", label: "Hangup" },
-    { value: "Custom", label: "Custom" },
+    { value: 'Undefined', label: 'Undefined' },
+    { value: 'SIP', label: 'SIP' },
+    { value: 'IVR', label: 'IVR' },
+    { value: 'Queue', label: 'Queue' },
+    { value: 'Group', label: 'Group' },
+    { value: 'Number', label: 'Number' },
+    { value: 'Repeat_ivr', label: 'Repeat_ivr' },
+    { value: 'Hangup', label: 'Hangup' },
+    { value: 'Custom', label: 'Custom' },
   ]);
+  const [selectedOptions, setSelectedOptions] = useState(Array(10).fill(''));
+  const [unavailableOptions, setUnavailableOptions] = useState([]);
+  const [users, setUsers] = useState([]);
 
-  const apiUrl = "http://localhost:5000/api/admin/IVRs/affiche";
-  const addIvrUrl = "http://localhost:5000/api/admin/IVRs/add";
-  
+  const apiUrl = 'http://localhost:5000/api/admin/IVRs/affiche';
+  const addIvrUrl = 'http://localhost:5000/api/admin/IVRs/add';
 
+  const fetchUsers = () => {
+    axios
+      .get('http://localhost:5000/api/admin/users/users')
+      .then((response) => {
+        setUsers(response.data.users);
+      })
+      .catch((err) => {
+        console.error('Error fetching users:', err);
+      });
+  };
 
-  const fetchUser=  ()=>{
-        axios.get("http://localhost:5000/api/admin/users/users")
-           .then((response) => {
-                setUsers(response.data.users)
-            })
-            .catch((err) => {
-                console.error('Error fetching user:', err)
-            })
-  }
   useEffect(() => {
     const fetchIVRs = async () => {
       try {
@@ -56,53 +60,52 @@ const IvrTable = () => {
         if (response.data.ivrs) {
           setIvrs(response.data.ivrs);
         } else {
-          setMessage("Aucun IVR trouvé");
+          setMessage('Aucun IVR trouvé');
         }
       } catch (error) {
-        console.error("Erreur lors de la récupération des IVRs :", error);
-        setMessage("Échec du chargement des données");
+        console.error('Erreur lors de la récupération des IVRs :', error);
+        setMessage('Échec du chargement des données');
       }
     };
 
     fetchIVRs();
-    fetchUser()
+    fetchUsers();
   }, []);
-console.log(users);
 
   const handleCSVExport = () => {
     const headers = Object.keys(visibleColumns).filter((key) => visibleColumns[key]);
     const csvRows = [
-      headers.join(","),
+      headers.join(','),
       ...ivrs.map((ivr) =>
         headers
           .map((column) => {
             switch (column) {
-              case "ID":
+              case 'ID':
                 return ivr.id;
-              case "Utilisateur":
+              case 'Utilisateur':
                 return ivr.username;
-              case "Nom":
+              case 'Nom':
                 return ivr.name;
-              case "Début Semaine":
+              case 'Début Semaine':
                 return ivr.monFriStart;
-              case "Début Samedi":
+              case 'Début Samedi':
                 return ivr.satStart;
-              case "Début Dimanche":
+              case 'Début Dimanche':
                 return ivr.sunStart;
               default:
-                return "";
+                return '';
             }
           })
-          .join(",")
+          .join(','),
       ),
     ];
-    const csvContent = csvRows.join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv" });
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
 
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
-    a.download = "ivrs.csv";
+    a.download = 'ivrs.csv';
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -115,48 +118,49 @@ console.log(users);
   };
 
   const handleAddClick = () => {
-    setShowAddModal(true); // Open the modal
+    setShowAddModal(true);
   };
 
   const handleCloseModal = () => {
-    setShowAddModal(false); // Close the modal
+    setShowAddModal(false);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const newIvr = {
-      id_user: 1, // Replace with the logged-in user's ID
+      id_user: userId,
       name: name,
-      [selectedOption]: destination,
-      monFriStart: "09:00-12:00|14:00-18:00",
-      satStart: "09:00-12:00",
-      sunStart: "00:00",
-      use_holidays: 0,
+      monFriStart: monFriStart,
+      satStart: satStart,
+      sunStart: sunStart,
+      use_holidays: useHolidays,
+      options: selectedOptions.map((option) => ({ option })),
     };
 
     try {
       const response = await axios.post(addIvrUrl, newIvr);
       if (response.data.success) {
-        setMessage("IVR ajouté avec succès");
+        setMessage('IVR ajouté avec succès');
         const fetchResponse = await axios.get(apiUrl);
         setIvrs(fetchResponse.data.ivrs);
       } else {
-        setMessage("Erreur lors de l'ajout de l'IVR");
+        setMessage('Erreur lors de l\'ajout de l\'IVR');
       }
     } catch (error) {
-      console.error("Erreur lors de l'ajout de l'IVR :", error);
-      setMessage("Échec de l'ajout de l'IVR");
+      console.error('Erreur lors de l\'ajout de l\'IVR :', error);
+      setMessage('Échec de l\'ajout de l\'IVR');
     }
 
-    setName("");
-    setSelectedOption("");
-    setDestination("");
-    setDescription("");
-    setShowAddModal(false); // Close the modal after submission
+    setName('');
+    setUserId('');
+    setMonFriStart('');
+    setSatStart('');
+    setSunStart('');
+    setUseHolidays('00:00');
+    setSelectedOptions(Array(10).fill(''));
+    setShowAddModal(false);
   };
-
-  
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -197,7 +201,6 @@ console.log(users);
         </div>
       )}
 
-      {/* Modal for Adding IVR */}
       <Modal show={showAddModal} onHide={handleCloseModal} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>Ajouter un IVR</Modal.Title>
@@ -213,330 +216,80 @@ console.log(users);
                   onChange={(e) => setName(e.target.value)}
                   required
                 />
-                <Form.Label>Username</Form.Label>
-                <select>
-                  <option value="">Select User</option>
+                <Form.Label>Utilisateur</Form.Label>
+                <Form.Select
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                  required
+                >
+                  <option value="">Sélectionner un utilisateur</option>
                   {users.map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.username}
                     </option>
                   ))}
-                </select>
-                <Form.Label>MonFri intervals</Form.Label>
+                </Form.Select>
+                <Form.Label>Intervalles en semaine</Form.Label>
                 <Form.Control
                   type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={monFriStart}
+                  onChange={(e) => setMonFriStart(e.target.value)}
                   required
                 />
-                <Form.Label>Saturday intervals</Form.Label>
+                <Form.Label>Intervalles le samedi</Form.Label>
                 <Form.Control
                   type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={satStart}
+                  onChange={(e) => setSatStart(e.target.value)}
                   required
                 />
-                 <Form.Label>Use Holidays</Form.Label>
+                <Form.Label>Intervalles le dimanche</Form.Label>
                 <Form.Control
                   type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={sunStart}
+                  onChange={(e) => setSunStart(e.target.value)}
                   required
                 />
+                <Form.Label>Utiliser les jours fériés</Form.Label>
+                <Form.Select
+                  value={useHolidays}
+                  onChange={(e) => setUseHolidays(e.target.value)}
+                  required
+                >
+                  <option value="00:00">Non</option>
+                  <option value="01:00">Oui</option>
+                </Form.Select>
               </Form.Group>
             </Tab>
-            <Tab eventKey="Options" title="Available Options">
-              <Form.Group controlId="formOption" className="mb-3">
-                <Form.Label>Option 0</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Label>Option 1</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Label>Option 2</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Label>Option 3</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Label>Option 4</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Label>Option 5</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Label>Option 6</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Label>Option 7</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Label>Option 8</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-
-                <Form.Label>Option 9</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-
-                <Form.Label>Default option</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-
-                <Form.Label>Enable known SIP user</Form.Label>
-                <Form.Select>
-                  <option value="Yes">Oui</option>
-                  <option value="No">Non</option>               </Form.Select>
-                
-
-              </Form.Group>
-              
-            </Tab>
-            <Tab eventKey="Option" title="Unavailable Options">
-              <Form.Group controlId="formUnavailableOptions" className="mb-3">
-                <Form.Label>Option 0</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Label>Option 1</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Label>Option 2</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Label>Option 3</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Label>Option 4</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Label>Option 5</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Label>Option 6</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Label>Option 7</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Label>Option 8</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-
-                <Form.Label>Option 9</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-
-                <Form.Label>Default option</Form.Label>
-                <Form.Select
-                  value={selectedOption}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  required
-                >
-                  {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
+            <Tab eventKey="Options" title="Options disponibles">
+              {Array.from({ length: 10 }).map((_, index) => (
+                <Form.Group key={index} controlId={`formOption${index}`} className="mb-3">
+                  <Form.Label>Option {index}</Form.Label>
+                  <Form.Select
+                    value={selectedOptions[index]}
+                    onChange={(e) => {
+                      const newOptions = [...selectedOptions];
+                      newOptions[index] = e.target.value;
+                      setSelectedOptions(newOptions);
+                    }}
+                  >
+                    {options.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              ))}
             </Tab>
           </Tabs>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseModal}>
-            Fermer
+            Annuler
           </Button>
           <Button variant="primary" onClick={handleSubmit}>
-            Enregistrer
+            Ajouter
           </Button>
         </Modal.Footer>
       </Modal>
@@ -547,9 +300,9 @@ console.log(users);
             {visibleColumns.ID && <th>ID</th>}
             {visibleColumns.Utilisateur && <th>Utilisateur</th>}
             {visibleColumns.Nom && <th>Nom</th>}
-            {visibleColumns["Début Semaine"] && <th>Début Semaine</th>}
-            {visibleColumns["Début Samedi"] && <th>Début Samedi</th>}
-            {visibleColumns["Début Dimanche"] && <th>Début Dimanche</th>}
+            {visibleColumns['Début Semaine'] && <th>Début Semaine</th>}
+            {visibleColumns['Début Samedi'] && <th>Début Samedi</th>}
+            {visibleColumns['Début Dimanche'] && <th>Début Dimanche</th>}
           </tr>
         </thead>
         <tbody>
@@ -558,13 +311,28 @@ console.log(users);
               {visibleColumns.ID && <td>{ivr.id}</td>}
               {visibleColumns.Utilisateur && <td>{ivr.username}</td>}
               {visibleColumns.Nom && <td>{ivr.name}</td>}
-              {visibleColumns["Début Semaine"] && <td>{ivr.monFriStart}</td>}
-              {visibleColumns["Début Samedi"] && <td>{ivr.satStart}</td>}
-              {visibleColumns["Début Dimanche"] && <td>{ivr.sunStart}</td>}
+              {visibleColumns['Début Semaine'] && <td>{ivr.monFriStart}</td>}
+              {visibleColumns['Début Samedi'] && <td>{ivr.satStart}</td>}
+              {visibleColumns['Début Dimanche'] && <td>{ivr.sunStart}</td>}
             </tr>
           ))}
         </tbody>
       </Table>
+
+      {/* Pagination */}
+      <div className="d-flex justify-content-center">
+        <Button variant="link" onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1}>
+          Précédent
+        </Button>
+        <span className="mx-2">{currentPage}</span>
+        <Button
+          variant="link"
+          onClick={() => paginate(currentPage + 1)}
+          disabled={currentPage === Math.ceil(ivrs.length / itemsPerPage)}
+        >
+          Suivant
+        </Button>
+      </div>
     </Container>
   );
 };

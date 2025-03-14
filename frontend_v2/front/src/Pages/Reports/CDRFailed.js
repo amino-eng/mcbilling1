@@ -3,6 +3,7 @@ import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { format } from "date-fns"; // Import the date-fns library
 
 function CdrFailedTable() {
   const [cdrFailedData, setCdrFailedData] = useState([]);
@@ -183,10 +184,11 @@ function CdrFailedTable() {
                         .filter((col) => visibleColumns[col.key]) // Filtrer les colonnes visibles
                         .map((col, idx) => (
                           <td key={idx} className="p-2">
-                            {cdr[col.key] || <span className="text-muted">—</span>}
+                            {col.key === "starttime"
+                              ? format(new Date(cdr[col.key]), "dd/MM/yyyy HH:mm:ss") // Formatage de la date
+                              : cdr[col.key] || <span className="text-muted">—</span>}
                           </td>
                         ))}
-                      
                     </tr>
                   ))
                 ) : (

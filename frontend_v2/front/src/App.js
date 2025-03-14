@@ -24,7 +24,7 @@ import Users from './Pages/clients/Users';
 import UserHistory from './Pages/clients/UserHistory';
 import LiveCalls from './Pages/titleside/LiveCalls';
 import SipUser from './Pages/clients/SipUser';
-import Lax from './Pages/clients/Lax';
+import Iax from './Pages/clients/Iax';
 import SummaryPerDay from './Pages/Reports/SummaryPerDay';
 import CDR from './Pages/Reports/CDR';
 import CDRFailed from './Pages/Reports/CDRFailed';
@@ -133,7 +133,7 @@ function App() {
 
               <Route path="/clients/SipUser" element={<SipUser />} />
 
-              <Route path="/clients/Lax" element={<Lax />} />
+              <Route path="/clients/Iax" element={<Iax />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/reports/summary-day" element={<SummaryPerDay />} />
               <Route path="/reports/summaryperuser" element={<SummaryPerUser />} />

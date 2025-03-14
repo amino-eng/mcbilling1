@@ -75,7 +75,7 @@ exports.ajouterSIPUser = (req, res) => {
 exports.sipUsers = async (req, res) => {
     try {
       // Query to fetch all users (pkg_user)
-      const query = `SELECT * FROM pkg_user`; 
+      const query = `SELECT * FROM pkg_sip`; 
       connection.query(query, async (err, users) => {
         if (err) {
           return res.json(err); // Send error if query fails

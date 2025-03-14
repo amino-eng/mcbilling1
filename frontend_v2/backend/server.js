@@ -20,12 +20,12 @@ const routeSummaryMonthUser = require("./route/rapport/SummaryMonthUser");
 const routeCallArchive = require("./route/rapport/CallArchive"); 
 const routePayMeth = require("./route/billing/PayMeth");
 const routeRefills = require("./route/Billing/Refills");
-
 const DIDs = require("./route/DIDs/DIDs");
-
 const routeDIDDestination = require("./route/DIDs/DIDDestination");
 const routeDIDUse = require("./route/DIDs/DIDUse");
 const routeIVRs = require("./route/DIDs/IVRs");
+const routeQueuesMembers = require("./route/DIDs/QueuesMembers");
+const routeQueues = require("./route/DIDs/Queues");
 
 
 
@@ -51,16 +51,14 @@ app.use("/api/admin/SummaryMonthUser", routeSummaryMonthUser);
 app.use("/api/admin/PayMeth", routePayMeth);
 app.use("/api/admin/SummaryDayUser", routeSummaryDayUser);
 app.use("/api/admin/Refills", routeRefills); 
-
 app.use("/api/admin/DIDs", DIDs);
-
 app.use("/api/admin/DIDDestination", routeDIDDestination);
 app.use("/api/admin/DIDUse", routeDIDUse);
 app.use("/api/admin/IVRs", routeIVRs);
+app.use("/api/admin/QueuesMembers", routeQueuesMembers);
+app.use("/api/admin/Queues", routeQueues);
+
 app.use("/api/admin/Iax", routeIax);
-
-
-
 
 
 

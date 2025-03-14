@@ -80,6 +80,11 @@ const Sidebar = () => {
   </Link>
 </li>
 <li className="nav-item">
+  <Link to="/DIDs/Queues" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
+    <i className="bi bi-speedometer2 me-2"></i> Queues
+  </Link>
+</li>
+<li className="nav-item">
   <Link to="/DIDs/QueuesMembres" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
     <i className="bi bi-people me-2"></i> Queues Membres
   </Link>
@@ -89,6 +94,7 @@ const Sidebar = () => {
     <i className="bi bi-speedometer2 me-2"></i> QueuesDashboard
   </Link>
 </li>
+
 <li className="nav-item">
   <Link to="/DIDs/Holidays" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
     <i className="bi bi-calendar-event me-2"></i> Holidays

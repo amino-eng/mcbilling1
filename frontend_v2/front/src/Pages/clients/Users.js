@@ -207,15 +207,48 @@ function Users() {
           <Form onSubmit={handleNewUserSubmit}>
             <Tabs defaultActiveKey="General" className='mb-3'>
               <Tab eventKey="General" title="General">
-                <Form.Group controlId="formUsername">
-                  <Form.Label>Username</Form.Label>
-                  <Form.Control type="text" name="username" value={newUser.username} onChange={handleNewUserChange} required />
-                </Form.Group>
+              <Form.Group controlId="formUsername">
+  <Form.Label>Username</Form.Label>
+  <Form.Control
+    type="text"
+    name="username"
+    value={newUser.username}
+    onChange={(e) => {
+      const trimmedValue = e.target.value.trim();
+      handleNewUserChange({
+        target: { name: "username", value: trimmedValue },
+      });
+    }}
+    required
+  />
+  {newUser.username.trim().length < 6 && (
+    <Form.Text className="text-danger">
+      Username must be at least 6 characters long.
+    </Form.Text>
+  )}
+</Form.Group>
+                
 
-                <Form.Group controlId="formPassword">
-                  <Form.Label>Password</Form.Label>
-                  <Form.Control type="password" name="password" value={newUser.password} onChange={handleNewUserChange} required />
-                </Form.Group>
+<Form.Group controlId="formPassword">
+  <Form.Label>Password</Form.Label>
+  <Form.Control
+    type="password"
+    name="password"
+    value={newUser.password}
+    onChange={(e) => {
+      const value = e.target.value;
+      handleNewUserChange({
+        target: { name: "password", value },
+      });
+    }}
+    required
+  />
+  {(newUser.password.length < 8 || newUser.password.length > 12) && (
+    <Form.Text className="text-danger">
+      Password must be between 8 and 12 characters long.
+    </Form.Text>
+  )}
+</Form.Group>
 
                 <Form.Group controlId="formGroup">
                   <Form.Label>Group</Form.Label>

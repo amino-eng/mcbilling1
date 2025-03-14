@@ -202,26 +202,26 @@ const SIPUsers = () => {
                                         name="name" 
                                         value={formData.name} 
                                         onChange={handleChange} 
-                                        required 
+                                        
                                     />
                                 </Form.Group>
                                 <Form.Group>
                                     <Form.Label>SIP Password</Form.Label>
-                                    <Form.Control type="text" name="sippasswd" onChange={handleChange} required />
+                                    <Form.Control type="text" name="sippasswd" onChange={handleChange}  />
                                 </Form.Group>
                                 <Form.Group>
                                     <Form.Label>Caller ID</Form.Label>
-                                    <Form.Control type="text" name="callerid" onChange={handleChange} required />
+                                    <Form.Control type="text" name="callerid" onChange={handleChange}  />
                                 </Form.Group>
                                 <Form.Group>
                                     <Form.Label>Alias</Form.Label>
-                                    <Form.Control type="text" name="alias" onChange={handleChange} required />
+                                    <Form.Control type="text" name="alias" onChange={handleChange}  />
                                 </Form.Group>
                                 <Form.Group>
                                     <Form.Label>Disable</Form.Label>
                                     <Form.Control as="select" name="disable" onChange={handleChange}>
-                                        <option value="no">No</option>
-                                        <option value="yes">Yes</option>
+                                        <option value="no">all</option>
+                                        
                                     </Form.Control>
                                 </Form.Group>
                                 <Form.Group>

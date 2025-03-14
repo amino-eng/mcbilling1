@@ -37,7 +37,7 @@ import SummaryDayTrunk from './Pages/Reports/SummaryDayTrunk';
 import ReportsDestination from './Pages/Reports/ReportsDestination';
 import InboundReports from './Pages/Reports/InboundReports';
 import SummaryPerUser from './Pages/Reports/SummaryPerUser';
-import CallArchive from './Pages/Reports/CallArchive';
+import CallArchive from './Pages/Reports/callArchive';
 import ActivityDash from './Pages/Dashboard/ActivityDash';
 import RechargeHistory from './Pages/Dashboard/RechargeHistory';
 import Profile from './components/UserProfile/profile';
@@ -59,6 +59,7 @@ import ProviderRates from './Pages/Routes/ProviderRates';
 import Servers from './Pages/Routes/Servers';
 import Trunks from './Pages/Routes/Trunks';
 import TrunkErrors from './Pages/Routes/TrunkErrors';
+import Queues from './Pages/DIDs/Queues';
 
 
 
@@ -158,6 +159,7 @@ function App() {
               <Route path="/DIDs/QueuesMembres" element={<QueuesMembres/>} />
               <Route path="/DIDs/QueuesDashboard" element={<QueuesDashboard/>} />
               <Route path="/DIDs/Holidays" element={<Holidays/>} />
+              <Route path="/DIDs/Queues" element={<Queues/>} />
               <Route path="/DIDs/DIDHistory" element={<DIDHistory/>} />
               <Route path="/Billing/Refills" element={<Refills/>} />
               <Route path="/Billing/PaymentMethods" element={<PaymentMethods/>} />

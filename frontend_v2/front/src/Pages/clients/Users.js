@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Table, Dropdown, Modal, Button, Form, Tabs, Tab } from 'react-bootstrap';
-import { FaChevronDown,FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { FaChevronDown, FaCheckCircle, FaTimesCircle, FaExclamationCircle, FaLock, FaUnlock, FaEdit, FaTrash } from 'react-icons/fa';
 
 function Users() {
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]); // État pour les utilisateurs filtrés
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedColumns, setSelectedColumns] = useState([
-    'username', 'credit',  'active', 'creationdate'
-  ]);
+  const [searchTerm, setSearchTerm] = useState(''); // État pour le terme de recherche
+  const [selectedColumns, setSelectedColumns] = useState(['username', 'credit', 'active', 'creationdate']);
+  const [numberOfSipUsers, setNumberOfSipUsers] = useState(1);
+  const [numberOfIax, setNumberOfIax] = useState(2);
   const [dropdownVisibility, setDropdownVisibility] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -22,13 +24,15 @@ function Users() {
     language: 'fr',
     status: 'Active',
     country: 'United States/Canada',
-    description: ''
+    description: '',
   });
-
   const [groups, setGroups] = useState([]);
   const [plans, setPlans] = useState([]);
-  const [showConfirmModal, setShowConfirmModal] = useState(false); // Modal de confirmation
-  const [userIdToDelete, setUserIdToDelete] = useState(null); // ID de l'utilisateur à supprimer
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [userIdToDelete, setUserIdToDelete] = useState(null);
+  const [errors, setErrors] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const availableColumns = [
     'username', 'credit', 'plan_name', 'group_name', 'agent', 'active', 'creationdate',
@@ -64,6 +68,7 @@ function Users() {
     axios.get('http://localhost:5000/api/admin/users/users')
       .then(response => {
         setUsers(response.data.users);
+        setFilteredUsers(response.data.users); // Initialiser les utilisateurs filtrés
         setLoading(false);
       })
       .catch(err => {
@@ -78,6 +83,37 @@ function Users() {
     fetchGroup();
     fetchPlan();
   }, []);
+
+  // Fonction pour gérer le changement de terme de recherche
+  const handleSearchChange = (e) => {
+    const term = e.target.value.toLowerCase();
+    setSearchTerm(term);
+
+    // Filtrer les utilisateurs en fonction du terme de recherche
+    const filtered = users.filter(user =>
+      Object.values(user).some(value =>
+        String(value).toLowerCase().includes(term)
+      )
+    );
+    setFilteredUsers(filtered);
+    setCurrentPage(1); // Réinitialiser la pagination
+  };
+
+  const indexOfLastUser = currentPage * itemsPerPage;
+  const indexOfFirstUser = indexOfLastUser - itemsPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser); // Utiliser les utilisateurs filtrés
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const nextPage = () => {
+    if (currentPage < Math.ceil(filteredUsers.length / itemsPerPage)) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
 
   const handleColumnChange = (column) => {
     if (!selectedColumns.includes(column)) {
@@ -96,8 +132,7 @@ function Users() {
     const csvContent = [
       selectedColumns.join(','),
       ...users.map(user => selectedColumns.map(col => user[col] || '').join(','))
-    ].join('\n');
-
+    ].join('\n'); // Fixed: Use '\n' instead of `
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -127,9 +162,8 @@ function Users() {
     setNewUser(prevState => ({ ...prevState, [name]: value }));
   };
 
-  const handleNewUserSubmit = async (e) => {
+  const handleEditUserSubmit = async (e) => {
     e.preventDefault();
-  
     const userData = {
       username: newUser.username,
       password: newUser.password,
@@ -137,10 +171,59 @@ function Users() {
       id_plan: newUser.plan,
       language: newUser.language,
       active: newUser.status === 'Active' ? 1 : 0,
-      email: newUser.email, 
-      id_user: newUser.id
+      email: newUser.email,
     };
-  
+    try {
+      const response = await fetch(`http://localhost:5000/api/admin/users/modifier/${newUser.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const result = await response.json();
+      console.log('User updated:', result);
+      fetchUsers();
+      setShowForm(false);
+      setNewUser({
+        username: '',
+        password: '',
+        group: '',
+        plan: '',
+        language: 'fr',
+        status: 'Active',
+        country: 'United States/Canada',
+        description: ''
+      });
+    } catch (error) {
+      console.error('Error updating user:', error);
+    }
+  };
+
+  const handleNewUserSubmit = async (e) => {
+    e.preventDefault();
+    const statusMapping = {
+      'Active': 1,
+      'Inactive': 0,
+      'Pending': 2,
+      'Blocked': 3,
+      'Blocked In Out': 4
+    };
+    const activeStatus = statusMapping[newUser.status] !== undefined ? statusMapping[newUser.status] : 0;
+    const userData = {
+      username: newUser.username,
+      password: newUser.password,
+      id_group: newUser.group,
+      id_plan: newUser.plan,
+      language: newUser.language,
+      active: activeStatus,
+      email: newUser.email,
+      numberOfSipUsers: numberOfSipUsers,
+      numberOfIax: newUser.numberOfIax,
+    };
     try {
       const response = await fetch('http://localhost:5000/api/admin/users/ajouter', {
         method: 'POST',
@@ -149,11 +232,10 @@ function Users() {
         },
         body: JSON.stringify(userData),
       });
-      
       if (!response.ok) {
+        setErrors("SIP user already exists");
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-  
       const result = await response.json();
       console.log('User added:', result);
       fetchUsers();
@@ -165,22 +247,27 @@ function Users() {
         plan: '',
         language: 'English',
         status: 'Active',
-        description: ''
+        description: '',
+        numberOfIax: 0,
       });
-  
+      setNumberOfSipUsers(1);
     } catch (error) {
       console.error('Error adding user:', error);
     }
   };
 
+  const handleEdit = (id) => {
+    const userToEdit = users.find(user => user.id === id);
+    setNewUser(userToEdit);
+    setShowForm(true);
+  };
+
   if (loading) {
     return <div className="alert alert-info text-center">Chargement des utilisateurs...</div>;
   }
-
   if (error) {
     return <div className="alert alert-danger text-center">{error}</div>;
   }
-
   if (users.length === 0) {
     return <div className="alert alert-warning text-center">Aucun utilisateur trouvé</div>;
   }
@@ -188,7 +275,6 @@ function Users() {
   return (
     <div className="container mt-4">
       <h1>Liste des utilisateurs</h1>
-
       <div className="mb-3 text-end">
         <Button variant="primary" onClick={() => setShowForm(true)}>
           New User
@@ -198,58 +284,56 @@ function Users() {
         </Button>
       </div>
 
+      {/* Barre de recherche */}
+      <Form.Group controlId="formSearch" className="mb-3">
+        <Form.Label>Rechercher un utilisateur</Form.Label>
+        <Form.Control
+          type="text"
+          placeholder="Entrez un nom, email, ou autre..."
+          value={searchTerm}
+          onChange={handleSearchChange}
+        />
+      </Form.Group>
+
       <Modal show={showForm} onHide={() => setShowForm(false)} size='lg'>
         <Modal.Header closeButton>
-          <Modal.Title>New User</Modal.Title>
+          <Modal.Title>{newUser.id ? 'Edit User' : 'New User'}</Modal.Title>
         </Modal.Header>
-
         <Modal.Body>
           <Form onSubmit={handleNewUserSubmit}>
             <Tabs defaultActiveKey="General" className='mb-3'>
               <Tab eventKey="General" title="General">
-              <Form.Group controlId="formUsername">
-  <Form.Label>Username</Form.Label>
-  <Form.Control
-    type="text"
-    name="username"
-    value={newUser.username}
-    onChange={(e) => {
-      const trimmedValue = e.target.value.trim();
-      handleNewUserChange({
-        target: { name: "username", value: trimmedValue },
-      });
-    }}
-    required
-  />
-  {newUser.username.trim().length < 6 && (
-    <Form.Text className="text-danger">
-      Username must be at least 6 characters long.
-    </Form.Text>
-  )}
-</Form.Group>
-                
-
-<Form.Group controlId="formPassword">
-  <Form.Label>Password</Form.Label>
-  <Form.Control
-    type="password"
-    name="password"
-    value={newUser.password}
-    onChange={(e) => {
-      const value = e.target.value;
-      handleNewUserChange({
-        target: { name: "password", value },
-      });
-    }}
-    required
-  />
-  {(newUser.password.length < 8 || newUser.password.length > 12) && (
-    <Form.Text className="text-danger">
-      Password must be between 8 and 12 characters long.
-    </Form.Text>
-  )}
-</Form.Group>
-
+                <Form.Group controlId="formUsername">
+                  {errors && <h1>{errors}</h1>}
+                  <Form.Label>Username</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="username"
+                    value={newUser.username}
+                    onChange={handleNewUserChange}
+                    required
+                  />
+                  {newUser.username.trim().length < 6 && (
+                    <Form.Text className="text-danger">
+                      Username must be at least 6 characters long.
+                    </Form.Text>
+                  )}
+                </Form.Group>
+                <Form.Group controlId="formPassword">
+                  <Form.Label>Password</Form.Label>
+                  <Form.Control
+                    type="password"
+                    name="password"
+                    value={newUser.password}
+                    onChange={handleNewUserChange}
+                    required
+                  />
+                  {(newUser.password.length < 8 || newUser.password.length > 12) && (
+                    <Form.Text className="text-danger">
+                      Password must be between 8 and 12 characters long.
+                    </Form.Text>
+                  )}
+                </Form.Group>
                 <Form.Group controlId="formGroup">
                   <Form.Label>Group</Form.Label>
                   <Form.Select
@@ -265,7 +349,6 @@ function Users() {
                     ))}
                   </Form.Select>
                 </Form.Group>
-
                 <Form.Group controlId="formPlan">
                   <Form.Label>Plan</Form.Label>
                   <Form.Select
@@ -281,7 +364,6 @@ function Users() {
                     ))}
                   </Form.Select>
                 </Form.Group>
-
                 <Form.Group controlId="formLanguage">
                   <Form.Label>Language</Form.Label>
                   <Form.Control as="select" name="language" onChange={handleNewUserChange} required>
@@ -292,21 +374,19 @@ function Users() {
                     <option value="rs">Russian</option>
                   </Form.Control>
                 </Form.Group>
-
                 <Form.Group controlId="formStatus">
                   <Form.Label>Status</Form.Label>
                   <Form.Control as="select" name="status" value={newUser.status} onChange={handleNewUserChange} required>
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                     <option value="Pending">Pending</option>
-                    <option value="Blocked In">Blocked In</option>
+                    <option value="Blocked">Blocked</option>
                     <option value="Blocked In Out">Blocked In Out</option>
                   </Form.Control>
                 </Form.Group>
-
                 <Form.Group controlId="formCountry">
                   <Form.Label>Country</Form.Label>
-                  <Form.Control as="Select" name="country" value={newUser.country} onChange={handleNewUserChange}>
+                  <Form.Control as="select" name="country" value={newUser.country} onChange={handleNewUserChange}>
                     <option value="United States/Canada">United States/Canada</option>
                     <option value="United Kingdom">United Kingdom</option>
                     <option value="Australia">Australia</option>
@@ -323,266 +403,62 @@ function Users() {
                     <option value="Vietnam">Vietnam</option>
                   </Form.Control>
                 </Form.Group>
-
                 <Form.Group controlId="formDescription">
                   <Form.Label>Description</Form.Label>
                   <Form.Control type="text" name="description" value={newUser.description} onChange={handleNewUserChange} />
                 </Form.Group>
+                <Form.Group controlId="formNumberOfSipUsers">
+                  <Form.Label>Number of SIP Users</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="numberOfSipUsers"
+                    value={numberOfSipUsers}
+                    onChange={(e) => setNumberOfSipUsers(parseInt(e.target.value, 10))}
+                    min="0"
+                    required
+                  />
+                </Form.Group>
+                <Form.Group controlId="formNumberOfIax">
+                  <Form.Label>Number of Iax</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="numberOfIax"
+                    onChange={(e) => setNewUser(prev => ({ ...prev, numberOfIax: parseInt(e.target.value, 10) }))}
+                    min="0"
+                    required
+                  />
+                </Form.Group>
               </Tab>
-              <Tab eventKey="personal Data " title="Personal">
-  <Form.Group 
-    controlId="formUsercomany">
+              <Tab eventKey="Personal Data" title="Personal">
+                <Form.Group controlId="formCompanyWebsite">
                   <Form.Label>Company website</Form.Label>
-                  <Form.Control type="text" name="company" value={newUser.company} onChange={handleNewUserChange}  />         
-  </Form.Group>
-
-  <Form.Group 
-    controlId="formUsercomanyn">
+                  <Form.Control type="text" name="company_website" value={newUser.company_website || ''} onChange={handleNewUserChange} />
+                </Form.Group>
+                <Form.Group controlId="formCompanyName">
                   <Form.Label>Company name</Form.Label>
-                  <Form.Control type="text" name="companyn" value={newUser.companyn} onChange={handleNewUserChange}  />         
-  </Form.Group>
-
-  <Form.Group 
-    controlId="formUsercommercialco">
+                  <Form.Control type="text" name="company_name" value={newUser.company_name || ''} onChange={handleNewUserChange} />
+                </Form.Group>
+                <Form.Group controlId="formCommercialName">
                   <Form.Label>Commercial name</Form.Label>
-                  <Form.Control type="text" name="commercialco" value={newUser.companyco} onChange={handleNewUserChange}  />         
-  </Form.Group>
-
-  <Form.Group 
-    controlId="formUserstate">
-                  <Form.Label>State number</Form.Label>
-                  <Form.Control type="text" name="state" value={newUser.state} onChange={handleNewUserChange}  />         
-  </Form.Group>
-
- 
-  <Form.Group 
-    controlId="formUserfirstname">
-                  <Form.Label>First name</Form.Label>
-                  <Form.Control type="text" name="lastname" value={newUser.firstname} onChange={handleNewUserChange}  />         
-  </Form.Group>
-
-  
-  <Form.Group 
-    controlId="formUsercity">
-                  <Form.Label>City</Form.Label>
-                  <Form.Control type="text" name="lastname" value={newUser.city} onChange={handleNewUserChange}  />         
-  </Form.Group>
-
-  
-  <Form.Group 
-    controlId="formUseradresse">
-                  <Form.Label>Adresse</Form.Label>
-                  <Form.Control type="text" name="Adresse" value={newUser.adresse} onChange={handleNewUserChange}  />         
-  </Form.Group>
-
-  
-  <Form.Group 
-    controlId="formUserState">
-                  <Form.Label>State</Form.Label>
-                  <Form.Control type="text" name="State" value={newUser.State} onChange={handleNewUserChange}  />         
-  </Form.Group>
-
-
-  <Form.Group 
-    controlId="formUserNeighborhood">
-                  <Form.Label>Neighborhood</Form.Label>
-                  <Form.Control type="text" name="Neighborhood" value={newUser.Neighborhood} onChange={handleNewUserChange}  />         
-  </Form.Group>
-
-  <Form.Group 
-    controlId="formUserZipcode">
-                  <Form.Label>Zip code</Form.Label>
-                  <Form.Control type="text" name="Zipcode" value={newUser.Zipcode} onChange={handleNewUserChange}  />         
-  </Form.Group>
-
-  <Form.Group 
-    controlId="formUserPhone">
-                  <Form.Label>Phone</Form.Label>
-                  <Form.Control type="text" name="Phone" value={newUser.Phone} onChange={handleNewUserChange}  />         
-  </Form.Group>
-
-  <Form.Group 
-    controlId="formUserMobile">
-                  <Form.Label>Mobile</Form.Label>
-                  <Form.Control type="text" name="Mobile" value={newUser.Mobile} onChange={handleNewUserChange}  />         
-  </Form.Group>
-
-  <Form.Group 
-    controlId="formUserEmail">
-                  <Form.Label>Email</Form.Label>
-                  <Form.Control type="text" name="Email" value={newUser.Email} onChange={handleNewUserChange}  />         
-  </Form.Group>
-
-  <Form.Group 
-    controlId="formUserEmail2 ">
-                  <Form.Label>Email 2</Form.Label>
-                  <Form.Control type="text" name="Email" value={newUser.Email} onChange={handleNewUserChange}  />         
-  </Form.Group>
-
-  <Form.Group 
-    controlId="formUserDOC">
-                  <Form.Label>DOC</Form.Label>
-                  <Form.Control type="text" name="DOC" value={newUser.DOC} onChange={handleNewUserChange}  />         
-  </Form.Group>
-
-  <Form.Group 
-    controlId="formUserVAT">
-                  <Form.Label>VAT</Form.Label>
-                  <Form.Control type="text" name="DOC" value={newUser.VAT} onChange={handleNewUserChange}/>         
-  </Form.Group>
-
-  <Form.Group 
-    controlId="formUserContractvalue">
-                  <Form.Label>Contract value</Form.Label>
-                  <Form.Control type="text" name="Contract_value" value={newUser.Contractvalue} onChange={handleNewUserChange}  />     
-                      
-  </Form.Group>
-
-  <Form.Group 
-    controlId="formUserDIST">
-                  <Form.Label>DIST</Form.Label>
-                  <Form.Control type="text" name="DIST" value={newUser.DIST} onChange={handleNewUserChange}  />         
-  </Form.Group>
-</Tab>
-           
-<Tab eventKey="Supplementary info " title="Supplementary info">
-            <Form.Group 
-            controlId="formUsertype">
+                  <Form.Control type="text" name="commercial_name" value={newUser.commercial_name || ''} onChange={handleNewUserChange} />
+                </Form.Group>
+              </Tab>
+              <Tab eventKey="Supplementary Info" title="Supplementary Info">
+                <Form.Group controlId="formTypePaid">
                   <Form.Label>Type paid</Form.Label>
-                  <Form.Control as="Select" name="Activate offer" value={newUser.country} on change={handleNewUserChange}>
-                    <option value="Undefined">Prepaid</option>
-                    <option value="Undefined">Postpaid</option>
+                  <Form.Control as="select" name="type_paid" value={newUser.type_paid || ''} onChange={handleNewUserChange}>
+                    <option value="Prepaid">Prepaid</option>
+                    <option value="Postpaid">Postpaid</option>
                   </Form.Control>
-            </Form.Group>
-            
-            <Form.Group 
-            controlId="formUsercredit">
-                  <Form.Label>Credit notification daily</Form.Label>
-                  <Form.Control as="Select" name="Activate offer" value={newUser.country} on change={handleNewUserChange}>
-                    <option value="Undefined">No </option>
-                    <option value="Undefined">Yes</option>
-                  </Form.Control>
-            </Form.Group>
-            
-            <Form.Group 
-            controlId="formUserlimit">
-                  <Form.Label>Credit limit</Form.Label>
-                  <Form.Control type="text" name="DIST" value={newUser.DIST} onChange={handleNewUserChange}  />
-            </Form.Group>
-            
-            <Form.Group 
-            controlId="formUsercreditnot">
-                  <Form.Label>Credit notification</Form.Label>
-                  <Form.Control type="text" name="creditnot" value={newUser.creditnot} onChange={handleNewUserChange}  />
-            </Form.Group>
-            
-            <Form.Group 
-            controlId="formUsersevices">
-                  <Form.Label>Services email notification</Form.Label>
-                  <Form.Control as="Select" name="services" value={newUser.country} on change={handleNewUserChange}>
-                    <option value="No">No</option>
-                    <option value="Yes">Yes</option>
-                  </Form.Control>
-            </Form.Group>
-           
-            <Form.Group 
-            controlId="formUserDID">
-                  <Form.Label>DID email notification</Form.Label>
-                  <Form.Control as="Select" name="services" value={newUser.country} on change={handleNewUserChange}>
-                    <option value="No">No</option>
-                    <option value="Yes">Yes</option>
-                  </Form.Control>
-            </Form.Group>
-           
-            <Form.Group 
-            controlId="formUserenable">
-                  <Form.Label>Enable expire</Form.Label>
-                  <Form.Control as="Select" name="services" value={newUser.country} on change={handleNewUserChange}>
-                    <option value="No">No</option>
-                    <option value="Yes">Yes</option>
-                  </Form.Control>
-            </Form.Group>
-           
-            <Form.Group controlId="formUserExpirationDate">
-           <Form.Label>Expiration Date</Form.Label>
-           <Form.Control 
-              type="date" 
-              name="expirationDate" 
-              value={newUser.expirationDate} 
-              onChange={handleNewUserChange} 
-               
-             />
-           </Form.Group>
-           
-           <Form.Group 
-            controlId="formUsercall">
-                  <Form.Label>Call limit</Form.Label>
-                  <Form.Control type="text" name="call" value={newUser.call} onChange={handleNewUserChange}  >         
-
-                  </Form.Control>
-            </Form.Group>
-            
-            <Form.Group 
-            controlId="formUserrecord">
-                  <Form.Label>Record call format</Form.Label>
-                  <Form.Control as="Select" name="services" value={newUser.country} on change={handleNewUserChange}>
-                    <option value="No">gsm</option>
-                    <option value="Yes">wav</option>
-                    <option value="Yes">wav49</option>
-                  </Form.Control>
-            </Form.Group>
-            
-            <Form.Group 
-            controlId="formUserca">
-                  <Form.Label>call</Form.Label>
-                  <Form.Control as="Select" name="services" value={newUser.country} on change={handleNewUserChange}>
-                    <option value="No">No</option>
-                    <option value="Yes">Yes</option>
-                  </Form.Control>
-            </Form.Group>
-           
-            <Form.Group 
-            controlId="formUserDIsk">
-                  <Form.Label>Disk space</Form.Label>
-                  <Form.Control type="text" name="DIsk" value={newUser.DIsk} onChange={handleNewUserChange}  >         
-
-                  </Form.Control>
-            </Form.Group>
-           
-            <Form.Group 
-            controlId="formUsersip">
-                  <Form.Label>SIP account limit</Form.Label>
-                  <Form.Control type="text" name="sip" value={newUser.sip} onChange={handleNewUserChange}  >         
-
-                  </Form.Control>
-            </Form.Group>
-           
-            <Form.Group 
-            controlId="formUserpin">
-                  <Form.Label>CallingCard PIN</Form.Label>
-                  <Form.Control type="text" name="pin" value={newUser.pin} onChange={handleNewUserChange}  >         
-
-                  </Form.Control>
-            </Form.Group>
-            
-            <Form.Group 
-            controlId="formUserrestriction">
-                  <Form.Label>Restriction</Form.Label>
-                  <Form.Control as="Select" name="restriction" value={newUser.restriction} on change={handleNewUserChange}>
-                    <option value="No">Inactive</option>
-                    <option value="Yes">Cannot call to restricted numbers</option>
-                  </Form.Control>
-                  </Form.Group>
+                </Form.Group>
               </Tab>
             </Tabs>
             <Button variant="primary" type="submit">
-              Add User
+              {newUser.id ? 'Update User' : 'Add User'}
             </Button>
           </Form>
         </Modal.Body>
       </Modal>
-
-      {/* Modal de confirmation de suppression */}
       <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Confirmation</Modal.Title>
@@ -597,7 +473,6 @@ function Users() {
           </Button>
         </Modal.Footer>
       </Modal>
-
       <Table striped bordered hover responsive>
         <thead>
           <tr>
@@ -621,32 +496,46 @@ function Users() {
           </tr>
         </thead>
         <tbody>
-        {users.map((user, index) => (
-  <tr key={index}>
-    {selectedColumns.map((col, idx) => (
-      <td key={idx}>
-        {col === "creationdate" && user[col]
-          ? new Date(user[col]).toLocaleString() 
-          : col === "active" // Check if the column is 'active'
-            ? (user[col] === 1 
-                ? <FaCheckCircle color="green" /> // Active icon
-                : <FaTimesCircle color="red" />) // Not active icon
-            : user[col] !== null && user[col] !== undefined
-              ? user[col].toString()
-              : 'vide!'}
-      </td>
-    ))}
-    <td>
-      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(user.id)}>
-        Delete
-      </button>
-    </td>
-  </tr>
-))}
+          {currentUsers.map((user, index) => (
+            <tr key={index}>
+              {selectedColumns.map((col, idx) => (
+                <td key={idx}>
+                  {col === "creationdate" && user[col]
+                    ? new Date(user[col]).toLocaleString()
+                    : col === "active"
+                    ? user[col] === 1 ? <FaCheckCircle color="green" title="Active" />
+                    : user[col] === 0 ? <FaTimesCircle color="red" title="Inactive" />
+                    : user[col] === 2 ? <FaExclamationCircle color="orange" title="Pending" />
+                    : user[col] === 3 ? <FaLock color="blue" title="Blocked" />
+                    : user[col] === 4 ? <FaUnlock color="purple" title="Blocked In Out" />
+                    : 'Unknown Status'
+                  : user[col] !== null && user[col] !== undefined
+                  ? user[col].toString()
+                  : 'vide!'}
+                </td>
+              ))}
+              <td>
+                <button className="btn btn-primary btn-sm me-2" onClick={() => handleEdit(user.id)}>
+                  <FaEdit />
+                </button>
+                <button className="btn btn-danger btn-sm" onClick={() => handleDelete(user.id)}>
+                  <FaTrash />
+                </button>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </Table>
+      <div className="d-flex justify-content-center mt-3">
+        <Button variant="secondary" onClick={prevPage} disabled={currentPage === 1}>
+          Previous
+        </Button>
+        <span className="mx-3">Page {currentPage}</span>
+        <Button variant="secondary" onClick={nextPage} disabled={currentPage === Math.ceil(filteredUsers.length / itemsPerPage)}>
+          Next
+        </Button>
+      </div>
     </div>
-    
   );
 }
 

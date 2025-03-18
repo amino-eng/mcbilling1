@@ -42,6 +42,10 @@ const SIPUsers = () => {
     const [selectedUser, setSelectedUser] = useState("");
     const [user, setUsers] = useState([]);
 
+    // États pour la pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10); // Nombre d'éléments par page
+
     const fetchUsers = () => {
         axios.get('http://localhost:5000/api/admin/SIPUsers/nom')
             .then(res => setUsers(res.data.users))
@@ -140,6 +144,28 @@ const SIPUsers = () => {
         fetchUsers();
     }, []);
 
+    // Calcul des éléments à afficher pour la pagination
+    const indexOfLastUser = currentPage * itemsPerPage;
+    const indexOfFirstUser = indexOfLastUser - itemsPerPage;
+    const currentUsers = sipUsers.slice(indexOfFirstUser, indexOfLastUser);
+
+    // Fonction pour changer de page
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+    // Fonction pour aller à la page suivante
+    const nextPage = () => {
+        if (currentPage < Math.ceil(sipUsers.length / itemsPerPage)) {
+            setCurrentPage(currentPage + 1);
+        }
+    };
+
+    // Fonction pour aller à la page précédente
+    const prevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
+
     return (
         <div className="container mt-4">
             <h2>SIP Users Management</h2>
@@ -156,7 +182,7 @@ const SIPUsers = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {sipUsers.map((user) => (
+                    {currentUsers.map((user) => (
                         <tr key={user.id}>
                             <td>{user.name}</td>
                             <td>{user.accountcode}</td>
@@ -170,6 +196,32 @@ const SIPUsers = () => {
                     ))}
                 </tbody>
             </Table>
+
+            {/* Pagination */}
+            <div className="d-flex justify-content-between mt-3">
+                <Button variant="primary" onClick={prevPage} disabled={currentPage === 1}>
+                    Previous
+                </Button>
+                <div>
+                    {Array.from({ length: Math.ceil(sipUsers.length / itemsPerPage) }, (_, i) => (
+                        <Button
+                            key={i + 1}
+                            variant={currentPage === i + 1 ? "primary" : "outline-primary"}
+                            onClick={() => paginate(i + 1)}
+                            className="ms-1"
+                        >
+                            {i + 1}
+                        </Button>
+                    ))}
+                </div>
+                <Button
+                    variant="primary"
+                    onClick={nextPage}
+                    disabled={currentPage === Math.ceil(sipUsers.length / itemsPerPage)}
+                >
+                    Next
+                </Button>
+            </div>
 
             {/* Add SIP User Modal */}
             <Modal show={show} onHide={() => setShow(false)} size="lg">
@@ -197,13 +249,6 @@ const SIPUsers = () => {
                                 </Form.Group>
                                 <Form.Group>
                                     <Form.Label>Name</Form.Label>
-
-                                    <Form.Control 
-                                        type="text" 
-                                        name="name" 
-                                        value={formData.name} 
-                                        onChange={handleChange} 
-                                        
                                     <Form.Control
                                         type="text"
                                         name="name"
@@ -214,21 +259,20 @@ const SIPUsers = () => {
                                 </Form.Group>
                                 <Form.Group>
                                     <Form.Label>SIP Password</Form.Label>
-                                    <Form.Control type="text" name="sippasswd" onChange={handleChange}  />
+                                    <Form.Control type="text" name="sippasswd" onChange={handleChange} />
                                 </Form.Group>
                                 <Form.Group>
                                     <Form.Label>Caller ID</Form.Label>
-                                    <Form.Control type="text" name="callerid" onChange={handleChange}  />
+                                    <Form.Control type="text" name="callerid" onChange={handleChange} />
                                 </Form.Group>
                                 <Form.Group>
                                     <Form.Label>Alias</Form.Label>
-                                    <Form.Control type="text" name="alias" onChange={handleChange}  />
+                                    <Form.Control type="text" name="alias" onChange={handleChange} />
                                 </Form.Group>
                                 <Form.Group>
                                     <Form.Label>Disable</Form.Label>
                                     <Form.Control as="select" name="disable" onChange={handleChange}>
                                         <option value="no">all</option>
-                                        
                                         <option value="all">all</option>
                                     </Form.Control>
                                 </Form.Group>

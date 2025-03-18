@@ -19,7 +19,6 @@ import Sda from './Pages/titleside/Sda';
 import Clients from './Pages/clients/clients';
 import Reports from './Pages/Reports/Reports';
 import CallerID from './Pages/clients/CallerID';
-import ATALinksys from './Pages/clients/ATALinksys';
 import Users from './Pages/clients/Users';
 import UserHistory from './Pages/clients/UserHistory';
 import LiveCalls from './Pages/titleside/LiveCalls';
@@ -37,7 +36,7 @@ import SummaryDayTrunk from './Pages/Reports/SummaryDayTrunk';
 import ReportsDestination from './Pages/Reports/ReportsDestination';
 import InboundReports from './Pages/Reports/InboundReports';
 import SummaryPerUser from './Pages/Reports/SummaryPerUser';
-import CallArchive from './Pages/Reports/callArchive';
+import CallArchive from './Pages/Reports/CallArchive';
 import ActivityDash from './Pages/Dashboard/ActivityDash';
 import RechargeHistory from './Pages/Dashboard/RechargeHistory';
 import Profile from './components/UserProfile/profile';
@@ -122,7 +121,6 @@ function App() {
               <Route path="/clients" element={<Clients />} />
               <Route path="/clients/caller-id" element={<CallerID />} />
               <Route path="/clients/live-calls" element={<LiveCalls />} />
-              <Route path="/clients/ATALinksys" element={<ATALinksys />} />
               <Route path="/clients/Users" element={<Users />} />
               <Route path="/clients/RestricNumber" element={<RestricNumber />} /> {/* Use the renamed route */}
 

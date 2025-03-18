@@ -127,7 +127,6 @@ const Sidebar = () => {
                 { path: "/clients/Users", icon: "bi-people", label: "Users" },               
                 { path: "/clients/UserHistory", icon: "bi-clock-history", label: "UserHistory" },
                 { path: "/clients/Iax", icon: "bi-building", label: "Iax" },
-                { path: "/clients/ATALinksys", icon: "bi-hdd-network", label: "ATA Linksys" },
                 { path: "/clients/SipUser", icon: "bi-telephone-forward", label: "SIP Users" },                 
                 { path: "/clients/RestricNumber", icon: "bi-ban", label: "RestricNumber" },
                  // ✅ Updated Icon

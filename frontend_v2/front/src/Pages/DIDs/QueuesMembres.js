@@ -62,8 +62,8 @@ console.log(queueMembers);
   const handleAddNewMember = () => {
     const newMemberData = {
       queue: selectedQueue,
-      user: selectedUser,
-      sipUser: document.getElementById("Sip").value,
+      sipUser: selectedUser,
+      //sipUser: document.getElementById("Sip").value,
       paused: document.getElementById("paused").value,
     };
 
@@ -146,7 +146,7 @@ console.log(queueMembers);
                 </select>
             </div>
             <div className="mb-3">
-              <label htmlFor="user" className="form-label">Sip User</label>
+              <label htmlFor="user" className="form-label">Sip User </label>
               <select
                 className="form-select"
                 value={selectedUser}

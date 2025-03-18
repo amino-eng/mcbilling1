@@ -144,6 +144,9 @@ const SIPUsers = () => {
         fetchUsers();
     }, []);
 
+
+    
+
     // Calcul des éléments à afficher pour la pagination
     const indexOfLastUser = currentPage * itemsPerPage;
     const indexOfFirstUser = indexOfLastUser - itemsPerPage;
@@ -165,6 +168,7 @@ const SIPUsers = () => {
             setCurrentPage(currentPage - 1);
         }
     };
+
 
     return (
         <div className="container mt-4">
@@ -242,24 +246,45 @@ const SIPUsers = () => {
                                         <option value="">Select User</option>
                                         {user.map((user) => (
                                             <option key={user.id} value={user.id}>
-                                                {user.username}
+                                                {user.accountcode}
                                             </option>
                                         ))}
                                     </select>
                                 </Form.Group>
                                 <Form.Group>
                                     <Form.Label>Name</Form.Label>
+
+
+                                    <Form.Control 
+                                        type="text" 
+                                        name="name" 
+                                        value={formData.name} 
+                                        onChange={handleChange} 
+                                        />
+                                </Form.Group>
+                                <Form.Group controlId="formPassword">
+                                    <Form.Label>Password</Form.Label>
+
+
                                     <Form.Control
-                                        type="text"
-                                        name="name"
-                                        value={formData.name}
+                                        type="password"
+                                        name="password"
+                                        value={formData.password}
                                         onChange={handleChange}
                                         required
                                     />
+
+                                    {(formData.password.length < 8 || formData.password.length > 12) && (
+                                        <Form.Text className="text-danger">
+                                            Password must be between 8 and 12 characters long.
+                                        </Form.Text>
+                                    )}
+
                                 </Form.Group>
                                 <Form.Group>
                                     <Form.Label>SIP Password</Form.Label>
                                     <Form.Control type="text" name="sippasswd" onChange={handleChange} />
+
                                 </Form.Group>
                                 <Form.Group>
                                     <Form.Label>Caller ID</Form.Label>

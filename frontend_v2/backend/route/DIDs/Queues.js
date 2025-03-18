@@ -6,7 +6,7 @@ const router = express.Router();
 router.get('/', afficherQueues);
 
 // Add a new Queue
-router.post('/', ajouterQueue);
+router.post('/add-queue', ajouterQueue);
 
 // Update an existing Queue
 router.put('/:id', modifierQueue);

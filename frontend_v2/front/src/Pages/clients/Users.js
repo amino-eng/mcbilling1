@@ -5,16 +5,13 @@ import { FaChevronDown, FaCheckCircle, FaTimesCircle, FaExclamationCircle, FaLoc
 
 function Users() {
   const [users, setUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]); // État pour les utilisateurs filtrés
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState(''); // État pour le terme de recherche
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedColumns, setSelectedColumns] = useState(['username', 'credit', 'active', 'creationdate']);
   const [numberOfSipUsers, setNumberOfSipUsers] = useState(1);
-  const [numberOfIax, setNumberOfIax] = useState(2);
   const [dropdownVisibility, setDropdownVisibility] = useState({});
-  const [showModal, setShowModal] = useState(false);
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [newUser, setNewUser] = useState({
     username: '',
@@ -22,9 +19,10 @@ function Users() {
     group: '',
     plan: '',
     language: 'fr',
-    status: 'Active',
+    status: '',
     country: 'United States/Canada',
     description: '',
+    numberOfIax: 1, // Default value set to 1
   });
   const [groups, setGroups] = useState([]);
   const [plans, setPlans] = useState([]);
@@ -33,6 +31,7 @@ function Users() {
   const [errors, setErrors] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [showPassword, setShowPassword] = useState(false);
 
   const availableColumns = [
     'username', 'credit', 'plan_name', 'group_name', 'agent', 'active', 'creationdate',
@@ -68,7 +67,7 @@ function Users() {
     axios.get('http://localhost:5000/api/admin/users/users')
       .then(response => {
         setUsers(response.data.users);
-        setFilteredUsers(response.data.users); // Initialiser les utilisateurs filtrés
+        setFilteredUsers(response.data.users);
         setLoading(false);
       })
       .catch(err => {
@@ -84,28 +83,25 @@ function Users() {
     fetchPlan();
   }, []);
 
-  // Fonction pour gérer le changement de terme de recherche
   const handleSearchChange = (e) => {
     const term = e.target.value.toLowerCase();
     setSearchTerm(term);
 
-    // Filtrer les utilisateurs en fonction du terme de recherche
     const filtered = users.filter(user =>
-      Object.values(user).some(value =>
-        String(value).toLowerCase().includes(term)
-      )
+      user.username.toLowerCase().includes(term) // Only filter by username
     );
     setFilteredUsers(filtered);
-    setCurrentPage(1); // Réinitialiser la pagination
+    setCurrentPage(1);
   };
 
   const indexOfLastUser = currentPage * itemsPerPage;
   const indexOfFirstUser = indexOfLastUser - itemsPerPage;
-  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser); // Utiliser les utilisateurs filtrés
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
   const nextPage = () => {
-    if (currentPage < Math.ceil(filteredUsers.length / itemsPerPage)) {
+    if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     }
   };
@@ -132,7 +128,7 @@ function Users() {
     const csvContent = [
       selectedColumns.join(','),
       ...users.map(user => selectedColumns.map(col => user[col] || '').join(','))
-    ].join('\n'); // Fixed: Use '\n' instead of `
+    ].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -162,57 +158,31 @@ function Users() {
     setNewUser(prevState => ({ ...prevState, [name]: value }));
   };
 
-  const handleEditUserSubmit = async (e) => {
-    e.preventDefault();
-    const userData = {
-      username: newUser.username,
-      password: newUser.password,
-      id_group: newUser.group,
-      id_plan: newUser.plan,
-      language: newUser.language,
-      active: newUser.status === 'Active' ? 1 : 0,
-      email: newUser.email,
-    };
-    try {
-      const response = await fetch(`http://localhost:5000/api/admin/users/modifier/${newUser.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const result = await response.json();
-      console.log('User updated:', result);
-      fetchUsers();
-      setShowForm(false);
-      setNewUser({
-        username: '',
-        password: '',
-        group: '',
-        plan: '',
-        language: 'fr',
-        status: 'Active',
-        country: 'United States/Canada',
-        description: ''
-      });
-    } catch (error) {
-      console.error('Error updating user:', error);
+  const generateRandomPassword = (length = 12) => {
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+    let password = "";
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * charset.length);
+      password += charset[randomIndex];
     }
+    return password;
   };
 
   const handleNewUserSubmit = async (e) => {
     e.preventDefault();
+
+    if (!newUser.password) {
+      newUser.password = generateRandomPassword();
+    }
+
     const statusMapping = {
       'Active': 1,
       'Inactive': 0,
       'Pending': 2,
       'Blocked': 3,
-      'Blocked In Out': 4
+      'Blocked In Out': 4,
     };
-    const activeStatus = statusMapping[newUser.status] !== undefined ? statusMapping[newUser.status] : 0;
+    const activeStatus = statusMapping[newUser.status] != null ? statusMapping[newUser.status] : 0; 
     const userData = {
       username: newUser.username,
       password: newUser.password,
@@ -222,8 +192,9 @@ function Users() {
       active: activeStatus,
       email: newUser.email,
       numberOfSipUsers: numberOfSipUsers,
-      numberOfIax: newUser.numberOfIax,
+      numberOfIax: newUser.numberOfIax, // Use updated number of Iax
     };
+
     try {
       const response = await fetch('http://localhost:5000/api/admin/users/ajouter', {
         method: 'POST',
@@ -236,21 +207,9 @@ function Users() {
         setErrors("SIP user already exists");
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-      const result = await response.json();
-      console.log('User added:', result);
       fetchUsers();
       setShowForm(false);
-      setNewUser({
-        username: '',
-        password: '',
-        group: '',
-        plan: '',
-        language: 'English',
-        status: 'Active',
-        description: '',
-        numberOfIax: 0,
-      });
-      setNumberOfSipUsers(1);
+      resetNewUser();
     } catch (error) {
       console.error('Error adding user:', error);
     }
@@ -260,6 +219,69 @@ function Users() {
     const userToEdit = users.find(user => user.id === id);
     setNewUser(userToEdit);
     setShowForm(true);
+  };
+
+  const handleUpdateUserSubmit = async (e) => {
+    e.preventDefault();
+
+    const statusMapping = {
+      'Active': 1,
+      'Inactive': 0,
+      'Pending': 2,
+      'Blocked': 3,
+      'Blocked In Out': 4,
+    };
+    const activeStatus = statusMapping[newUser.status] != null ? statusMapping[newUser.status] : 0;
+
+    const userData = {
+      username: newUser.username,
+      password: newUser.password ? newUser.password : undefined,
+      language: newUser.language,
+      active: activeStatus,
+      id_group: newUser.group,
+      id_plan: newUser.plan,
+      numberOfSipUsers: numberOfSipUsers,
+      numberOfIax: newUser.numberOfIax, // Use updated number of Iax
+    };
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/admin/users/modifier/${newUser.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        setErrors(errorData.error || "Error updating user");
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      fetchUsers();
+      setShowForm(false);
+      resetNewUser();
+    } catch (error) {
+      console.error('Error updating user:', error);
+    }
+  };
+
+  const resetNewUser = () => {
+    setNewUser({
+      username: '',
+      password: '',
+      group: '',
+      plan: '',
+      language: 'English',
+      status: '',
+      description: '',
+      numberOfIax: 1, // Reset to default value
+    });
+    setNumberOfSipUsers(1);
+  };
+
+  const handleCancel = () => {
+    resetNewUser();
+    setShowForm(false);
   };
 
   if (loading) {
@@ -284,27 +306,26 @@ function Users() {
         </Button>
       </div>
 
-      {/* Barre de recherche */}
       <Form.Group controlId="formSearch" className="mb-3">
-        <Form.Label>Rechercher un utilisateur</Form.Label>
+        <Form.Label>Rechercher un utilisateur par username</Form.Label>
         <Form.Control
           type="text"
-          placeholder="Entrez un nom, email, ou autre..."
+          placeholder="Entrez un nom d'utilisateur..."
           value={searchTerm}
           onChange={handleSearchChange}
         />
       </Form.Group>
 
-      <Modal show={showForm} onHide={() => setShowForm(false)} size='lg'>
+      <Modal show={showForm} onHide={handleCancel} size='lg'>
         <Modal.Header closeButton>
           <Modal.Title>{newUser.id ? 'Edit User' : 'New User'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form onSubmit={handleNewUserSubmit}>
+          <Form onSubmit={newUser.id ? handleUpdateUserSubmit : handleNewUserSubmit}>
             <Tabs defaultActiveKey="General" className='mb-3'>
               <Tab eventKey="General" title="General">
+                {errors && <h1>{errors}</h1>}
                 <Form.Group controlId="formUsername">
-                  {errors && <h1>{errors}</h1>}
                   <Form.Label>Username</Form.Label>
                   <Form.Control
                     type="text"
@@ -321,52 +342,63 @@ function Users() {
                 </Form.Group>
                 <Form.Group controlId="formPassword">
                   <Form.Label>Password</Form.Label>
-                  <Form.Control
-                    type="password"
-                    name="password"
-                    value={newUser.password}
-                    onChange={handleNewUserChange}
-                    required
-                  />
+                  <div className="input-group">
+                    <Form.Control
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      value={newUser.password}
+                      onChange={handleNewUserChange}
+                    />
+                    <Button 
+                      variant="outline-secondary"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? "Hide" : "Show"}
+                    </Button>
+                  </div>
                   {(newUser.password.length < 8 || newUser.password.length > 12) && (
                     <Form.Text className="text-danger">
                       Password must be between 8 and 12 characters long.
                     </Form.Text>
                   )}
                 </Form.Group>
-                <Form.Group controlId="formGroup">
-                  <Form.Label>Group</Form.Label>
-                  <Form.Select
-                    name="group"
-                    value={newUser.group}
-                    onChange={handleNewUserChange} required
-                  >
-                    <option value="">Select a group</option>
-                    {groups.map(group => (
-                      <option key={group.id} value={group.id}>
-                        {group.name}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
-                <Form.Group controlId="formPlan">
-                  <Form.Label>Plan</Form.Label>
-                  <Form.Select
-                    name="plan"
-                    value={newUser.plan}
-                    onChange={handleNewUserChange} required
-                  >
-                    <option value="">Select a plan</option>
-                    {plans.map(plan => (
-                      <option key={plan.id} value={plan.name}>
-                        {plan.name}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
+                {!newUser.id && ( 
+                  <>
+                    <Form.Group controlId="formGroup">
+                      <Form.Label>Group</Form.Label>
+                      <Form.Select
+                        name="group"
+                        value={newUser.group}
+                        onChange={handleNewUserChange} required
+                      >
+                        <option value="">Select a group</option>
+                        {groups.map(group => (
+                          <option key={group.id} value={group.id}>
+                            {group.name}
+                          </option>
+                        ))}
+                      </Form.Select>
+                    </Form.Group>
+                    <Form.Group controlId="formPlan">
+                      <Form.Label>Plan</Form.Label>
+                      <Form.Select
+                        name="plan"
+                        value={newUser.plan}
+                        onChange={handleNewUserChange} required
+                      >
+                        <option value="">Select a plan</option>
+                        {plans.map(plan => (
+                          <option key={plan.id} value={plan.name}>
+                            {plan.name}
+                          </option>
+                        ))}
+                      </Form.Select>
+                    </Form.Group>
+                  </>
+                )}
                 <Form.Group controlId="formLanguage">
                   <Form.Label>Language</Form.Label>
-                  <Form.Control as="select" name="language" onChange={handleNewUserChange} required>
+                  <Form.Control as="select" name="language" value={newUser.language} onChange={handleNewUserChange} required>
                     <option value="fr">Français</option>
                     <option value="en">English</option>
                     <option value="sp">Spanish</option>
@@ -423,39 +455,22 @@ function Users() {
                   <Form.Control
                     type="number"
                     name="numberOfIax"
+                    value={newUser.numberOfIax} // Use updated number of Iax
                     onChange={(e) => setNewUser(prev => ({ ...prev, numberOfIax: parseInt(e.target.value, 10) }))}
                     min="0"
                     required
                   />
                 </Form.Group>
               </Tab>
-              <Tab eventKey="Personal Data" title="Personal">
-                <Form.Group controlId="formCompanyWebsite">
-                  <Form.Label>Company website</Form.Label>
-                  <Form.Control type="text" name="company_website" value={newUser.company_website || ''} onChange={handleNewUserChange} />
-                </Form.Group>
-                <Form.Group controlId="formCompanyName">
-                  <Form.Label>Company name</Form.Label>
-                  <Form.Control type="text" name="company_name" value={newUser.company_name || ''} onChange={handleNewUserChange} />
-                </Form.Group>
-                <Form.Group controlId="formCommercialName">
-                  <Form.Label>Commercial name</Form.Label>
-                  <Form.Control type="text" name="commercial_name" value={newUser.commercial_name || ''} onChange={handleNewUserChange} />
-                </Form.Group>
-              </Tab>
-              <Tab eventKey="Supplementary Info" title="Supplementary Info">
-                <Form.Group controlId="formTypePaid">
-                  <Form.Label>Type paid</Form.Label>
-                  <Form.Control as="select" name="type_paid" value={newUser.type_paid || ''} onChange={handleNewUserChange}>
-                    <option value="Prepaid">Prepaid</option>
-                    <option value="Postpaid">Postpaid</option>
-                  </Form.Control>
-                </Form.Group>
-              </Tab>
             </Tabs>
             <Button variant="primary" type="submit">
               {newUser.id ? 'Update User' : 'Add User'}
             </Button>
+            {newUser.id && (
+              <Button variant="secondary" onClick={handleCancel} className="ms-2">
+                Cancel
+              </Button>
+            )}
           </Form>
         </Modal.Body>
       </Modal>
@@ -500,8 +515,7 @@ function Users() {
             <tr key={index}>
               {selectedColumns.map((col, idx) => (
                 <td key={idx}>
-                  {col === "creationdate" && user[col]
-                    ? new Date(user[col]).toLocaleString()
+                  {col === "creationdate" && user[col] ? new Date(user[col]).toLocaleString()
                     : col === "active"
                     ? user[col] === 1 ? <FaCheckCircle color="green" title="Active" />
                     : user[col] === 0 ? <FaTimesCircle color="red" title="Inactive" />
@@ -530,8 +544,8 @@ function Users() {
         <Button variant="secondary" onClick={prevPage} disabled={currentPage === 1}>
           Previous
         </Button>
-        <span className="mx-3">Page {currentPage}</span>
-        <Button variant="secondary" onClick={nextPage} disabled={currentPage === Math.ceil(filteredUsers.length / itemsPerPage)}>
+        <span className="mx-3">Page {currentPage} of {totalPages}</span>
+        <Button variant="secondary" onClick={nextPage} disabled={currentPage === totalPages}>
           Next
         </Button>
       </div>

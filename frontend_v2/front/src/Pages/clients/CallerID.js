@@ -30,13 +30,11 @@ const CallerIdTable = () => {
   const itemsPerPage = 5;
   const [currentPage, setCurrentPage] = useState(0);
 
-  // Fetch Caller IDs and Usernames on component mount
   useEffect(() => {
     fetchCallerIds();
     fetchUsernames();
   }, []);
 
-  // Fetch all Caller IDs
   const fetchCallerIds = async () => {
     try {
       const response = await axios.get("http://localhost:5000/api/admin/CallerId/affiche");
@@ -47,7 +45,6 @@ const CallerIdTable = () => {
     }
   };
 
-  // Fetch all Usernames
   const fetchUsernames = async () => {
     try {
       const response = await axios.get("http://localhost:5000/api/admin/users/users");
@@ -58,7 +55,6 @@ const CallerIdTable = () => {
     }
   };
 
-  // Handle adding a new Caller ID
   const handleAddCallerId = async () => {
     if (!newCallerId.callerid || !newCallerId.username || !newCallerId.name) {
       setError("Veuillez remplir tous les champs obligatoires.");
@@ -68,10 +64,10 @@ const CallerIdTable = () => {
     try {
       const response = await axios.post("http://localhost:5000/api/admin/CallerId/ajouter", newCallerId);
       if (response.status === 201) {
-        fetchCallerIds(); // Refresh the list
-        setNewCallerId({ callerid: "", username: "", name: "", description: "", status: "1" }); // Reset form
-        setShowAddModal(false); // Close modal
-        setError(""); // Clear error
+        fetchCallerIds();
+        setNewCallerId({ callerid: "", username: "", name: "", description: "", status: "1" });
+        setShowAddModal(false);
+        setError("");
       }
     } catch (error) {
       console.error("Erreur lors de l'ajout du Caller ID :", error.response?.data || error.message);
@@ -79,9 +75,7 @@ const CallerIdTable = () => {
     }
   };
 
-  // Handle editing a Caller ID
   const handleEditCallerId = async () => {
-    console.log("Editing Caller ID:", editCallerId); // Debugging log
     if (!editCallerId.callerid || !editCallerId.username || !editCallerId.name) {
       setError("Veuillez remplir tous les champs obligatoires.");
       return;
@@ -91,18 +85,19 @@ const CallerIdTable = () => {
       const response = await axios.put(
         `http://localhost:5000/api/admin/CallerId/modifier/${editCallerId.id}`,
         {
-          cid: editCallerId.callerid, // Ensure the field names match backend expectations
-          id_user: editCallerId.username, // Make sure this is correct
+          cid: editCallerId.callerid,
+          id_user: editCallerId.username,
           name: editCallerId.name,
           description: editCallerId.description,
-          activated: editCallerId.status
+          activated: editCallerId.status,
         }
       );
+
       if (response.status === 200) {
-        fetchCallerIds(); // Refresh the list
-        setShowEditModal(false); // Close modal
-        setEditCallerId({ id: "", callerid: "", username: "", name: "", description: "", status: "1" }); // Reset edit form
-        setError(""); // Clear error
+        fetchCallerIds();
+        setShowEditModal(false);
+        setEditCallerId({ id: "", callerid: "", username: "", name: "", description: "", status: "1" });
+        setError("");
       }
     } catch (error) {
       console.error("Erreur lors de la modification du Caller ID :", error.response?.data || error.message);
@@ -110,40 +105,36 @@ const CallerIdTable = () => {
     }
   };
 
-  // Handle input changes in the add form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewCallerId({ ...newCallerId, [name]: value });
   };
 
-  // Handle input changes in the edit form
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     setEditCallerId({ ...editCallerId, [name]: value });
   };
 
-  // Handle deleting a Caller ID
   const handleDeleteCallerId = async (id) => {
     if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce Caller ID ?")) {
-      return; // Cancel deletion if the user clicks "No"
+      return;
     }
 
     try {
       await axios.delete(`http://localhost:5000/api/admin/CallerId/delete/${id}`);
-      fetchCallerIds(); // Refresh the list
-      setError(""); // Clear error
+      fetchCallerIds();
+      setError("");
     } catch (error) {
       console.error("Erreur lors de la suppression :", error.response?.data || error.message);
       setError("Erreur lors de la suppression. Veuillez réessayer.");
     }
   };
 
-  // Open edit modal and populate fields with selected Caller ID data
   const openEditModal = (caller) => {
     setEditCallerId({
       id: caller.id,
       callerid: caller.cid,
-      username: caller.username,
+      username: caller.id_user, // Ensure this matches your backend
       name: caller.name,
       description: caller.description,
       status: caller.activated.toString(),
@@ -151,7 +142,6 @@ const CallerIdTable = () => {
     setShowEditModal(true);
   };
 
-  // Pagination logic
   const offset = currentPage * itemsPerPage;
   const currentData = callerIds.slice(offset, offset + itemsPerPage);
   const pageCount = Math.ceil(callerIds.length / itemsPerPage);
@@ -160,7 +150,6 @@ const CallerIdTable = () => {
     setCurrentPage(selected);
   };
 
-  // CSV data for export
   const csvData = [
     ["Caller ID", "Nom", "Utilisateur", "Description", "Statut"],
     ...callerIds.map((caller) => [
@@ -175,21 +164,14 @@ const CallerIdTable = () => {
   return (
     <div className="container mt-4">
       <h2>Liste des Caller IDs</h2>
-
-      {/* Error Alert */}
       {error && <Alert variant="danger">{error}</Alert>}
-
-      {/* Add Caller ID Button */}
       <Button variant="primary" onClick={() => setShowAddModal(true)} className="me-2">
         Ajouter
       </Button>
-
-      {/* Export to CSV Button */}
       <CSVLink data={csvData} filename="callerid_export.csv" className="btn btn-success">
         Exporter CSV
       </CSVLink>
 
-      {/* Caller IDs Table */}
       <Table striped bordered hover className="mt-3">
         <thead>
           <tr>
@@ -228,7 +210,6 @@ const CallerIdTable = () => {
         </tbody>
       </Table>
 
-      {/* Pagination */}
       <ReactPaginate
         previousLabel={"← Précédent"}
         nextLabel={"Suivant →"}
@@ -357,13 +338,13 @@ const CallerIdTable = () => {
               <Form.Label>Utilisateur</Form.Label>
               <Dropdown>
                 <Dropdown.Toggle variant="secondary" id="dropdown-basic">
-                  {editCallerId.username || "Sélectionner un utilisateur"}
+                  {usernames.find(user => user.id === editCallerId.username)?.username || "Sélectionner un utilisateur"}
                 </Dropdown.Toggle>
                 <Dropdown.Menu>
                   {usernames.map((user) => (
                     <Dropdown.Item
                       key={user.id}
-                      onClick={() => setEditCallerId({ ...editCallerId, username: user.username })}
+                      onClick={() => setEditCallerId({ ...editCallerId, username: user.id })}
                     >
                       {user.username}
                     </Dropdown.Item>

@@ -9,7 +9,7 @@ const SIPUsers = () => {
         sippasswd: '',
         callerid: '',
         alias: '',
-        name: '', // Added name field
+        name: '',
         disable: 'no',
         codecs: [],
         host: '',
@@ -36,15 +36,15 @@ const SIPUsers = () => {
         enableVoicemail: 'no',
         email: '',
         password: '',
-        Parameters: '',
-        sipshowpeer: '',
+        voicemail_email: '',
+        voicemail_password: '',
     });
     const [selectedUser, setSelectedUser] = useState("");
     const [user, setUsers] = useState([]);
+    const [searchTerm, setSearchTerm] = useState(""); // New state for search
 
-    // États pour la pagination
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(10); // Nombre d'éléments par page
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     const fetchUsers = () => {
         axios.get('http://localhost:5000/api/admin/SIPUsers/nom')
@@ -90,7 +90,6 @@ const SIPUsers = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Basic validation for required fields
         const requiredFields = ['name', 'sippasswd', 'callerid', 'alias', 'host', 'sip_group', 'techprefix'];
 
         for (const field of requiredFields) {
@@ -100,15 +99,13 @@ const SIPUsers = () => {
             }
         }
 
-        // Correcting the typo for nat if necessary
         if (formData.nat === "forcce_rport") {
-            formData.nat = "force_rport"; // Fix the typo
+            formData.nat = "force_rport";
         }
 
-        // Prepare data with correct field names
         const dataToSubmit = {
-            id_user: selectedUser, // Include the selected user ID
-            name: formData.name, // Include the name field
+            id_user: selectedUser,
+            name: formData.name,
             sippasswd: formData.sippasswd,
             callerid: formData.callerid,
             alias: formData.alias,
@@ -124,10 +121,7 @@ const SIPUsers = () => {
             record_call: formData.record_call || 'no',
             voicemail_email: formData.voicemail_email || '',
             voicemail_password: formData.voicemail_password || ''
-            // Add other fields as necessary based on your requirements
         };
-
-        console.log("Submitting data:", dataToSubmit);
 
         try {
             await axios.post("http://localhost:5000/api/admin/SIPUsers/ajouter", dataToSubmit);
@@ -144,31 +138,26 @@ const SIPUsers = () => {
         fetchUsers();
     }, []);
 
+    // Filtered users based on the search term
+    const filteredUsers = sipUsers.filter(user =>
+        user.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-    
-
-    // Calcul des éléments à afficher pour la pagination
     const indexOfLastUser = currentPage * itemsPerPage;
     const indexOfFirstUser = indexOfLastUser - itemsPerPage;
-    const currentUsers = sipUsers.slice(indexOfFirstUser, indexOfLastUser);
+    const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
 
-    // Fonction pour changer de page
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
-    // Fonction pour aller à la page suivante
     const nextPage = () => {
-        if (currentPage < Math.ceil(sipUsers.length / itemsPerPage)) {
+        if (currentPage < Math.ceil(filteredUsers.length / itemsPerPage)) {
             setCurrentPage(currentPage + 1);
         }
     };
-
-    // Fonction pour aller à la page précédente
     const prevPage = () => {
         if (currentPage > 1) {
             setCurrentPage(currentPage - 1);
         }
     };
-
 
     return (
         <div className="container mt-4">
@@ -176,6 +165,13 @@ const SIPUsers = () => {
             <Button variant="primary" onClick={() => setShow(true)} className="mb-3">
                 Add SIP User
             </Button>
+            <Form.Control
+                type="text"
+                placeholder="Search by Name"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="mb-3"
+            />
             <Table striped bordered hover>
                 <thead>
                     <tr>
@@ -207,7 +203,7 @@ const SIPUsers = () => {
                     Previous
                 </Button>
                 <div>
-                    {Array.from({ length: Math.ceil(sipUsers.length / itemsPerPage) }, (_, i) => (
+                    {Array.from({ length: Math.ceil(filteredUsers.length / itemsPerPage) }, (_, i) => (
                         <Button
                             key={i + 1}
                             variant={currentPage === i + 1 ? "primary" : "outline-primary"}
@@ -221,7 +217,7 @@ const SIPUsers = () => {
                 <Button
                     variant="primary"
                     onClick={nextPage}
-                    disabled={currentPage === Math.ceil(sipUsers.length / itemsPerPage)}
+                    disabled={currentPage === Math.ceil(filteredUsers.length / itemsPerPage)}
                 >
                     Next
                 </Button>
@@ -253,19 +249,15 @@ const SIPUsers = () => {
                                 </Form.Group>
                                 <Form.Group>
                                     <Form.Label>Name</Form.Label>
-
-
-                                    <Form.Control 
-                                        type="text" 
-                                        name="name" 
-                                        value={formData.name} 
-                                        onChange={handleChange} 
-                                        />
+                                    <Form.Control
+                                        type="text"
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleChange}
+                                    />
                                 </Form.Group>
                                 <Form.Group controlId="formPassword">
                                     <Form.Label>Password</Form.Label>
-
-
                                     <Form.Control
                                         type="password"
                                         name="password"
@@ -273,18 +265,15 @@ const SIPUsers = () => {
                                         onChange={handleChange}
                                         required
                                     />
-
                                     {(formData.password.length < 8 || formData.password.length > 12) && (
                                         <Form.Text className="text-danger">
                                             Password must be between 8 and 12 characters long.
                                         </Form.Text>
                                     )}
-
                                 </Form.Group>
                                 <Form.Group>
                                     <Form.Label>SIP Password</Form.Label>
                                     <Form.Control type="text" name="sippasswd" onChange={handleChange} />
-
                                 </Form.Group>
                                 <Form.Group>
                                     <Form.Label>Caller ID</Form.Label>
@@ -297,8 +286,8 @@ const SIPUsers = () => {
                                 <Form.Group>
                                     <Form.Label>Disable</Form.Label>
                                     <Form.Control as="select" name="disable" onChange={handleChange}>
-                                        <option value="no">all</option>
-                                        <option value="all">all</option>
+                                        <option value="no">No</option>
+                                        <option value="all">All</option>
                                     </Form.Control>
                                 </Form.Group>
                                 <Form.Group>

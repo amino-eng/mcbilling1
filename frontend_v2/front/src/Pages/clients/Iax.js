@@ -33,6 +33,7 @@ const IaxTable = () => {
     codecs: ['g729', 'alaw', 'gsm', 'ulaw']
   });
   const [deleteItemId, setDeleteItemId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Récupère les utilisateurs SIP
   const fetchIax = () => {
@@ -61,7 +62,10 @@ const IaxTable = () => {
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
+  const filteredData = data.filter(item =>
+    item.user_name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -78,7 +82,7 @@ const IaxTable = () => {
 
   const renderPagination = () => {
     const pageNumbers = [];
-    for (let i = 1; i <= Math.ceil(data.length / itemsPerPage); i++) {
+    for (let i = 1; i <= Math.ceil(filteredData.length / itemsPerPage); i++) {
       pageNumbers.push(
         <Pagination.Item key={i} active={i === currentPage} onClick={() => paginate(i)}>
           {i}
@@ -104,48 +108,52 @@ const IaxTable = () => {
     }
   };
 
-const handleAddNew = async () => {
-    // // Validate required fields
-    // if (!newEntry.id_user) {
-    //     alert("Please provide a valid user ID.");
-    //     return; // Prevent the function from executing if id_user is not valid
-    // }
+  const generatePassword = () => {
+    const length = 10;
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let password = "";
+    for (let i = 0; i < length; i++) {
+      password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    return password;
+  };
 
-    // if (!newEntry.accountcode) {
-    //     alert("Please provide a valid account code.");
-    //     return;
-    // }
+  const handleAddNew = async () => {
+    const generatedPassword = generatePassword();
+    setNewEntry({ ...newEntry, secret: generatedPassword });
 
     try {
-        const response = await axios.post('http://localhost:5000/api/admin/Iax/ajouter', { 
-            ...newEntry, 
-            allow: formData.codecs.join(',') 
-        });
+      const response = await axios.post('http://localhost:5000/api/admin/Iax/ajouter', { 
+        ...newEntry, 
+        allow: formData.codecs.join(','),
+        secret: generatedPassword // Utiliser le mot de passe généré
+      });
 
-        setData([...data, response.data]); // Add the new entry to the list
-        setShowAddModal(false); // Close the modal
-        setNewEntry({
-            accountcode: '',
-            id_user: '',
-            secret: '',
-            host: 'dynamic',
-            ip: '',
-            context: 'billing',
-            callerid: '',
-            allow: 'All',
-            nat: 'force,report,comedia',
-            qualify: 'no',
-            dtmfmode: 'RFC2833',
-            insecure: 'no',
-            type: 'friend',
-            call_limit: 0
-        }); // Reset the form with default values
-        setFormData({ codecs: ['g729', 'alaw', 'gsm', 'ulaw'] }); // Reset codecs with default values
+      setData([...data, response.data]); // Ajouter la nouvelle entrée à la liste
+      setShowAddModal(false); // Fermer le modal
+      setNewEntry({
+        accountcode: '',
+        id_user: '',
+        secret: '',
+        host: 'dynamic',
+        ip: '',
+        context: 'billing',
+        callerid: '',
+        allow: 'All',
+        nat: 'force,report,comedia',
+        qualify: 'no',
+        dtmfmode: 'RFC2833',
+        insecure: 'no',
+        type: 'friend',
+        call_limit: 0
+      }); // Réinitialiser le formulaire avec les valeurs par défaut
+      setFormData({ codecs: ['g729', 'alaw', 'gsm', 'ulaw'] }); // Réinitialiser les codecs avec les valeurs par défaut
     } catch (error) {
-        console.error('Erreur lors de l\'ajout:', error);
-        alert("Failed to add the new entry. Please check the console for more details.");
+      console.error('Erreur lors de l\'ajout:', error);
+      alert("Failed to add the new entry. Please check the console for more details.");
     }
-};
+  };
+
   const handleChange = (e) => {
     const { value } = e.target;
     setFormData((prev) => {
@@ -189,6 +197,14 @@ const handleAddNew = async () => {
           <Button variant="success" onClick={() => setShowAddModal(true)}>
             Ajouter
           </Button>
+        </Col>
+        <Col>
+          <Form.Control
+            type="text"
+            placeholder="Rechercher par username"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </Col>
       </Row>
 

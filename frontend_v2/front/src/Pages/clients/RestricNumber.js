@@ -51,21 +51,30 @@ function RestricNumber() {
     }
   };
 
+  const formatDateTime = (dateTime) => {
+    const date = new Date(dateTime);
+    const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear().toString().slice(-2)} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+    return formattedDate;
+  };
+
   const handleAddRestriction = async () => {
     if (!phoneNumber || !restrictionType || !selectedUser) {
       setError('Veuillez remplir tous les champs.');
       return;
     }
-  
+
+    const now = new Date();
+    const formattedDate = formatDateTime(now); // Format the current date and time
+
     const data = {
       number: phoneNumber,
       direction: restrictionType,
       id_user: selectedUser,
-      date: new Date().toISOString().slice(0, 10) // Format the date as 'YYYY-MM-DD'
+      date: formattedDate // Use the formatted date and time
     };
-  
-    console.log('Data being sent:', data); // Log the data to inspect it
-  
+
+    console.log('Data being sent:', data);
+
     setLoading(true);
     try {
       await axios.post('http://localhost:5000/api/admin/agent/add', data);
@@ -123,8 +132,7 @@ function RestricNumber() {
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = sortedPhoneData.slice(indexOfFirstItem, indexOfLastItem);
-  console.log(phoneData);
-  
+
   return (
     <div className="container mt-4">
       <ToastContainer />
@@ -165,7 +173,7 @@ function RestricNumber() {
                   <td>{e.agent?.username}</td>
                   <td>{e.number}</td>
                   <td>{e.direction === 2 ? 'Entrant' : 'Sortant'}</td>
-                  <td>{e.date}</td>
+                  <td>{formatDateTime(e.date)}</td> {/* Format the date for display */}
                   <td>
                     <button className="btn btn-danger btn-sm" onClick={() => handleDeleteRestriction(e.id)}>
                       Supprimer
@@ -232,11 +240,11 @@ function RestricNumber() {
           </select>
 
           <input
-            type="date"
+            type="text"
             className="form-control mt-2"
-            value={new Date().toISOString().split('T')[0]}
+            value={formatDateTime(new Date())} // Display the current date and time
             readOnly
-            ></input>
+          />
 
           <button className="btn btn-success mt-2" onClick={handleAddRestriction} disabled={loading}>
             Confirmer

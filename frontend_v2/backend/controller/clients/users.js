@@ -191,7 +191,7 @@ exports.ajouterUtilisateur = (req, res) => {
                 userId,
                 `${username}-iax${suffix}`,
                 `${username}-iax${suffix}`,
-                'dynamic',
+                'dynamic', 1 ,
                 'all',
                 '', // regexten
                 callerid || 'default_callerid',
@@ -289,13 +289,17 @@ exports.supprimerUtilisateur = (req, res) => {
 
 exports.modifierUtilisateur = (req, res) => {
   const userId = req.params.id;
-  const { username, password, id_group, id_plan, language, active } = req.body;
+  const { username, password, language, active } = req.body;
 
-  const query = "UPDATE pkg_user SET username = ?, password = ?, id_group = ?, id_plan = ?, language = ?, active = ? WHERE id = ?";
+  const query = "UPDATE pkg_user SET username = ?, password = ?, language = ?, active = ? WHERE id = ?";
 
-  connection.query(query, [username, password, id_group, id_plan, language, active, userId], (error, results) => {
-    if (error || results.affectedRows === 0) {
+  connection.query(query, [username, password, language, active, userId], (error, results) => {
+    if (error) {
       return res.status(500).json({ error: "Erreur de base de données" });
+    }
+    
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: "Utilisateur non trouvé" });
     }
 
     res.status(200).json({ message: "Utilisateur modifié avec succès" });

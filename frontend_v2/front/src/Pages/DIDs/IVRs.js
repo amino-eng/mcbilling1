@@ -16,6 +16,7 @@ const IvrTable = () => {
     'Début Dimanche': false,
   });
 
+  const [searchTerm, setSearchTerm] = useState('');
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [name, setName] = useState('');
@@ -71,6 +72,12 @@ const IvrTable = () => {
     fetchIVRs();
     fetchUsers();
   }, []);
+
+  const filteredIVRs = ivrs.filter(
+    (ivr) =>
+      ivr.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ivr.username.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleCSVExport = () => {
     const headers = Object.keys(visibleColumns).filter((key) => visibleColumns[key]);
@@ -164,7 +171,7 @@ const IvrTable = () => {
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentIVRs = ivrs.slice(indexOfFirstItem, indexOfLastItem);
+  const currentIVRs = filteredIVRs.slice(indexOfFirstItem, indexOfLastItem);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -200,6 +207,15 @@ const IvrTable = () => {
           ))}
         </div>
       )}
+
+      <Form.Group className="mb-3">
+        <Form.Control
+          type="text"
+          placeholder="Rechercher par nom ou utilisateur..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </Form.Group>
 
       <Modal show={showAddModal} onHide={handleCloseModal} size="lg">
         <Modal.Header closeButton>
@@ -321,14 +337,18 @@ const IvrTable = () => {
 
       {/* Pagination */}
       <div className="d-flex justify-content-center">
-        <Button variant="link" onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1}>
+        <Button 
+          variant="link" 
+          onClick={() => paginate(currentPage - 1)} 
+          disabled={currentPage === 1}
+        >
           Précédent
         </Button>
         <span className="mx-2">{currentPage}</span>
         <Button
           variant="link"
           onClick={() => paginate(currentPage + 1)}
-          disabled={currentPage === Math.ceil(ivrs.length / itemsPerPage)}
+          disabled={currentPage === Math.ceil(filteredIVRs.length / itemsPerPage)}
         >
           Suivant
         </Button>

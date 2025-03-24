@@ -307,7 +307,6 @@ function Users() {
       </div>
 
       <Form.Group controlId="formSearch" className="mb-3">
-        <Form.Label>Rechercher un utilisateur par username</Form.Label>
         <Form.Control
           type="text"
           placeholder="Entrez un nom d'utilisateur..."

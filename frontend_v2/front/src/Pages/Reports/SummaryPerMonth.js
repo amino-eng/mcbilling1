@@ -10,7 +10,7 @@ import {
   Spinner,
   Pagination,
 } from "react-bootstrap";
-import { FaCheck, FaTimes } from "react-icons/fa";
+import { FaEuroSign, FaPercent } from "react-icons/fa";
 
 // Composant pour gérer la visibilité des colonnes
 const ColumnVisibilityDropdown = ({ visibleColumns, setVisibleColumns }) => {
@@ -58,10 +58,9 @@ const SummaryPerMonth = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [searchTerm, setSearchTerm] = useState(""); // Search term for Month
 
   // State for column visibility
   const [visibleColumns, setVisibleColumns] = useState({
@@ -73,7 +72,6 @@ const SummaryPerMonth = () => {
     SessionBill: true,
     Profit: true,
     ASR: true,
-    Actions: true,
   });
 
   // Fetch data from the backend when the component mounts
@@ -90,20 +88,23 @@ const SummaryPerMonth = () => {
       });
   }, []);
 
-  const handleDelete = () => {
-    if (confirmDelete) {
-      axios
-        .delete(`http://localhost:5000/api/admin/SummaryPerMonth/${confirmDelete}`)
-        .then(() => {
-          setData(data.filter((item) => item.id !== confirmDelete));
-          setShowModal(false);
-          setConfirmDelete(null);
-        })
-        .catch(() => {
-          setError("Failed to delete data");
-          setShowModal(false);
-        });
-    }
+  // Filtered data based on the search term
+  const filteredData = data.filter(item =>
+    `${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}`.includes(searchTerm)
+  );
+
+  // Calculate data for current page
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Generate page numbers
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  // Handle page change
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
   };
 
   // Function to export table data to CSV
@@ -118,7 +119,7 @@ const SummaryPerMonth = () => {
       "Profit (Lucro)",
       "ASR (%)",
     ];
-    const rows = data.map((item) => [
+    const rows = filteredData.map((item) => [
       `${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}`,
       item.sessiontime.toFixed(2),
       item.nbcall.toFixed(2),
@@ -136,20 +137,6 @@ const SummaryPerMonth = () => {
     link.href = url;
     link.download = "summary_per_month.csv";
     link.click();
-  };
-
-  // Calculer les données pour la page actuelle
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
-
-  // Générer les numéros de page
-  const totalPages = Math.ceil(data.length / itemsPerPage);
-  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
-
-  // Gérer le clic sur une page
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
   };
 
   if (loading) {
@@ -174,6 +161,17 @@ const SummaryPerMonth = () => {
         <ColumnVisibilityDropdown
           visibleColumns={visibleColumns}
           setVisibleColumns={setVisibleColumns}
+        />
+      </div>
+
+      {/* Search Bar */}
+      <div className="mb-3">
+        <input
+          type="text"
+          placeholder="Search by Month"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="form-control"
         />
       </div>
 
@@ -212,7 +210,6 @@ const SummaryPerMonth = () => {
                       {visibleColumns.SessionBill && <td>{item.sessionbill.toFixed(2)}</td>}
                       {visibleColumns.Profit && <td>{item.lucro.toFixed(2)}</td>}
                       {visibleColumns.ASR && <td>{item.asr.toFixed(2)} %</td>}
-                     
                     </tr>
                   ))}
                 </tbody>
@@ -236,8 +233,6 @@ const SummaryPerMonth = () => {
           ))}
         </Pagination>
       </div>
-
-     
     </div>
   );
 };

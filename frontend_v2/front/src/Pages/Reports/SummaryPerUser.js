@@ -1,12 +1,15 @@
 // src/components/SummaryPerUser.js
 
 import React, { useEffect, useState } from 'react';
-import { Table, Spinner, Container, Button } from 'react-bootstrap';
+import { Table, Spinner, Container, Button, Form, Pagination } from 'react-bootstrap';
 
 const SummaryPerUser = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Fetch data from the API on component mount
   useEffect(() => {
@@ -44,7 +47,7 @@ const SummaryPerUser = () => {
   // Function to export data to CSV
   const exportToCSV = () => {
     const header = ['Username', 'Duration', 'Allocated Calls', 'Answered', 'Failed', 'Buy Price', 'Sell Price', 'Markup', 'ASR'];
-    const rows = data.map((userSummary) => [
+    const rows = filteredData.map((userSummary) => [
       userSummary.username,
       formatSessionTime(userSummary.sessiontime),
       userSummary.aloc_all_calls,
@@ -66,6 +69,21 @@ const SummaryPerUser = () => {
     link.click();
   };
 
+  // Filter data based on search term
+  const filteredData = data.filter(user => 
+    user.username.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+
+  // Handle page change
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center mt-5">
@@ -81,10 +99,25 @@ const SummaryPerUser = () => {
   return (
     <Container className="mt-5">
       <h2 className="mb-4 text-center">User Summary</h2>
+      
+      {/* Search Bar */}
+      <Form.Group className="mb-3">
+        <Form.Control
+          type="text"
+          placeholder="Search by username..."
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1); // Reset to first page when searching
+          }}
+        />
+      </Form.Group>
+      
       {/* Export Button */}
       <Button variant="success" onClick={exportToCSV} className="mb-3">
         Export to CSV
       </Button>
+      
       <Table striped bordered hover responsive variant="light">
         <thead>
           <tr>
@@ -100,21 +133,67 @@ const SummaryPerUser = () => {
           </tr>
         </thead>
         <tbody>
-          {data.map((userSummary) => (
-            <tr key={userSummary.id}>
-              <td>{userSummary.username}</td>
-              <td>{formatSessionTime(userSummary.sessiontime)}s</td>
-              <td>{userSummary.aloc_all_calls}</td>
-              <td>{userSummary.nbcall}</td>  {/* Answered calls */}
-              <td>{userSummary.nbcall_fail}</td>  {/* Failed calls */}
-              <td>{roundToTwoDecimal(userSummary.buycost)}€</td>  {/* Rounded Buy Price */}
-              <td>{roundToTwoDecimal(userSummary.sessionbill)}€</td>  {/* Rounded Sell Price */}
-              <td>{roundToTwoDecimal(userSummary.lucro)}</td>  {/* Rounded Markup */}
-              <td>{roundToTwoDecimal(userSummary.asr)}%</td>  {/* Rounded ASR */}
+          {paginatedData.length > 0 ? (
+            paginatedData.map((userSummary) => (
+              <tr key={userSummary.id}>
+                <td>{userSummary.username}</td>
+                <td>{formatSessionTime(userSummary.sessiontime)}</td>
+                <td>{userSummary.aloc_all_calls}</td>
+                <td>{userSummary.nbcall}</td>
+                <td>{userSummary.nbcall_fail}</td>
+                <td>{roundToTwoDecimal(userSummary.buycost)}€</td>
+                <td>{roundToTwoDecimal(userSummary.sessionbill)}€</td>
+                <td>{roundToTwoDecimal(userSummary.lucro)}</td>
+                <td>{roundToTwoDecimal(userSummary.asr)}%</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="9" className="text-center">No matching users found</td>
             </tr>
-          ))}
+          )}
         </tbody>
       </Table>
+      
+      {/* Pagination */}
+      {filteredData.length > itemsPerPage && (
+        <div className="d-flex justify-content-center">
+          <Pagination>
+            <Pagination.First 
+              onClick={() => handlePageChange(1)} 
+              disabled={currentPage === 1} 
+            />
+            <Pagination.Prev 
+              onClick={() => handlePageChange(currentPage - 1)} 
+              disabled={currentPage === 1} 
+            />
+            
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <Pagination.Item
+                key={page}
+                active={page === currentPage}
+                onClick={() => handlePageChange(page)}
+              >
+                {page}
+              </Pagination.Item>
+            ))}
+            
+            <Pagination.Next 
+              onClick={() => handlePageChange(currentPage + 1)} 
+              disabled={currentPage === totalPages} 
+            />
+            <Pagination.Last 
+              onClick={() => handlePageChange(totalPages)} 
+              disabled={currentPage === totalPages} 
+            />
+          </Pagination>
+        </div>
+      )}
+      
+      {/* Display current page info */}
+      <div className="text-center mt-2">
+        Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredData.length)} of {filteredData.length} users
+      </div>
     </Container>
   );
 };

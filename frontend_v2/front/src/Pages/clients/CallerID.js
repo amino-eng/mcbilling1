@@ -26,6 +26,7 @@ const CallerIdTable = () => {
     status: "1",
   });
   const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const itemsPerPage = 5;
   const [currentPage, setCurrentPage] = useState(0);
@@ -143,8 +144,12 @@ const CallerIdTable = () => {
   };
 
   const offset = currentPage * itemsPerPage;
-  const currentData = callerIds.slice(offset, offset + itemsPerPage);
-  const pageCount = Math.ceil(callerIds.length / itemsPerPage);
+  const filteredCallerIds = callerIds.filter(caller =>
+    caller.cid.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    caller.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  const currentData = filteredCallerIds.slice(offset, offset + itemsPerPage);
+  const pageCount = Math.ceil(filteredCallerIds.length / itemsPerPage);
 
   const handlePageClick = ({ selected }) => {
     setCurrentPage(selected);
@@ -165,6 +170,13 @@ const CallerIdTable = () => {
     <div className="container mt-4">
       <h2>Liste des Caller IDs</h2>
       {error && <Alert variant="danger">{error}</Alert>}
+      <Form.Control
+        type="text"
+        placeholder="Rechercher par Caller ID ou Nom"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="mb-3"
+      />
       <Button variant="primary" onClick={() => setShowAddModal(true)} className="me-2">
         Ajouter
       </Button>

@@ -5,6 +5,9 @@ const SummaryMonthUserTable = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // Pagination: max 10 items per page
+  const [searchTerm, setSearchTerm] = useState(""); // Search term for Month
 
   // Fetch data from the backend
   useEffect(() => {
@@ -60,8 +63,8 @@ const SummaryMonthUserTable = () => {
       "ASR (%)",
     ];
     const rows = data.map((item) => [
-      `${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}`,
-      formatSessionTime(item.sessiontime),  // Format session time here
+      `${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}`, // Format month
+      formatSessionTime(item.sessiontime), // Format session time here
       item.nbcall.toFixed(2),
       item.nbcall_fail.toFixed(2),
       `${item.buycost.toFixed(2)} €`,
@@ -79,9 +82,39 @@ const SummaryMonthUserTable = () => {
     link.click();
   };
 
+  // Filter data based on search term
+  const filteredData = data.filter(item =>
+    `${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}`.includes(searchTerm)
+  );
+
+  // Calculate data for current page
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Generate page numbers
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  // Handle page change
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
   return (
     <div className="container mt-5">
       <h2 className="mb-4 text-center text-dark">Summary of Monthly User Data</h2>
+
+      {/* Search Bar */}
+      <div className="mb-3">
+        <input
+          type="text"
+          placeholder="Search by Month "
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="form-control"
+        />
+      </div>
 
       {/* Export CSV Button */}
       <div className="d-flex justify-content-end mb-3">
@@ -109,9 +142,9 @@ const SummaryMonthUserTable = () => {
             </tr>
           </thead>
           <tbody>
-            {data.map((item) => (
+            {currentItems.map((item) => (
               <tr key={item.id}>
-                <td>{item.month.slice(0, 7)}</td> {/* Format month as YYYY-MM */}
+                <td>{`${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}`}</td> {/* Format month as YYYY-MM */}
                 <td>{item.username}</td>
                 <td>{formatSessionTime(item.sessiontime)}</td> {/* Format session time */}
                 <td>{roundToTwoDecimalPlaces(item.aloc_all_calls)}</td> {/* Round allocated calls */}
@@ -124,6 +157,21 @@ const SummaryMonthUserTable = () => {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="d-flex justify-content-center mt-3">
+        <nav>
+          <ul className="pagination">
+            {pageNumbers.map((number) => (
+              <li className={`page-item ${number === currentPage ? 'active' : ''}`} key={number}>
+                <button className="page-link" onClick={() => handlePageChange(number)}>
+                  {number}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
     </div>
   );

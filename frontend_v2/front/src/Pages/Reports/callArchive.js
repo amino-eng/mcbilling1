@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Table, Button, Spinner, Modal, Form } from 'react-bootstrap';
+import { Table, Button, Spinner, Modal, Form, InputGroup } from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import Papa from 'papaparse';
 
@@ -9,8 +9,8 @@ const CallArchive = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const recordsPerPage = 10;
+  const [search, setSearch] = useState('');
 
-  // Column visibility state
   const [visibleColumns, setVisibleColumns] = useState({
     date: true,
     sip_user: true,
@@ -74,19 +74,32 @@ const CallArchive = () => {
     return <Spinner animation="border" />;
   }
 
+  // Filter records by search input for both SIP user and number
+  const filteredRecords = cdrArchive.filter(record =>
+    record.sip_user.toLowerCase().includes(search.toLowerCase()) ||
+    record.number.toString().includes(search) // Convert number to string for comparison
+  );
+
   // Pagination logic
   const offset = currentPage * recordsPerPage;
-  const currentRecords = cdrArchive.slice(offset, offset + recordsPerPage);
-  const pageCount = Math.ceil(cdrArchive.length / recordsPerPage);
+  const currentRecords = filteredRecords.slice(offset, offset + recordsPerPage);
+  const pageCount = Math.ceil(filteredRecords.length / recordsPerPage);
 
   return (
     <div>
       <h2>Call Archive</h2>
+      <InputGroup className="mb-3">
+        <Form.Control
+          placeholder="Search by SIP User or Number"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </InputGroup>
       <Button variant="success" onClick={exportToCSV} className="mb-3">
         Export CSV
       </Button>
       <Button variant="info" onClick={() => setShowModal(true)} className="mb-3">
-         Column
+        Column
       </Button>
 
       <Table striped bordered hover>

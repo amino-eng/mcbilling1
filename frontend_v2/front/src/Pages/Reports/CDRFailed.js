@@ -11,6 +11,7 @@ function CdrFailedTable() {
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState(""); // Single search term
 
   // Columns mapping
   const allColumns = [
@@ -26,7 +27,7 @@ function CdrFailedTable() {
   // State for column visibility
   const [visibleColumns, setVisibleColumns] = useState(
     allColumns.reduce((acc, col) => {
-      acc[col.key] = true; // Toutes les colonnes sont visibles par défaut
+      acc[col.key] = true; // All columns are visible by default
       return acc;
     }, {})
   );
@@ -52,18 +53,18 @@ function CdrFailedTable() {
     }
   };
 
-  // Fonction pour exporter les données en CSV
+  // Function to export data to CSV
   const exportToCSV = () => {
     const csvRows = [];
 
-    // Ajouter les en-têtes au CSV
+    // Add headers to CSV
     const headers = allColumns
       .filter((col) => visibleColumns[col.key])
       .map((col) => col.label)
       .join(",");
     csvRows.push(headers);
 
-    // Ajouter les données au CSV
+    // Add data to CSV
     cdrFailedData.forEach((row) => {
       const values = allColumns
         .filter((col) => visibleColumns[col.key])
@@ -71,7 +72,7 @@ function CdrFailedTable() {
       csvRows.push(values.join(","));
     });
 
-    // Créer un fichier CSV
+    // Create CSV file
     const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -95,7 +96,7 @@ function CdrFailedTable() {
     }
   };
 
-  // Composant Dropdown pour la visibilité des colonnes
+  // Column Visibility Dropdown component
   const ColumnVisibilityDropdown = ({ visibleColumns, setVisibleColumns, allColumns }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -137,6 +138,12 @@ function CdrFailedTable() {
     );
   };
 
+  // Filtered data based on the single search term
+  const filteredData = cdrFailedData.filter(cdr =>
+    (cdr.src.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     cdr.calledstation.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
   return (
     <div className="container mt-4">
       <ToastContainer />
@@ -150,7 +157,18 @@ function CdrFailedTable() {
         </div>
       ) : (
         <>
-          {/* Bouton pour exporter en CSV et menu déroulant des colonnes */}
+          {/* Search input for SIP User and Number */}
+          <div className="mb-3">
+            <input
+              type="text"
+              placeholder="Search by SIP User or Number"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="form-control"
+            />
+          </div>
+
+          {/* Button to export to CSV and column visibility dropdown */}
           <div className="mb-3 text-end">
             <button className="btn btn-success me-2" onClick={exportToCSV}>
               Export to CSV
@@ -162,13 +180,13 @@ function CdrFailedTable() {
             />
           </div>
 
-          {/* Tableau des données */}
+          {/* Data table */}
           <div className="table-responsive">
             <table className="table table-bordered table-striped shadow-sm text-center">
               <thead className="bg-dark text-white">
                 <tr>
                   {allColumns
-                    .filter((col) => visibleColumns[col.key]) // Filtrer les colonnes visibles
+                    .filter((col) => visibleColumns[col.key]) // Filter visible columns
                     .map((col, index) => (
                       <th key={index} className="p-3">
                         {col.label}
@@ -177,15 +195,15 @@ function CdrFailedTable() {
                 </tr>
               </thead>
               <tbody>
-                {cdrFailedData.length > 0 ? (
-                  cdrFailedData.map((cdr, index) => (
+                {filteredData.length > 0 ? (
+                  filteredData.map((cdr, index) => (
                     <tr key={index}>
                       {allColumns
-                        .filter((col) => visibleColumns[col.key]) // Filtrer les colonnes visibles
+                        .filter((col) => visibleColumns[col.key]) // Filter visible columns
                         .map((col, idx) => (
                           <td key={idx} className="p-2">
                             {col.key === "starttime"
-                              ? format(new Date(cdr[col.key]), "dd/MM/yyyy HH:mm:ss") // Formatage de la date
+                              ? format(new Date(cdr[col.key]), "dd/MM/yyyy HH:mm:ss") // Date formatting
                               : cdr[col.key] || <span className="text-muted">—</span>}
                           </td>
                         ))}
@@ -204,7 +222,7 @@ function CdrFailedTable() {
         </>
       )}
 
-      {/* Modal de confirmation pour la suppression */}
+      {/* Confirmation modal for deletion */}
       {showModal && (
         <div
           className="modal fade show d-block"

@@ -1,125 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import styled from "styled-components";
+import { Table, Button, Spinner, Dropdown, Form, Pagination } from "react-bootstrap";
 
-// Styled Components
-const TableContainer = styled.div`
-  width: 100%;
-  margin: 0;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-`;
-
-const Title = styled.h2`
-  text-align: center;
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  color: #333;
-  padding: 10px 0;
-`;
-
-const SearchInput = styled.input`
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 15px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 16px;
-`;
-
-const Table = styled.table`
-  width: 100%;
-  height: 100%;
-  border-collapse: collapse;
-  min-width: 800px;
-`;
-
-const TableHeader = styled.th`
-  background-color: #007bff;
-  color: white;
-  padding: 12px;
-  text-align: left;
-  border: 1px solid #ddd;
-`;
-
-const TableCell = styled.td`
-  padding: 10px;
-  border: 1px solid #ddd;
-`;
-
-const TableRow = styled.tr`
-  &:nth-child(even) {
-    background-color: #f2f2f2;
-  }
-  &:hover {
-    background-color: #ddd;
-  }
-`;
-
-const PaginationContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 15px;
-`;
-
-const Button = styled.button`
-  padding: 10px 15px;
-  margin: 0 5px;
-  border-radius: 5px;
-  border: none;
-  background-color: #007bff;
-  color: white;
-  cursor: pointer;
-  transition: background 0.3s;
-  &:hover {
-    background-color: #0056b3;
-  }
-  &:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-  }
-`;
-
-const LoadingSpinner = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100px;
-  font-size: 18px;
-  color: #007bff;
-`;
-
-const ErrorMessage = styled.p`
-  color: red;
-  text-align: center;
-  font-weight: bold;
-`;
-
-const DropdownContainer = styled.div`
-  position: relative;
-  display: inline-block;
-`;
-
-const DropdownContent = styled.div`
-  position: absolute;
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  padding: 10px;
-  z-index: 1000;
-  margin-top: 5px;
-`;
-
-const DropdownLabel = styled.label`
-  display: block;
-  margin: 5px 0;
-`;
-
-// Component
 const CDRTable = () => {
   const [cdrData, setCdrData] = useState([]);
   const [users, setUsers] = useState({});
@@ -127,9 +9,7 @@ const CDRTable = () => {
   const [pkgTrunks, setPkgTrunks] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [searchTerm, setSearchTerm] = useState(""); // State for search term
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [visibleColumns, setVisibleColumns] = useState({
     Date: true,
@@ -138,19 +18,21 @@ const CDRTable = () => {
     Number: true,
     Destination: true,
     Duration: true,
-    RealDuration: true,
+    RealDuration: false,
     Username: true,
     Trunk: true,
     Type: true,
     BuyPrice: true,
     SellPrice: true,
-    UniqueID: true,
-    Plan: true,
-    Campaign: true,
-    Server: true,
+    UniqueID: false,
+    Plan: false,
+    Campaign: false,
+    Server: false,
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [recordsPerPage] = useState(10);
 
   // Fetch CDR data
   useEffect(() => {
@@ -207,42 +89,18 @@ const CDRTable = () => {
     });
   }, []);
 
-  // Filter data based on search query
-  const filteredData = cdrData.filter((cdr) =>
-    [
-      cdr.callerid,
-      cdr.calledstation,
-      new Date(cdr.starttime).toLocaleString(),
-      cdr.uniqueid,
-      cdr.id_prefix,
-      cdr.id_campaign,
-    ].some((field) =>
-      field?.toString().toLowerCase().includes(search.toLowerCase())
-    )
+  // Pagination logic
+  const indexOfLastRecord = currentPage * recordsPerPage;
+  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+
+  // Filter records based on search term
+  const filteredRecords = cdrData.filter(cdr =>
+    cdr.callerid.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-  const handlePageChange = (newPage) => {
-    if (newPage >= 0 && newPage < totalPages) {
-      setPage(newPage);
-    }
-  };
+  const currentRecords = filteredRecords.slice(indexOfFirstRecord, indexOfLastRecord);
 
-  // Handle delete action
-  const handleDelete = async (id) => {
-    if (confirmDelete === id) {
-      try {
-        await axios.delete(`http://localhost:5000/api/admin/CDR/delete/${id}`);
-        setCdrData((prevData) => prevData.filter((cdr) => cdr.id !== id));
-      } catch (err) {
-        setError("Error deleting the record. Please try again.");
-      }
-      setConfirmDelete(null);
-    } else {
-      setConfirmDelete(id);
-    }
-  };
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   // Toggle column visibility
   const toggleColumnVisibility = (column) => {
@@ -272,7 +130,7 @@ const CDRTable = () => {
       .filter((column) => visibleColumns[column])
       .join(",");
 
-    const rows = filteredData
+    const rows = filteredRecords
       .map((cdr) =>
         Object.keys(visibleColumns)
           .filter((column) => visibleColumns[column])
@@ -330,97 +188,107 @@ const CDRTable = () => {
     document.body.removeChild(link);
   };
 
-  if (loading) return <LoadingSpinner>Loading...</LoadingSpinner>;
-  if (error) return <ErrorMessage>{error}</ErrorMessage>;
+  if (loading) return <Spinner animation="border" variant="primary" />;
+  if (error) return <p className="text-danger text-center">{error}</p>;
 
   return (
-    <TableContainer>
-      <Title>Call Detail Records (CDR)</Title>
-      <SearchInput
-        type="text"
-        placeholder="🔍 Search Caller ID, Number, or Date"
-        onChange={(e) => setSearch(e.target.value)}
-      />
-      <div style={{ display: "flex", gap: "10px", marginBottom: "15px" }}>
-        <DropdownContainer ref={dropdownRef}>
-          <Button onClick={() => setIsDropdownOpen(!isDropdownOpen)}>Columns</Button>
-          {isDropdownOpen && (
-            <DropdownContent>
-              {Object.keys(visibleColumns).map((column) => (
-                <DropdownLabel key={column}>
-                  <input
-                    type="checkbox"
-                    checked={visibleColumns[column]}
-                    onChange={() => toggleColumnVisibility(column)}
-                  />
-                  {column}
-                </DropdownLabel>
-              ))}
-            </DropdownContent>
-          )}
-        </DropdownContainer>
-        <Button onClick={exportToCSV}>Export CSV</Button>
+    <div className="container mt-4">
+      <h2 className="text-center">Call Detail Records (CDR)</h2>
+      <div className="d-flex mb-3">
+        <input
+          type="text"
+          placeholder="Search by Caller ID"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="form-control me-2"
+        />
+        <Dropdown ref={dropdownRef} className="me-2">
+          <Dropdown.Toggle variant="primary" id="dropdown-basic">
+            Columns
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            {Object.keys(visibleColumns).map((column) => (
+              <Dropdown.Item key={column}>
+                <Form.Check
+                  type="checkbox"
+                  label={column}
+                  checked={visibleColumns[column]}
+                  onChange={() => toggleColumnVisibility(column)}
+                />
+              </Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown>
+        <Button variant="primary" onClick={exportToCSV}>Export CSV</Button>
       </div>
-      <Table>
+      <Table striped bordered hover>
         <thead>
           <tr>
-            {visibleColumns.Date && <TableHeader>Date</TableHeader>}
-            {visibleColumns.SipUser && <TableHeader>Sip User</TableHeader>}
-            {visibleColumns.CallerID && <TableHeader>Caller ID</TableHeader>}
-            {visibleColumns.Number && <TableHeader>Number</TableHeader>}
-            {visibleColumns.Destination && <TableHeader>Destination</TableHeader>}
-            {visibleColumns.Duration && <TableHeader>Duration</TableHeader>}
-            {visibleColumns.RealDuration && <TableHeader>Real Duration</TableHeader>}
-            {visibleColumns.Username && <TableHeader>Username</TableHeader>}
-            {visibleColumns.Trunk && <TableHeader>Trunk</TableHeader>}
-            {visibleColumns.Type && <TableHeader>Type</TableHeader>}
-            {visibleColumns.BuyPrice && <TableHeader>Buy Price</TableHeader>}
-            {visibleColumns.SellPrice && <TableHeader>Sell Price</TableHeader>}
-            {visibleColumns.UniqueID && <TableHeader>Unique ID</TableHeader>}
-            {visibleColumns.Plan && <TableHeader>Plan</TableHeader>}
-            {visibleColumns.Campaign && <TableHeader>Campaign</TableHeader>}
-            {visibleColumns.Server && <TableHeader>Server</TableHeader>}
+            {visibleColumns.Date && <th>Date</th>}
+            {visibleColumns.SipUser && <th>Sip User</th>}
+            {visibleColumns.CallerID && <th>Caller ID</th>}
+            {visibleColumns.Number && <th>Number</th>}
+            {visibleColumns.Destination && <th>Destination</th>}
+            {visibleColumns.Duration && <th>Duration</th>}
+            {visibleColumns.RealDuration && <th>Real Duration</th>}
+            {visibleColumns.Username && <th>Username</th>}
+            {visibleColumns.Trunk && <th>Trunk</th>}
+            {visibleColumns.Type && <th>Type</th>}
+            {visibleColumns.BuyPrice && <th>Buy Price</th>}
+            {visibleColumns.SellPrice && <th>Sell Price</th>}
+            {visibleColumns.UniqueID && <th>Unique ID</th>}
+            {visibleColumns.Plan && <th>Plan</th>}
+            {visibleColumns.Campaign && <th>Campaign</th>}
+            {visibleColumns.Server && <th>Server</th>}
           </tr>
         </thead>
         <tbody>
-          {filteredData
-            .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
-            .map((cdr) => (
-              <TableRow key={cdr.id}>
-                {visibleColumns.Date && <TableCell>{new Date(cdr.starttime).toLocaleString()}</TableCell>}
-                {visibleColumns.SipUser && <TableCell>{cdr.src}</TableCell>}
-                {visibleColumns.CallerID && <TableCell>{cdr.callerid}</TableCell>}
-                {visibleColumns.Number && <TableCell>{cdr.calledstation}</TableCell>}
-                {visibleColumns.Destination && <TableCell>{cdr.id_prefix}</TableCell>}
-                {visibleColumns.Duration && <TableCell>{cdr.sessiontime} seconds</TableCell>}
-                {visibleColumns.RealDuration && <TableCell>{cdr.real_sessiontime} seconds</TableCell>}
-                {visibleColumns.Username && <TableCell>{cdr.username}</TableCell>}
-                {visibleColumns.Trunk && <TableCell>{cdr.trunkcode}</TableCell>}
-                {visibleColumns.Type && <TableCell>{cdr.type}</TableCell>}
-                {visibleColumns.BuyPrice && <TableCell>{cdr.buycost} €</TableCell>}
-                {visibleColumns.SellPrice && <TableCell>{cdr.sessionbill} €</TableCell>}
-                {visibleColumns.UniqueID && <TableCell>{cdr.uniqueid}</TableCell>}
-                {visibleColumns.Plan && <TableCell>{cdr.id_plan}</TableCell>}
-                {visibleColumns.Campaign && <TableCell>{cdr.id_campaign || "vide"}</TableCell>}
-                {visibleColumns.Server && <TableCell>{cdr.server_name}</TableCell>}
-                
-              </TableRow>
-            ))}
+          {currentRecords.map((cdr) => (
+            <tr key={cdr.id}>
+              {visibleColumns.Date && <td>{new Date(cdr.starttime).toLocaleString()}</td>}
+              {visibleColumns.SipUser && <td>{cdr.src}</td>}
+              {visibleColumns.CallerID && <td>{cdr.callerid}</td>}
+              {visibleColumns.Number && <td>{cdr.calledstation}</td>}
+              {visibleColumns.Destination && <td>{cdr.id_prefix}</td>}
+              {visibleColumns.Duration && <td>{cdr.sessiontime} seconds</td>}
+              {visibleColumns.RealDuration && <td>{cdr.real_sessiontime} seconds</td>}
+              {visibleColumns.Username && <td>{cdr.username}</td>}
+              {visibleColumns.Trunk && <td>{cdr.trunkcode}</td>}
+              {visibleColumns.Type && <td>{cdr.type}</td>}
+              {visibleColumns.BuyPrice && <td>{cdr.buycost} €</td>}
+              {visibleColumns.SellPrice && <td>{cdr.sessionbill} €</td>}
+              {visibleColumns.UniqueID && <td>{cdr.uniqueid}</td>}
+              {visibleColumns.Plan && <td>{cdr.id_plan}</td>}
+              {visibleColumns.Campaign && <td>{cdr.id_campaign || "vide"}</td>}
+              {visibleColumns.Server && <td>{cdr.server_name}</td>}
+            </tr>
+          ))}
         </tbody>
       </Table>
-      <PaginationContainer>
-        <Button onClick={() => handlePageChange(page - 1)} disabled={page <= 0}>
-          Prev
-        </Button>
-        <span>Page {page + 1} of {totalPages}</span>
-        <Button
-          onClick={() => handlePageChange(page + 1)}
-          disabled={page >= totalPages - 1}
-        >
-          Next
-        </Button>
-      </PaginationContainer>
-    </TableContainer>
+      <Pagination>
+        <Pagination.Prev
+          onClick={() => setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev))}
+          disabled={currentPage === 1}
+        />
+        {Array.from({ length: Math.ceil(filteredRecords.length / recordsPerPage) }, (_, i) => (
+          <Pagination.Item
+            key={i + 1}
+            active={i + 1 === currentPage}
+            onClick={() => paginate(i + 1)}
+          >
+            {i + 1}
+          </Pagination.Item>
+        ))}
+        <Pagination.Next
+          onClick={() =>
+            setCurrentPage((prev) =>
+              prev < Math.ceil(filteredRecords.length / recordsPerPage) ? prev + 1 : prev
+            )
+          }
+          disabled={currentPage === Math.ceil(filteredRecords.length / recordsPerPage)}
+        />
+      </Pagination>
+    </div>
   );
 };
 

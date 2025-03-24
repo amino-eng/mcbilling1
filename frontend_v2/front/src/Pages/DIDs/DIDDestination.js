@@ -1,14 +1,16 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
-import { Table, Container, Alert, Button, Pagination, Form, Dropdown } from 'react-bootstrap';
+import { Table, Container, Alert, Button, Pagination, Form, Dropdown, InputGroup, FormControl } from 'react-bootstrap';
 
 const App = () => {
     const [dids, setDids] = useState([]);
+    const [filteredDids, setFilteredDids] = useState([]);
     const [message, setMessage] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(5);
     const [user, setUser] = useState([]);
     const [sip, setSip] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
     const apiUrl = 'http://localhost:5000/api/admin/DIDDestination/affiche';
 
     // New state variables to hold form data
@@ -20,8 +22,6 @@ const App = () => {
         destinationType: 1, // Default to SIP
         sipUser: '',
     });
-    
-
 
     //fetch sip user
     const fetchSipUser = () => {
@@ -50,12 +50,30 @@ const App = () => {
             const result = await response.json();
             if (result.dids) {
                 setDids(result.dids);
+                setFilteredDids(result.dids);
             } else {
                 setMessage('No DIDs found');
             }
         } catch (error) {
             console.error('Error fetching DIDs:', error);
             setMessage('Failed to fetch data');
+        }
+    };
+
+    const handleSearch = (e) => {
+        const term = e.target.value.toLowerCase();
+        setSearchTerm(term);
+        if (term === '') {
+            setFilteredDids(dids);
+            setCurrentPage(1);
+        } else {
+            const filtered = dids.filter(did => 
+                did.did.toLowerCase().includes(term) || 
+                (did.username && did.username.toLowerCase().includes(term)) ||
+                getCallTypeLabel(did.Calltype).toLowerCase().includes(term)
+            );
+            setFilteredDids(filtered);
+            setCurrentPage(1);
         }
     };
 
@@ -111,6 +129,7 @@ const App = () => {
     const handleDelete = (id) => {
         if (window.confirm("Êtes-vous sûr de vouloir supprimer cet élément?")) {
             setDids((prevDids) => prevDids.filter((did) => did.id !== id));
+            setFilteredDids((prevDids) => prevDids.filter((did) => did.id !== id));
             setMessage('DID supprimé avec succès.');
         }
     };
@@ -146,7 +165,7 @@ const App = () => {
     
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentDIDs = dids.slice(indexOfFirstItem, indexOfLastItem);
+    const currentDIDs = filteredDids.slice(indexOfFirstItem, indexOfLastItem);
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -229,28 +248,28 @@ const App = () => {
                                 />
                             </Form.Group>
                             <Form.Group className="mb-3" controlId="formDestination">
-    <Form.Label>Destination</Form.Label>
-    <Form.Control
-        as="select"
-        name="destination"
-        value={newDidData.destination}
-        onChange={handleInputChange}
-    >
-        <option value="">Select Destination</option>
-        <option value="PSTN">PSTN</option>
-        <option value="SIP">SIP</option>
-        <option value="IVR">IVR</option>
-        <option value="CallingCard">Calling Card</option>
-        <option value="DirectExtension">Direct Extension</option>
-        <option value="CidCallback">Cid Callback</option>
-        <option value="0800Callback">0800 Callback</option>
-        <option value="Queue">Queue</option>
-        <option value="SipGroup">Sip Group</option>
-        <option value="Custom">Custom</option>
-        <option value="Context">Context</option>
-        <option value="MultiplesIPs">Multiples IPs</option>
-    </Form.Control>
-</Form.Group>
+                                <Form.Label>Destination</Form.Label>
+                                <Form.Control
+                                    as="select"
+                                    name="destination"
+                                    value={newDidData.destination}
+                                    onChange={handleInputChange}
+                                >
+                                    <option value="">Select Destination</option>
+                                    <option value="PSTN">PSTN</option>
+                                    <option value="SIP">SIP</option>
+                                    <option value="IVR">IVR</option>
+                                    <option value="CallingCard">Calling Card</option>
+                                    <option value="DirectExtension">Direct Extension</option>
+                                    <option value="CidCallback">Cid Callback</option>
+                                    <option value="0800Callback">0800 Callback</option>
+                                    <option value="Queue">Queue</option>
+                                    <option value="SipGroup">Sip Group</option>
+                                    <option value="Custom">Custom</option>
+                                    <option value="Context">Context</option>
+                                    <option value="MultiplesIPs">Multiples IPs</option>
+                                </Form.Control>
+                            </Form.Group>
 
                             <Form.Group className="mb-3" controlId="formSipUser">
                                 <Form.Label>SIP User</Form.Label>
@@ -263,7 +282,7 @@ const App = () => {
                                     <option value="">Select SIP User</option>
                                     {sip.map((sipUser) => (
                                         <option key={sipUser.id} value={sipUser.id}>
-                                            {sipUser.username}
+                                            {sipUser.name}
                                         </option>
                                     ))}
                                 </Form.Control>
@@ -280,6 +299,20 @@ const App = () => {
                     Exporter en CSV
                 </Button>
             </div>
+
+            {/* Barre de recherche ajoutée ici */}
+            <InputGroup className="mb-3">
+                <FormControl
+                    placeholder="Rechercher par DID, Username ou Type d'appel"
+                    aria-label="Rechercher"
+                    aria-describedby="basic-addon2"
+                    onChange={handleSearch}
+                    value={searchTerm}
+                />
+                <Button variant="outline-secondary" id="button-addon2">
+                    <i className="bi bi-search"></i>
+                </Button>
+            </InputGroup>
 
             <Table striped bordered hover className="mt-3">
                 <thead>
@@ -313,7 +346,7 @@ const App = () => {
             </Table>
 
             <Pagination>
-                {[...Array(Math.ceil(dids.length / itemsPerPage))].map((_, index) => (
+                {[...Array(Math.ceil(filteredDids.length / itemsPerPage))].map((_, index) => (
                     <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
                         {index + 1}
                     </Pagination.Item>

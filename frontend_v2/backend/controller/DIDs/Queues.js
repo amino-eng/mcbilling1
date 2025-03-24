@@ -76,7 +76,7 @@ exports.ajouterQueue = (req, res) => {
         servicelevel, 
         strategy, 
         joinempty, 
-        leavewhenempty, 
+        leavewhenempty,
         eventmemberstatus, 
         eventwhencalled, 
         reportholdtime, 

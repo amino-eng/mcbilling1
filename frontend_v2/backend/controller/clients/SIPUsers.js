@@ -133,6 +133,38 @@ exports.sipUsers = async (req, res) => {
 };
 
 
+
+// 📌 **Modifier un utilisateur SIP**
+exports.modifierSIPUser = (req, res) => {
+  const { id } = req.params; 
+  const { id_user, name, accountcode, host, status, allow } = req.body; 
+
+  if (!id) {
+      return res.status(400).json({ error: "ID est requis" });
+  }
+
+  const query = `
+      UPDATE pkg_sip 
+      SET id_user = ?, name = ?, accountcode = ?, host = ?, status = ?, allow = ? 
+      WHERE id = ?
+  `;
+
+  connection.query(query, [id_user, name, accountcode, host, status, allow, id], (error, result) => {
+      if (error) {
+          console.error("Erreur base de données:", error);
+          return res.status(500).json({ error: "Erreur base de données" });
+      }
+
+      if (result.affectedRows === 0) {
+          return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
+
+      res.status(200).json({ message: "Utilisateur SIP modifié avec succès" });
+  });
+};
+
+
+
 // Delete SIP User
 exports.supprimerSIPUser = (req, res) => {
   const sipId = req.params.id;

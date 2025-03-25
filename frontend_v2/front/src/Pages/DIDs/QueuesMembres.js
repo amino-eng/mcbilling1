@@ -4,6 +4,7 @@ import { Table, Spinner, Alert, Button, Modal, Form } from "react-bootstrap";
 import { saveAs } from "file-saver";
 
 const QueueMembersTable = () => {
+  const [queue, setQueue] = useState([]);
   const [queueMembers, setQueueMembers] = useState([]);
   const [filteredMembers, setFilteredMembers] = useState([]);
   const [users, setUsers] = useState([]);
@@ -14,48 +15,89 @@ const QueueMembersTable = () => {
   const [selectedQueue, setSelectedQueue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetching queue members
+  // Fetch Queues
   useEffect(() => {
-    axios.get("http://localhost:5000/api/admin/QueuesMembers/")
-      .then((response) => {
+    const fetchQueues = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/admin/Queues');
+        const data = await response.json();
+        setQueue(data.queues); 
+      } catch (error) {
+        console.error('Error fetching queues:', error);
+      }
+    };
+
+    fetchQueues();
+  }, []);
+
+  // Fetch Queue Members and Users on Mount
+  useEffect(() => {
+    const fetchQueueMembers = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/api/admin/QueuesMembers/");
         setQueueMembers(response.data.queueMembers);
         setFilteredMembers(response.data.queueMembers);
-        setLoading(false);
-      })
-      .catch((error) => {
+      } catch (error) {
         setError("Failed to fetch queue members");
+      } finally {
         setLoading(false);
-      });
+      }
+    };
 
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/api/admin/SIPUsers/nom");
+        setUsers(response.data.users);
+      } catch (error) {
+        console.error("Failed to fetch users:", error);
+      }
+    };
+
+    fetchQueueMembers();
     fetchUsers();
   }, []);
 
-  // Filter members based on search term
+  // Fetch Users when a specific Queue is selected
   useEffect(() => {
-    if (searchTerm === "") {
+    if (selectedQueue) {
+      const selectedQueueItem = queue.find(q => q.id === selectedQueue);
+      if (selectedQueueItem) {
+        const fetchUsersForQueue = async () => {
+          try {
+            const response = await fetch(`http://localhost:5000/api/admin/SIPUsers/nom?userId=${selectedQueueItem.id_user}`);
+            const data = await response.json();
+            setUsers(data.users); 
+          } catch (error) {
+            console.error('Error fetching SIP users:', error);
+          }
+        };
+        fetchUsersForQueue();
+      }
+    } else {
+      setUsers([]); // Reset users if no queue is selected
+    }
+  }, [selectedQueue, queue]);
+
+  // Filter Queue Members based on Search Term
+  useEffect(() => {
+    if (!searchTerm) {
       setFilteredMembers(queueMembers);
     } else {
-      const results = queueMembers.filter(member =>
-        member.queue_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.interface.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (member.name && member.name.toLowerCase().includes(searchTerm.toLowerCase()))
+      setFilteredMembers(
+        queueMembers.filter(member =>
+          member.queue_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          member.interface.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (member.name && member.name.toLowerCase().includes(searchTerm.toLowerCase()))
+        )
       );
-      setFilteredMembers(results);
     }
   }, [searchTerm, queueMembers]);
 
-  // Fetching users
-  const fetchUsers = () => {
-    axios.get("http://localhost:5000/api/admin/SIPUsers/nom")
-      .then(res => setUsers(res.data.users))
-      .catch(err => console.log(err));
-  };
-
-  // Exporting data to CSV
+  // Handle Export to CSV
   const handleCSVExport = () => {
     const csvData = [
-      ["Destination", "Queues", "sip", "Paused"],
-      ...filteredMembers.map((member) => [
+      ["Destination", "Queues", "SIP", "Paused"],
+      ...filteredMembers.map(member => [
         member.interface,
         member.queue_name,
         member.sip || "N/A",
@@ -63,37 +105,33 @@ const QueueMembersTable = () => {
       ]),
     ];
 
-    const csvContent = "data:text/csv;charset=utf-8," +
-      csvData.map((row) => row.join(",")).join("\n");
-
+    const csvContent = "data:text/csv;charset=utf-8," + csvData.map(row => row.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     saveAs(blob, "queue_members.csv");
   };
 
-  // Handling modal actions
+  // Handle Modal Open/Close
   const handleCloseModal = () => setShowModal(false);
   const handleShowModal = () => setShowModal(true);
 
-  // Handling form submission for adding new member
+  // Handle Add New Member
   const handleAddNewMember = () => {
     const newMemberData = {
-      queue_name: selectedQueue,
-      interface: `SIP/${selectedUser}`,
+      queue: selectedQueue,
       paused: document.getElementById("paused").value,
-      id_user: selectedUser
+      sipUser: selectedUser,
     };
 
     axios.post("http://localhost:5000/api/admin/QueuesMembers/ajouter", newMemberData)
-      .then((response) => {
+      .then(() => {
         alert("New Queue Member Added Successfully!");
-        // Refresh the list
         return axios.get("http://localhost:5000/api/admin/QueuesMembers/");
       })
-      .then((response) => {
+      .then(response => {
         setQueueMembers(response.data.queueMembers);
         setShowModal(false);
       })
-      .catch((error) => {
+      .catch(error => {
         setError("Failed to add new member: " + (error.response?.data?.error || error.message));
       });
   };
@@ -132,11 +170,11 @@ const QueueMembersTable = () => {
         </thead>
         <tbody>
           {filteredMembers.length > 0 ? (
-            filteredMembers.map((member, index) => (
+            filteredMembers.map((member) => (
               <tr key={member.id}>
                 <td>{member.interface}</td>
                 <td>{member.queue_name}</td>
-                <td>{member.name || "Vide"}</td>
+                <td>{member.user_username}</td>
                 <td>{member.paused === 0 ? "No" : "Yes"}</td>
               </tr>
             ))
@@ -155,27 +193,29 @@ const QueueMembersTable = () => {
           <Modal.Title>Add New Queue Member</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <form>
-            <div className="mb-3">
-              <label htmlFor="queue" className="form-label">Select Queue</label>
-              <select
-                className="form-select"
+          <Form>
+            {/* Queue Selection */}
+            <Form.Group className="mb-3" controlId="formQueueSelect">
+              <Form.Label>Select Queue</Form.Label>
+              <Form.Select
                 value={selectedQueue}
                 onChange={(e) => setSelectedQueue(e.target.value)}
                 required
+                aria-label="Select queue"
               >
                 <option value="">Select Queue</option>
-                {[...new Set(queueMembers.map(member => member.queue_name))].map((queueName, index) => (
-                  <option key={index} value={queueName}>
-                    {queueName}
+                {queue.map((queueItem) => (
+                  <option key={queueItem.id} value={queueItem.id}>
+                    {queueItem.name} {/* Display name of the queue */}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div className="mb-3">
-              <label htmlFor="user" className="form-label">Sip User</label>
-              <select
-                className="form-select"
+              </Form.Select>
+            </Form.Group>
+
+            {/* SIP User Selection */}
+            <Form.Group className="mb-3">
+              <Form.Label>SIP User</Form.Label>
+              <Form.Select
                 value={selectedUser}
                 onChange={(e) => setSelectedUser(e.target.value)}
                 required
@@ -186,16 +226,18 @@ const QueueMembersTable = () => {
                     {user.accountcode} || {user.name}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div className="mb-3">
-              <label htmlFor="paused" className="form-label">Paused</label>
-              <select className="form-control" id="paused" required>
+              </Form.Select>
+            </Form.Group>
+
+            {/* Paused Selection */}
+            <Form.Group className="mb-3">
+              <Form.Label>Paused</Form.Label>
+              <Form.Select id="paused" required>
                 <option value="0">No</option>
                 <option value="1">Yes</option>
-              </select>
-            </div>
-          </form>
+              </Form.Select>
+            </Form.Group>
+          </Form>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseModal}>

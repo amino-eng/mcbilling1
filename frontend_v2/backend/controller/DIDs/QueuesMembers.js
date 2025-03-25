@@ -29,6 +29,7 @@ exports.afficher = (req, res) => {
 };
 
 // Add a new Queue Member
+// Add a new Queue Member
 exports.ajouter = (req, res) => {
   const { queue, paused, sipUser } = req.body;
 
@@ -36,16 +37,46 @@ exports.ajouter = (req, res) => {
     return res.status(400).json({ error: "All fields are required" });
   }
 
-  const query = `
-    INSERT INTO pkg_queue_member (queue_name, interface, paused) 
-    VALUES (?, ?, ?)
-  `;
-
-  connection.query(query, [queue, paused, sipUser], (error, results) => {
+  // First, retrieve the id_user and name of the selected queue from the pkg_queue table
+  const queryQueue = 'SELECT id_user, name FROM pkg_queue WHERE id = ?'; // Fetch id_user and name
+  
+  connection.query(queryQueue, [queue], (error, results) => {
     if (error) return handleDatabaseError(res, error);
-    res.status(201).json({ message: "Queue Member added successfully", id: results.insertId });
+    
+    if (results.length === 0) {
+      return res.status(404).json({ error: "Queue not found" });
+    }
+    
+    const id_user = results[0].id_user;
+    const queueName = results[0].name; // Get the name of the queue
+    
+    // Now, check if the selected SIP user matches the id_user of the queue
+    const querySIPUser = 'SELECT * FROM pkg_sip WHERE id_user = ? AND id = ?';
+    
+    connection.query(querySIPUser, [id_user, sipUser], (error, sipResults) => {
+      if (error) return handleDatabaseError(res, error);
+      
+      if (sipResults.length === 0) {
+        return res.status(404).json({ error: "SIP User not found for the selected Queue's id_user" });
+      }
+
+      // Proceed with adding the new queue member
+      const queryInsert = `
+        INSERT INTO pkg_queue_member (queue_name, interface, paused, id_user) 
+        VALUES (?, ?, ?, ?)
+      `;
+      
+      connection.query(queryInsert, [queueName, `SIP/${sipResults[0].name}`, paused, id_user], (error, results) => {
+        if (error) return handleDatabaseError(res, error);
+        res.status(201).json({ message: "Queue Member added successfully", id: results.insertId });
+      });
+    });
   });
 };
+
+
+
+
 
 // Update a Queue Member
 exports.modifier = (req, res) => {

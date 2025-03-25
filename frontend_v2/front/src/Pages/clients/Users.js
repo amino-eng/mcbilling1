@@ -524,7 +524,7 @@ function Users() {
                     : 'Unknown Status'
                   : user[col] !== null && user[col] !== undefined
                   ? user[col].toString()
-                  : 'vide!'}
+                  : '0.0000'}
                 </td>
               ))}
               <td>

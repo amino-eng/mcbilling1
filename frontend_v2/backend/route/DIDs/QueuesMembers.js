@@ -6,7 +6,7 @@ const router = express.Router();
 router.get('/', afficher);
 
 // Add a new Queue Member
-router.post('/', ajouter);
+router.post('/ajouter',ajouter);
 
 // Update an existing Queue Member
 router.put('/:id', modifier);
@@ -14,4 +14,4 @@ router.put('/:id', modifier);
 // Delete a Queue Member
 router.delete('/:id', del);
 
-module.exports = router;
+module.exports = router;  

@@ -15,13 +15,13 @@ const QueueMembersTable = () => {
   const [selectedQueue, setSelectedQueue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch Queues
+
   useEffect(() => {
     const fetchQueues = async () => {
       try {
         const response = await fetch('http://localhost:5000/api/admin/Queues');
         const data = await response.json();
-        setQueue(data.queues); 
+        setQueue(data.queues); // Assuming the API response structure has a `queues` field
       } catch (error) {
         console.error('Error fetching queues:', error);
       }
@@ -30,7 +30,7 @@ const QueueMembersTable = () => {
     fetchQueues();
   }, []);
 
-  // Fetch Queue Members and Users on Mount
+  // Fetch queue members and users on mount
   useEffect(() => {
     const fetchQueueMembers = async () => {
       try {
@@ -57,28 +57,7 @@ const QueueMembersTable = () => {
     fetchUsers();
   }, []);
 
-  // Fetch Users when a specific Queue is selected
-  useEffect(() => {
-    if (selectedQueue) {
-      const selectedQueueItem = queue.find(q => q.id === selectedQueue);
-      if (selectedQueueItem) {
-        const fetchUsersForQueue = async () => {
-          try {
-            const response = await fetch(`http://localhost:5000/api/admin/SIPUsers/nom?userId=${selectedQueueItem.id_user}`);
-            const data = await response.json();
-            setUsers(data.users); 
-          } catch (error) {
-            console.error('Error fetching SIP users:', error);
-          }
-        };
-        fetchUsersForQueue();
-      }
-    } else {
-      setUsers([]); // Reset users if no queue is selected
-    }
-  }, [selectedQueue, queue]);
-
-  // Filter Queue Members based on Search Term
+  // Filter queue members based on search term
   useEffect(() => {
     if (!searchTerm) {
       setFilteredMembers(queueMembers);
@@ -93,7 +72,7 @@ const QueueMembersTable = () => {
     }
   }, [searchTerm, queueMembers]);
 
-  // Handle Export to CSV
+  // Export to CSV
   const handleCSVExport = () => {
     const csvData = [
       ["Destination", "Queues", "SIP", "Paused"],
@@ -110,11 +89,11 @@ const QueueMembersTable = () => {
     saveAs(blob, "queue_members.csv");
   };
 
-  // Handle Modal Open/Close
+  // Handle modal open/close
   const handleCloseModal = () => setShowModal(false);
   const handleShowModal = () => setShowModal(true);
 
-  // Handle Add New Member
+  // Handle adding a new queue member
   const handleAddNewMember = () => {
     const newMemberData = {
       queue: selectedQueue,
@@ -135,6 +114,7 @@ const QueueMembersTable = () => {
         setError("Failed to add new member: " + (error.response?.data?.error || error.message));
       });
   };
+
 
   if (loading) return <Spinner animation="border" />;
   if (error) return <Alert variant="danger">{error}</Alert>;
@@ -189,65 +169,66 @@ const QueueMembersTable = () => {
       </Table>
 
       <Modal show={showModal} onHide={handleCloseModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>Add New Queue Member</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            {/* Queue Selection */}
-            <Form.Group className="mb-3" controlId="formQueueSelect">
-              <Form.Label>Select Queue</Form.Label>
-              <Form.Select
-                value={selectedQueue}
-                onChange={(e) => setSelectedQueue(e.target.value)}
-                required
-                aria-label="Select queue"
-              >
-                <option value="">Select Queue</option>
-                {queue.map((queueItem) => (
-                  <option key={queueItem.id} value={queueItem.id}>
-                    {queueItem.name} {/* Display name of the queue */}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
+      <Modal.Header closeButton>
+        <Modal.Title>Add New Queue Member</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <Form>
+          {/* Queue Selection */}
+          <Form.Group className="mb-3" controlId="formQueueSelect">
+            <Form.Label>Select Queue</Form.Label>
+            <Form.Select
+              value={selectedQueue}
+              onChange={(e) => setSelectedQueue(e.target.value)}
+              required
+              aria-label="Select queue"
+            >
+              <option value="">Select Queue</option>
+              {queue.map((queueItem) => (
+                <option key={queueItem.id} value={queueItem.id}>
+                  {queueItem.name} {/* Display name of the queue */}
+                </option>
+              ))}
+            </Form.Select>
+          </Form.Group>
 
-            {/* SIP User Selection */}
-            <Form.Group className="mb-3">
-              <Form.Label>SIP User</Form.Label>
-              <Form.Select
-                value={selectedUser}
-                onChange={(e) => setSelectedUser(e.target.value)}
-                required
-              >
-                <option value="">Select User</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.accountcode} || {user.name}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
+          {/* SIP User Selection */}
+          <Form.Group className="mb-3">
+            <Form.Label>SIP User</Form.Label>
+            <Form.Select
+              value={selectedUser}
+              onChange={(e) => setSelectedUser(e.target.value)}
+              required
+            >
+              <option value="">Select User</option>
+              {users.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.accountcode} || {user.name}
+                </option>
+              ))}
+            </Form.Select>
+          </Form.Group>
 
-            {/* Paused Selection */}
-            <Form.Group className="mb-3">
-              <Form.Label>Paused</Form.Label>
-              <Form.Select id="paused" required>
-                <option value="0">No</option>
-                <option value="1">Yes</option>
-              </Form.Select>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseModal}>
-            Close
-          </Button>
-          <Button variant="primary" onClick={handleAddNewMember}>
-            Add
-          </Button>
-        </Modal.Footer>
-      </Modal>
+          {/* Paused Selection */}
+          <Form.Group className="mb-3">
+            <Form.Label>Paused</Form.Label>
+            <Form.Select id="paused" required>
+              <option value="0">No</option>
+              <option value="1">Yes</option>
+            </Form.Select>
+          </Form.Group>
+        </Form>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="secondary" onClick={handleCloseModal}>
+          Close
+        </Button>
+        <Button variant="primary" onClick={handleAddNewMember}>
+          Add
+        </Button>
+      </Modal.Footer>
+    </Modal>
+
     </div>
   );
 };

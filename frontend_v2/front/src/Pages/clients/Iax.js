@@ -9,7 +9,7 @@ const IaxTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [hiddenColumns, setHiddenColumns] = useState([
-    'Context', 'CallerID', 'Codec', 'NAT', 'Qualify', 'Dtmfmode', 'Insecure', 'Type'
+    'Context', 'CallerID', 'Codec', 'NAT', 'Qualify', 'Dtmfmode', 'Insecure', 'Type', 'IP',
   ]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newEntry, setNewEntry] = useState({

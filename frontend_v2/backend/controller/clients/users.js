@@ -36,7 +36,7 @@ exports.afficherPlans = (req, res) => {
   });
 };
 
-// Afficher tous les utilisateurs avec leurs informations associées (groupe, plan, agent, and sip count)
+// Afficher tous les utilisateurs avec leurs informations associées
 exports.afficherUtilisateurs = (req, res) => {
   const query = `
     SELECT 
@@ -65,13 +65,13 @@ exports.afficherUtilisateurs = (req, res) => {
   });
 };
 
+// Générer un PIN unique
 const generateUniquePin = () => {
   return new Promise((resolve, reject) => {
-    let pin;
     const checkPinQuery = "SELECT COUNT(*) AS count FROM pkg_user WHERE callingcard_pin = ?";
 
     const generatePin = () => {
-      pin = Math.floor(100000 + Math.random() * 900000);
+      const pin = Math.floor(100000 + Math.random() * 900000);
       connection.query(checkPinQuery, [pin], (err, results) => {
         if (err) {
           reject(err);
@@ -90,8 +90,8 @@ const generateUniquePin = () => {
   });
 };
 
+// Ajouter un utilisateur
 exports.ajouterUtilisateur = (req, res) => {
-  console.log("Request Body:", req.body);
   const {
     username,
     password,
@@ -112,18 +112,20 @@ exports.ajouterUtilisateur = (req, res) => {
     secret,
     allow,
     disallow,
-    deny // Add deny to the destructured request body
+    deny
   } = req.body;
 
   const getGroupIdQuery = "SELECT id FROM pkg_group_user WHERE id = ?";
   connection.query(getGroupIdQuery, [Number(id_group)], (err, results) => {
     if (err) {
       console.error("Group ID Error:", err);
-      return res.status(500).json({ error: "Erreur de base de données pour l'ID de groupe" });
+      return res.status(500).json({ error: "Database error for group ID" });
     }
 
     if (results.length === 0) {
-      return res.status(404).json({ error: "Groupe introuvable" });
+      console.log('group not found');
+      
+      return res.status(404).json({ error: "Group not found" });
     }
 
     const id_group_int = results[0].id;
@@ -132,11 +134,12 @@ exports.ajouterUtilisateur = (req, res) => {
     connection.query(getPlanIdQuery, [id_plan], (err, planResults) => {
       if (err) {
         console.error("Plan ID Error:", err);
-        return res.status(500).json({ error: "Erreur de base de données pour le plan" });
+        return res.status(500).json({ error: "Database error for plan" });
       }
 
       if (planResults.length === 0) {
-        return res.status(404).json({ error: "Plan introuvable" });
+        console.log('plan not found');
+        return res.status(500).json({ error: "Plan not found" });
       }
 
       const id_plan_int = planResults[0].id;
@@ -145,11 +148,12 @@ exports.ajouterUtilisateur = (req, res) => {
       connection.query(checkUserQuery, [username], (err, userResults) => {
         if (err) {
           console.error("User Check Error:", err);
-          return res.status(500).json({ error: "Erreur lors de la vérification de l'utilisateur" });
+          return res.status(500).json({ error: "Error checking user" });
         }
 
         if (userResults.length > 0) {
-          return res.status(400).json({ error: "L'utilisateur existe déjà" });
+          console.log('user already exists');
+          return res.status(400).json({ error: "User already exists" });
         }
 
         generateUniquePin().then(callingcard_pin => {
@@ -158,56 +162,55 @@ exports.ajouterUtilisateur = (req, res) => {
             id_group: id_group_int,
             id_group_agent: null,
             id_plan: id_plan_int,
-            username: username,
-            password: password,
+            username,
+            password,
             active: active || 1,
             language: language || 'en',
-            callingcard_pin: callingcard_pin
+            callingcard_pin
           };
 
           const insertUserQuery = "INSERT INTO pkg_user SET ?";
           connection.query(insertUserQuery, userData, (err, results) => {
             if (err) {
               console.error("User Insert Error:", err);
-              return res.status(500).json({ error: "Erreur lors de l'insertion de l'utilisateur" });
+              return res.status(500).json({ error: "Error inserting user" });
             }
 
             const userId = results.insertId;
 
             // Création des SIP users associés
-            const sipUsers = [];
-            for (let i = 1; i <= numberOfSipUsers; i++) {
-              const suffix = String(i).padStart(2, '0');
-              sipUsers.push([userId, `${username}-${suffix}`, `${username}-${suffix}`, 'dynamic', 1, 'all']);
-            }
+            const sipUsers = Array.from({ length: numberOfSipUsers }, (_, i) => [
+              userId,
+              `${username}-${String(i + 1).padStart(2, '0')}`,
+              `${username}-${String(i + 1).padStart(2, '0')}`,
+              'dynamic',
+              1,
+              'all'
+            ]);
 
             console.log("SIP Users to insert:", sipUsers);
 
             // Création des IAX users associés
-            const iaxUsers = [];
-            for (let i = 1; i <= numberOfIax; i++) {
-              const suffix = String(i).padStart(2, '0');
-              iaxUsers.push([
-                userId,
-                `${username}-iax${suffix}`,
-                `${username}-iax${suffix}`,
-                'dynamic',
-                'all',
-                '', // regexten
-                callerid || 'default_callerid',
-                context || 'default_context',
-                fromuser || 'default_fromuser',
-                fromdomain || 'default_fromdomain',
-                insecure || 'default_insecure',
-                mailbox || 'default_mailbox',
-                md5secret || 'default_md5secret',
-                permit || 'default_permit',
-                secret || 'default_secret', // Include secret if needed
-                username || 'default_username', // Include username if needed
-                disallow || 'default_disallow', // Include disallow if needed
-                deny || 'default_deny' // Provide a default value for deny
-              ]);
-            }
+            const iaxUsers = Array.from({ length: numberOfIax }, (_, i) => [
+              userId,
+              `${username}-iax${String(i + 1).padStart(2, '0')}`,
+              `${username}-iax${String(i + 1).padStart(2, '0')}`,
+              'dynamic',
+              'all',
+              '',
+              callerid || 'default_callerid',
+              context || 'default_context',
+              fromuser || 'default_fromuser',
+              fromdomain || 'default_fromdomain',
+              insecure || 'default_insecure',
+              mailbox || 'default_mailbox',
+              md5secret || 'default_md5secret',
+              permit || 'default_permit',
+              secret || 'default_secret',
+              username || 'default_username',
+              disallow || 'default_disallow',
+              deny || 'default_deny'
+            ]);
 
             console.log("IAX Users to insert:", iaxUsers);
 
@@ -217,10 +220,10 @@ exports.ajouterUtilisateur = (req, res) => {
               connection.query(insertSIPQuery, [sipUsers], (err) => {
                 if (err) {
                   console.error("SIP Insert Error:", err);
-                  return res.status(500).json({ error: "Erreur lors de la création des utilisateurs SIP" });
+                  return res.status(500).json({ error: "Error creating SIP users" });
                 }
 
-                // Insert IAX users
+                // Insert IAX users if any
                 if (iaxUsers.length > 0) {
                   const insertIAXQuery = `
                     INSERT INTO pkg_iax (
@@ -229,17 +232,16 @@ exports.ajouterUtilisateur = (req, res) => {
                       mailbox, md5secret, permit, secret, username, disallow, deny
                     ) VALUES ?
                   `;
-                  console.log("Executing IAX insert query:", insertIAXQuery, iaxUsers);
                   connection.query(insertIAXQuery, [iaxUsers], (err) => {
                     if (err) {
                       console.error("IAX Insert Error:", err);
-                      return res.status(500).json({ error: "Erreur lors de la création des utilisateurs IAX" });
+                      return res.status(500).json({ error: "Error creating IAX users" });
                     }
 
-                    res.status(201).json({ message: "Utilisateur, utilisateurs SIP et IAX ajoutés avec succès" });
+                    res.status(201).json({ message: "User, SIP, and IAX users added successfully" });
                   });
                 } else {
-                  res.status(201).json({ message: "Utilisateur et utilisateurs SIP ajoutés avec succès" });
+                  res.status(201).json({ message: "User and SIP users added successfully" });
                 }
               });
             } else {
@@ -252,52 +254,80 @@ exports.ajouterUtilisateur = (req, res) => {
                     mailbox, md5secret, permit, secret, username, disallow, deny
                   ) VALUES ?
                 `;
-                console.log("Executing IAX insert query:", insertIAXQuery, iaxUsers);
                 connection.query(insertIAXQuery, [iaxUsers], (err) => {
                   if (err) {
                     console.error("IAX Insert Error:", err);
-                    return res.status(500).json({ error: "Erreur lors de la création des utilisateurs IAX" });
+                    return res.status(500).json({ error: "Error creating IAX users" });
                   }
 
-                  res.status(201).json({ message: "Utilisateur et utilisateurs IAX ajoutés avec succès" });
+                  res.status(201).json({ message: "User and IAX users added successfully" });
                 });
               } else {
-                res.status(201).json({ message: "Utilisateur ajouté sans SIP ni IAX" });
+                res.status(201).json({ message: "User added without SIP or IAX" });
               }
             }
           });
         }).catch(err => {
           console.error("PIN Generation Error:", err);
-          return res.status(500).json({ error: "Erreur lors de la génération du code PIN unique" });
+          return res.status(500).json({ error: "Error generating unique PIN" });
         });
       });
     });
   });
 };
+
+// Supprimer un utilisateur
 exports.supprimerUtilisateur = (req, res) => {
   const { id } = req.params;
   const deleteQuery = "DELETE FROM pkg_user WHERE id = ?";
 
   connection.query(deleteQuery, [Number(id)], (err) => {
     if (err) {
-      return res.status(500).json(err);
+      return res.status(500).json({ error: "Error deleting user" });
     }
 
-    res.status(200).json({ message: "Utilisateur supprimé avec succès" });
+    res.status(200).json({ message: "User deleted successfully" });
   });
 };
 
+// Modifier un utilisateur
 exports.modifierUtilisateur = (req, res) => {
   const userId = req.params.id;
-  const { username, password, id_group, id_plan, language, active } = req.body;
+  const {
+    username,
+    password,
+    id_group,
+    id_plan,
+    language,
+    active,
+  } = req.body;
+console.log(req.body);
 
-  const query = "UPDATE pkg_user SET username = ?, password = ?, id_group = ?, id_plan = ?, language = ?, active = ? WHERE id = ?";
+  const query = `
+    UPDATE pkg_user 
+    SET 
+      username = ?, 
+      password = ?, 
+      id_group = ?, 
+      id_plan = ?, 
+      language = ?, 
+      active = ?
+    WHERE id = ?`; // Removed the comma before WHERE
 
-  connection.query(query, [username, password, id_group, id_plan, language, active, userId], (error, results) => {
+  connection.query(query, [
+    username,
+    password,
+    id_group,
+    id_plan,
+    language,
+    active,
+    userId
+  ], (error, results) => {
     if (error || results.affectedRows === 0) {
-      return res.status(500).json({ error: "Erreur de base de données" });
+      console.error("Database Update Error:", error);
+      return res.status(500).json({ error: "Database error" });
     }
 
-    res.status(200).json({ message: "Utilisateur modifié avec succès" });
+    res.status(200).json({ message: "User updated successfully" });
   });
 };

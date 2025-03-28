@@ -5,7 +5,6 @@ const router = express.Router();
 router.get('/nom',UsersIax);
 router.get('/affiche', afficherIax);
 router.post('/ajouter', ajouterIax);
-// router.put('/modifier/:id', modifierIax);
 router.delete('/delete/:id', supprimerIax);
 
 module.exports = router;

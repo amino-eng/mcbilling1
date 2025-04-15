@@ -7,7 +7,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import Sidebar from './layout/Sidebar';
 import Navbar from './layout/Navbar';
-import QueueDash from './Pages/DIDs/QueueDash';
 import DIDs from './Pages/DIDs/DIDs';
 import IVRs from './Pages/DIDs/IVRs';
 import DIDDestination from './Pages/DIDs/DIDDestination';
@@ -149,7 +148,6 @@ function App() {
               <Route path="/reports/CallArchive" element={<CallArchive />} />
               <Route path="/dashboard/activitydash" element={<ActivityDash />} />
               <Route path="/dashboard/rechargehistory" element={<RechargeHistory />} />
-              <Route path="/DIDs/Queue" element={<QueueDash />} />
               <Route path="/DIDs/DIDs" element={<DIDs />} />
               <Route path="/DIDs/DIDDestination" element={<DIDDestination />} />
               <Route path="/DIDs/DIDsUse" element={<DIDsUse />} />

@@ -54,11 +54,7 @@ const Sidebar = () => {
 
           {openMenus.DIDs && (
             <ul className="nav flex-column mt-2">
-              <li className="nav-item">
-  <Link to="/DIDs/Queue" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
-    <i className="bi bi-list-ol me-2"></i> QueueDash
-  </Link>
-</li>
+              
 <li className="nav-item">
   <Link to="/DIDs/DIDs" className="nav-link text-dark py-3 px-3 bg-light rounded hover-effect">
     <i className="bi bi-telephone me-2"></i> DIDs

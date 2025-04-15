@@ -3,10 +3,10 @@ const mysql =require("mysql2")
 // Database connection configuration
   
     const connection = mysql.createConnection({
-        host: '213.32.34.34',       // Replace with your database IP
-        user: 'vicidial2',      // Replace with your database username
-        password: 'vicidial2',  // Replace with your database password
-        database: 'mbilling',   // Replace with your database name
+        host: '213.32.34.34',  
+        user: 'vicidial2',      
+        password: 'vicidial2', 
+        database: 'mbilling',   
         port:3306
            
       });

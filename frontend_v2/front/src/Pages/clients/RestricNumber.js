@@ -17,6 +17,8 @@ function RestricNumber() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   const [sortDirection, setSortDirection] = useState('asc');
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentRestrictionId, setCurrentRestrictionId] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -53,8 +55,7 @@ function RestricNumber() {
 
   const formatDateTime = (dateTime) => {
     const date = new Date(dateTime);
-    const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear().toString().slice(-2)} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
-    return formattedDate;
+    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear().toString().slice(-2)} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
   };
 
   const handleAddRestriction = async () => {
@@ -64,29 +65,41 @@ function RestricNumber() {
     }
 
     const now = new Date();
-    const formattedDate = formatDateTime(now); // Format the current date and time
+    const formattedDate = formatDateTime(now); 
 
     const data = {
       number: phoneNumber,
       direction: restrictionType,
       id_user: selectedUser,
-      date: formattedDate // Use the formatted date and time
+      date: formattedDate
     };
-
-    console.log('Data being sent:', data);
 
     setLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/admin/agent/add', data);
-      toast.success('Restriction ajoutée avec succès !');
+      if (isEditing) {
+        await axios.put(`http://localhost:5000/api/admin/agent/edit/${currentRestrictionId}`, data);
+        toast.success('Restriction modifiée avec succès !');
+      } else {
+        await axios.post('http://localhost:5000/api/admin/agent/add', data);
+        toast.success('Restriction ajoutée avec succès !');
+      }
       resetForm();
       fetchData();
     } catch (error) {
-      console.error("Erreur lors de l'ajout de la restriction:", error.response?.data || error);
-      toast.error("Erreur lors de l'ajout de la restriction.");
+      console.error("Erreur lors de l'ajout de la restriction:", error);
+      toast.error(isEditing ? "Erreur lors de la modification de la restriction." : "Erreur lors de l'ajout de la restriction.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEditRestriction = (restriction) => {
+    setPhoneNumber(restriction.number);
+    setRestrictionType(restriction.direction);
+    setSelectedUser(restriction.id_user);
+    setCurrentRestrictionId(restriction.id);
+    setIsEditing(true);
+    setShowForm(true);
   };
 
   const handleDeleteRestriction = async (restrictionId) => {
@@ -111,6 +124,8 @@ function RestricNumber() {
     setSelectedUser('');
     setShowForm(false);
     setError('');
+    setIsEditing(false);
+    setCurrentRestrictionId(null);
   };
 
   const filteredPhoneData = useMemo(() => {
@@ -173,17 +188,20 @@ function RestricNumber() {
                   <td>{e.agent?.username}</td>
                   <td>{e.number}</td>
                   <td>{e.direction === 2 ? 'Entrant' : 'Sortant'}</td>
-                  <td>{formatDateTime(e.date)}</td> {/* Format the date for display */}
+                  <td>{formatDateTime(e.date)}</td>
                   <td>
                     <button className="btn btn-danger btn-sm" onClick={() => handleDeleteRestriction(e.id)}>
                       Supprimer
+                    </button>
+                    <button className="btn btn-warning btn-sm ms-1" onClick={() => handleEditRestriction(e)}>
+                      Modifier
                     </button>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="4" className="text-center">Aucune restriction trouvée</td>
+                <td colSpan="5" className="text-center">Aucune restriction trouvée</td>
               </tr>
             )}
           </tbody>
@@ -242,12 +260,12 @@ function RestricNumber() {
           <input
             type="text"
             className="form-control mt-2"
-            value={formatDateTime(new Date())} // Display the current date and time
+            value={formatDateTime(new Date())}
             readOnly
           />
 
           <button className="btn btn-success mt-2" onClick={handleAddRestriction} disabled={loading}>
-            Confirmer
+            {isEditing ? 'Modifier' : 'Confirmer'}
           </button>
         </div>
       )}

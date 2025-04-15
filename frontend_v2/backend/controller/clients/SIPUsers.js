@@ -138,7 +138,7 @@ exports.modifierSIPUser = (req, res) => {
   const { id } = req.params; 
   const { id_user, name, accountcode, host, status, allow } = req.body; 
 
-  console.log('Received update request with:', { id, id_user, name, accountcode, host, status, allow }); // Add this line
+  console.log('Received update request with:', { id, id_user, name, accountcode, host, status, allow });
 
   if (!id) {
       return res.status(400).json({ error: "ID est requis" });
@@ -150,11 +150,14 @@ exports.modifierSIPUser = (req, res) => {
       WHERE id = ?
   `;
 
+  console.log("Executing query:", {
+      query,
+      params: [id_user, name, accountcode, host, status, allow, id]
+  });
+
   connection.query(query, [id_user, name, accountcode, host, status, allow, id], (error, result) => {
       if (error) {
-          console.error("Full database error:", error); // More detailed logging
-          console.error("SQL Error Code:", error.code);
-          console.error("SQL Error Message:", error.sqlMessage);
+          console.error("Full database error:", error);
           return res.status(500).json({ 
               error: "Erreur base de données",
               details: {

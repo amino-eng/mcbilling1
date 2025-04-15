@@ -45,7 +45,7 @@ const SIPUsers = () => {
         allow: ''
     });
     const [selectedUser, setSelectedUser] = useState("");
-    const [users, setUsers] = useState([]); // Changed from 'user' to 'users'
+    const [users, setUsers] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [editingId, setEditingId] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
@@ -53,7 +53,7 @@ const SIPUsers = () => {
 
     const fetchUsers = () => {
         axios.get('http://localhost:5000/api/admin/SIPUsers/nom')
-            .then(res => setUsers(res.data?.users || [])) // Added null check
+            .then(res => setUsers(res.data?.users || []))
             .catch(err => {
                 console.log(err);
                 setUsers([]);
@@ -63,7 +63,7 @@ const SIPUsers = () => {
     const fetchSIPUsers = async () => {
         try {
             const response = await axios.get("http://localhost:5000/api/admin/SIPUsers/affiche");
-            setSipUsers(response.data?.sipUsers || []); // Added null check
+            setSipUsers(response.data?.sipUsers || []);
         } catch (error) {
             console.error("Error fetching data:", error);
             setSipUsers([]);
@@ -240,6 +240,32 @@ const SIPUsers = () => {
             console.error("Error updating data:", error.response ? error.response.data : error.message);
             alert(`Error: ${error.response ? error.response.data.error : error.message}`);
         }
+    };
+
+    const exportToCSV = () => {
+        const csvRows = [];
+        const headers = ["ID", "Name", "Account Code", "Host", "Status"];
+        csvRows.push(headers.join(","));
+
+        sipUsers.forEach(user => {
+            const row = [
+                user.id_user,
+                user.name,
+                user.accountcode,
+                user.host,
+                user.status === 1 ? 'unregistered' : user.status === 0 ? 'unmonitored' : 'unknown'
+            ];
+            csvRows.push(row.join(","));
+        });
+
+        const csvString = csvRows.join("\n");
+        const blob = new Blob([csvString], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('href', url);
+        a.setAttribute('download', 'sip_users.csv');
+        a.click();
+        window.URL.revokeObjectURL(url);
     };
 
     useEffect(() => {
@@ -651,6 +677,9 @@ const SIPUsers = () => {
             }} className="mb-3">
                 Add SIP User
             </Button>
+            <Button variant="success" onClick={exportToCSV} className="mb-3 ms-2">
+                Export to CSV
+            </Button>
             <Form.Control
                 type="text"
                 placeholder="Search by Name"
@@ -674,7 +703,9 @@ const SIPUsers = () => {
                             <td>{user.name}</td>
                             <td>{user.accountcode}</td>
                             <td>{user.host}</td>
-                            <td>{user.status}</td>
+                            <td>
+                                {user.status === 1 ? 'unregistered' : user.status === 0 ? 'unmonitored' : 'unknown'}
+                            </td>
                             <td>
                                 <Button variant="info" onClick={() => handleEdit(user)} className="me-2">
                                     Edit

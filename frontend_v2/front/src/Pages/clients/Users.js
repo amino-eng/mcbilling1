@@ -50,7 +50,8 @@ function Users() {
     VAT: '',
     Contractvalue: '',
     DIST: '',
-    numberOfIax: 0,
+    numberOfSipUsers: 1,
+    numberOfIax: 1,
     expirationDate: '',
     call: '',
     DIsk: '',
@@ -87,7 +88,8 @@ function Users() {
     VAT: '',
     Contractvalue: '',
     DIST: '',
-    numberOfIax: 0,
+    numberOfSipUsers: 1,
+    numberOfIax: 1,
     expirationDate: '',
     call: '',
     DIsk: '',
@@ -279,7 +281,12 @@ function Users() {
   // Gestion des changements de formulaire
   const handleNewUserChange = (e) => {
     const { name, value } = e.target;
-    setNewUser(prevState => ({ ...prevState, [name]: value }));
+    // Ensure numberOfSipUsers is an integer
+    if (name === "numberOfSipUsers") {
+      setNewUser(prevState => ({ ...prevState, [name]: parseInt(value, 10) || 0 }));
+    } else {
+      setNewUser(prevState => ({ ...prevState, [name]: value }));
+    }
   };
 
   const handleEditUserChange = (e) => {
@@ -290,6 +297,7 @@ function Users() {
   // Soumission du formulaire New User
   const handleNewUserSubmit = async (e) => {
     e.preventDefault();
+    
     const statusMapping = {
       'Active': 1,
       'Inactive': 0,
@@ -297,9 +305,9 @@ function Users() {
       'Blocked': 3,
       'Blocked In Out': 4
     };
-
+  
     const activeStatus = statusMapping[newUser.status] !== undefined ? statusMapping[newUser.status] : 0;
-
+  
     const userData = {
       username: newUser.username,
       password: newUser.password || generateSecurePassword(),
@@ -308,6 +316,7 @@ function Users() {
       language: newUser.language,
       active: activeStatus,
       email: newUser.Email,
+      numberOfSipUsers: newUser.numberOfSipUsers,  // Ensure this is correct
       numberOfIax: newUser.numberOfIax,
       company: newUser.company,
       company_name: newUser.companyn,
@@ -333,7 +342,9 @@ function Users() {
       restriction: newUser.restriction,
       description: newUser.description
     };
-
+  
+    console.log('User Data to send:', userData);  // Debugging log
+  
     try {
       const response = await fetch('http://localhost:5000/api/admin/users/ajouter', {
         method: 'POST',
@@ -342,11 +353,11 @@ function Users() {
         },
         body: JSON.stringify(userData),
       });
-
+  
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-
+  
       const result = await response.json();
       console.log('User added:', result);
       fetchUsers();
@@ -360,14 +371,13 @@ function Users() {
         status: 'Active',
         country: 'United States/Canada',
         description: '',
-        // Reset all other fields...
-        numberOfIax: 0
+        numberOfSipUsers: 1,
+        numberOfIax: 1
       });
     } catch (error) {
       console.error('Error adding user:', error);
     }
   };
-
   // Soumission du formulaire Edit User
   const handleEditUserSubmit = async (e) => {
     e.preventDefault();
@@ -458,7 +468,8 @@ console.log(userData);
       VAT: userToEdit.vat || '',
       Contractvalue: userToEdit.contract_value || '',
       DIST: userToEdit.dist || '',
-      numberOfIax: userToEdit.numberOfIax || 0,
+      numberOfSipUsers: userToEdit.numberOfSipUsers || 0,
+           numberOfIax: userToEdit.numberOfIax || 0,
       expirationDate: userToEdit.expiration_date || '',
       call: userToEdit.call_limit || '',
       DIsk: userToEdit.disk_space || '',

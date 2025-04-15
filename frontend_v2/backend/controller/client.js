@@ -105,12 +105,29 @@ exports.userRestrict = async (req, res) => {
     res.json(err);  // Send error if something goes wrong
   }
 };
+
+// Modifier une restriction
+exports.editRestriction = async (req, res) => {
+  const { id } = req.params;
+  const { number, direction, id_user, date } = req.body;
+
+  const query = `UPDATE pkg_restrict_phone SET number = ?, direction = ?, id_user = ?, date = ? WHERE id = ?`;
+  connection.query(query, [number, direction, id_user, date, id], (error, results) => {
+    if (error) {
+      console.error('Database error:', error);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    return res.status(200).json({ message: 'Restriction updated successfully' });
+  });
+};
+
+
 //fonction supprimer
 exports.delete= async (req,res)=>{
    
         const restrictionId = req.params.id;
         
-        const sql = 'DELETE FROM restrictions WHERE id = ?';
+        const sql = 'DELETE FROM pkg_restrict_phone WHERE id = ?';
         
         connection.query(sql, [restrictionId], (err, result) => {
           if (err) {

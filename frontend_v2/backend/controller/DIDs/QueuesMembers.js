@@ -78,26 +78,52 @@ exports.ajouter = (req, res) => {
 
 
 
-// Update a Queue Member
-exports.modifier = (req, res) => {
-  const memberId = req.params.id;
-  const { queue_name, member_name, id_user } = req.body;
-
-  if (!queue_name || !member_name || !id_user) {
-    return res.status(400).json({ error: "All fields are required" });
+exports.bulkUpdate = async (req, res) => {
+  try {
+    const { updates } = req.body;
+    const conn = await connection.promise().getConnection();
+    
+    await conn.beginTransaction();
+    
+    try {
+      for (const update of updates) {
+        await conn.query(
+          'UPDATE pkg_queue_member SET ? WHERE id = ?',
+          [update, update.id]
+        );
+      }
+      
+      await conn.commit();
+      res.json({ message: 'Bulk update successful' });
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      conn.release();
+    }
+  } catch (error) {
+    handleDatabaseError(res, error);
   }
+};
 
-  const query = `
-    UPDATE pkg_queue_member 
-    SET queue_name = ?, member_name = ?, id_user = ? 
-    WHERE id = ?
-  `;
-
-  connection.query(query, [queue_name, member_name, id_user, memberId], (error, results) => {
-    if (error) return handleDatabaseError(res, error);
-    if (results.affectedRows === 0) return res.status(404).json({ message: "Queue Member not found" });
-    res.status(200).json({ message: "Queue Member updated successfully" });
-  });
+exports.modifier = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+    
+    const [result] = await connection.promise().query(
+      'UPDATE pkg_queue_member SET ? WHERE id = ?',
+      [updateData, id]
+    );
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Queue member not found' });
+    }
+    
+    res.json({ message: 'Update successful' });
+  } catch (error) {
+    handleDatabaseError(res, error);
+  }
 };
 
 // Delete a Queue Member

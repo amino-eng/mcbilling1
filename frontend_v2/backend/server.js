@@ -26,6 +26,8 @@ const routeDIDUse = require("./route/DIDs/DIDUse");
 const routeIVRs = require("./route/DIDs/IVRs");
 const routeQueuesMembers = require("./route/DIDs/QueuesMembers");
 const routeQueues = require("./route/DIDs/Queues");
+const routeProviders = require("./route/routes/Providers");
+const routeTrunks = require("./route/routes/trunks");
 
 
 
@@ -57,8 +59,9 @@ app.use("/api/admin/DIDUse", routeDIDUse);
 app.use("/api/admin/IVRs", routeIVRs);
 app.use("/api/admin/QueuesMembers", routeQueuesMembers);
 app.use("/api/admin/Queues", routeQueues);
-
 app.use("/api/admin/Iax", routeIax);
+app.use("/api/admin/Providers", routeProviders);
+app.use("/api/admin/Trunks", routeTrunks);
 
 
 

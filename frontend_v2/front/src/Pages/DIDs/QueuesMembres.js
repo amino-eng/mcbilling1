@@ -14,14 +14,18 @@ const QueueMembersTable = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedQueue, setSelectedQueue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-
+  const [editingId, setEditingId] = useState(null);
+  const [modifiedMembers, setModifiedMembers] = useState({});
+  const [showBulkEditModal, setShowBulkEditModal] = useState(false);
+  const [bulkEditField, setBulkEditField] = useState("");
+  const [bulkEditValue, setBulkEditValue] = useState("");
 
   useEffect(() => {
     const fetchQueues = async () => {
       try {
         const response = await fetch('http://localhost:5000/api/admin/Queues');
         const data = await response.json();
-        setQueue(data.queues); // Assuming the API response structure has a `queues` field
+        setQueue(data.queues);
       } catch (error) {
         console.error('Error fetching queues:', error);
       }
@@ -30,7 +34,6 @@ const QueueMembersTable = () => {
     fetchQueues();
   }, []);
 
-  // Fetch queue members and users on mount
   useEffect(() => {
     const fetchQueueMembers = async () => {
       try {
@@ -57,7 +60,6 @@ const QueueMembersTable = () => {
     fetchUsers();
   }, []);
 
-  // Filter queue members based on search term
   useEffect(() => {
     if (!searchTerm) {
       setFilteredMembers(queueMembers);
@@ -72,7 +74,6 @@ const QueueMembersTable = () => {
     }
   }, [searchTerm, queueMembers]);
 
-  // Export to CSV
   const handleCSVExport = () => {
     const csvData = [
       ["Destination", "Queues", "SIP", "Paused"],
@@ -89,11 +90,9 @@ const QueueMembersTable = () => {
     saveAs(blob, "queue_members.csv");
   };
 
-  // Handle modal open/close
   const handleCloseModal = () => setShowModal(false);
   const handleShowModal = () => setShowModal(true);
 
-  // Handle adding a new queue member
   const handleAddNewMember = () => {
     const newMemberData = {
       queue: selectedQueue,
@@ -115,6 +114,63 @@ const QueueMembersTable = () => {
       });
   };
 
+  // New functions for bulk editing
+  const handleBulkEditStart = () => {
+    setShowBulkEditModal(true);
+  };
+
+  const handleBulkEditSave = () => {
+    const updates = Object.entries(modifiedMembers).map(([id, changes]) => ({
+      id: parseInt(id),
+      ...changes
+    }));
+
+    if (updates.length === 0) {
+      alert("No changes to save");
+      return;
+    }
+
+    axios.put("http://localhost:5000/api/admin/QueuesMembers/bulk", { updates })
+      .then(() => {
+        alert("Bulk update successful!");
+        return axios.get("http://localhost:5000/api/admin/QueuesMembers/");
+      })
+      .then(response => {
+        setQueueMembers(response.data.queueMembers);
+        setModifiedMembers({});
+      })
+      .catch(error => {
+        setError("Failed to bulk update: " + (error.response?.data?.error || error.message));
+      })
+      .finally(() => {
+        setShowBulkEditModal(false);
+      });
+  };
+
+  const handleBulkFieldChange = () => {
+    const newModifiedMembers = { ...modifiedMembers };
+    
+    filteredMembers.forEach(member => {
+      if (!newModifiedMembers[member.id]) {
+        newModifiedMembers[member.id] = {};
+      }
+      newModifiedMembers[member.id][bulkEditField] = bulkEditValue;
+    });
+
+    setModifiedMembers(newModifiedMembers);
+    setShowBulkEditModal(false);
+    alert(`Bulk edit applied to ${filteredMembers.length} members`);
+  };
+
+  const handleFieldChange = (id, fieldName, value) => {
+    setModifiedMembers(prev => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        [fieldName]: value
+      }
+    }));
+  };
 
   if (loading) return <Spinner animation="border" />;
   if (error) return <Alert variant="danger">{error}</Alert>;
@@ -134,8 +190,11 @@ const QueueMembersTable = () => {
         <Button variant="primary" onClick={handleCSVExport} className="me-2">
           Export CSV
         </Button>
-        <Button variant="success" onClick={handleShowModal}>
+        <Button variant="success" onClick={handleShowModal} className="me-2">
           Add New
+        </Button>
+        <Button variant="warning" onClick={handleBulkEditStart}>
+          Bulk Edit
         </Button>
       </div>
 
@@ -146,21 +205,53 @@ const QueueMembersTable = () => {
             <th>Queues</th>
             <th>Username</th>
             <th>Paused</th>
+           
           </tr>
         </thead>
         <tbody>
           {filteredMembers.length > 0 ? (
             filteredMembers.map((member) => (
               <tr key={member.id}>
-                <td>{member.interface}</td>
-                <td>{member.queue_name}</td>
+                <td>
+                  {modifiedMembers[member.id]?.interface !== undefined ? (
+                    <Form.Control
+                      value={modifiedMembers[member.id].interface}
+                      onChange={(e) => handleFieldChange(member.id, 'interface', e.target.value)}
+                    />
+                  ) : (
+                    member.interface
+                  )}
+                </td>
+                <td>
+                  {modifiedMembers[member.id]?.queue_name !== undefined ? (
+                    <Form.Control
+                      value={modifiedMembers[member.id].queue_name}
+                      onChange={(e) => handleFieldChange(member.id, 'queue_name', e.target.value)}
+                    />
+                  ) : (
+                    member.queue_name
+                  )}
+                </td>
                 <td>{member.user_username}</td>
-                <td>{member.paused === 0 ? "No" : "Yes"}</td>
+                <td>
+                  {modifiedMembers[member.id]?.paused !== undefined ? (
+                    <Form.Select
+                      value={modifiedMembers[member.id].paused}
+                      onChange={(e) => handleFieldChange(member.id, 'paused', e.target.value)}
+                    >
+                      <option value="0">No</option>
+                      <option value="1">Yes</option>
+                    </Form.Select>
+                  ) : (
+                    member.paused === 0 ? "No" : "Yes"
+                  )}
+                </td>
+                
               </tr>
-            ))
+            ))   
           ) : (
             <tr>
-              <td colSpan="4" className="text-center">
+              <td colSpan="5" className="text-center">
                 {searchTerm ? "No matching members found" : "No Queue Members Found"}
               </td>
             </tr>
@@ -168,67 +259,115 @@ const QueueMembersTable = () => {
         </tbody>
       </Table>
 
+      {Object.keys(modifiedMembers).length > 0 && (
+        <div className="text-end mt-3">
+          <Button variant="success" onClick={handleBulkEditSave}>
+            Save All Changes ({Object.keys(modifiedMembers).length})
+          </Button>
+        </div>
+      )}
+
+      {/* Add New Member Modal */}
       <Modal show={showModal} onHide={handleCloseModal}>
-      <Modal.Header closeButton>
-        <Modal.Title>Add New Queue Member</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <Form>
-          {/* Queue Selection */}
-          <Form.Group className="mb-3" controlId="formQueueSelect">
-            <Form.Label>Select Queue</Form.Label>
-            <Form.Select
-              value={selectedQueue}
-              onChange={(e) => setSelectedQueue(e.target.value)}
-              required
-              aria-label="Select queue"
-            >
-              <option value="">Select Queue</option>
-              {queue.map((queueItem) => (
-                <option key={queueItem.id} value={queueItem.id}>
-                  {queueItem.name} {/* Display name of the queue */}
-                </option>
-              ))}
-            </Form.Select>
-          </Form.Group>
+        <Modal.Header closeButton>
+          <Modal.Title>Add New Queue Member</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3" controlId="formQueueSelect">
+              <Form.Label>Select Queue</Form.Label>
+              <Form.Select
+                value={selectedQueue}
+                onChange={(e) => setSelectedQueue(e.target.value)}
+                required
+                aria-label="Select queue"
+              >
+                <option value="">Select Queue</option>
+                {queue.map((queueItem) => (
+                  <option key={queueItem.id} value={queueItem.id}>
+                    {queueItem.name}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
 
-          {/* SIP User Selection */}
+            <Form.Group className="mb-3">
+              <Form.Label>SIP User</Form.Label>
+              <Form.Select
+                value={selectedUser}
+                onChange={(e) => setSelectedUser(e.target.value)}
+                required
+              >
+                <option value="">Select User</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.accountcode} || {user.name}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Paused</Form.Label>
+              <Form.Select id="paused" required>
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+              </Form.Select>
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseModal}>
+            Close
+          </Button>
+          <Button variant="primary" onClick={handleAddNewMember}>
+            Add
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Bulk Edit Modal */}
+      <Modal show={showBulkEditModal} onHide={() => setShowBulkEditModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Bulk Edit</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
           <Form.Group className="mb-3">
-            <Form.Label>SIP User</Form.Label>
-            <Form.Select
-              value={selectedUser}
-              onChange={(e) => setSelectedUser(e.target.value)}
-              required
-            >
-              <option value="">Select User</option>
-              {users.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.accountcode} || {user.name}
-                </option>
-              ))}
-            </Form.Select>
-          </Form.Group>
+              <Form.Label>SIP User</Form.Label>
+              <Form.Select
+                value={selectedUser}
+                onChange={(e) => setSelectedUser(e.target.value)}
+                required
+              >
+                <option value="">Select User</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.accountcode} || {user.name}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
 
-          {/* Paused Selection */}
-          <Form.Group className="mb-3">
-            <Form.Label>Paused</Form.Label>
-            <Form.Select id="paused" required>
-              <option value="0">No</option>
-              <option value="1">Yes</option>
-            </Form.Select>
-          </Form.Group>
-        </Form>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={handleCloseModal}>
-          Close
-        </Button>
-        <Button variant="primary" onClick={handleAddNewMember}>
-          Add
-        </Button>
-      </Modal.Footer>
-    </Modal>
-
+            <Form.Group className="mb-3">
+              <Form.Label>Paused</Form.Label>
+              <Form.Select id="paused" required>
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+              </Form.Select>
+            </Form.Group>
+            
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowBulkEditModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleBulkFieldChange}>
+            Apply
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

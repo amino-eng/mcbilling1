@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import axios from "axios"
-import { Table, Dropdown, Modal, Button, Form, Tabs, Tab, InputGroup } from "react-bootstrap"
+import { Table, Dropdown, Modal, Button, Form, Tabs, Tab, InputGroup, Toast, ToastContainer } from "react-bootstrap"
 import {
   FaChevronDown,
   FaCheckCircle,
@@ -35,6 +35,11 @@ function Users() {
   // États pour les formulaires
   const [showNewUserForm, setShowNewUserForm] = useState(false)
   const [showEditUserForm, setShowEditUserForm] = useState(false)
+
+  // États pour les toasts
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState("")
+  const [toastType, setToastType] = useState("success") // success, danger, warning
 
   // États pour New User
   const [newUser, setNewUser] = useState({
@@ -75,7 +80,6 @@ function Users() {
 
   // États pour Edit User
   const [editUser, setEditUser] = useState({
-    id: "",
     username: "",
     password: "",
     group: "",
@@ -121,6 +125,13 @@ function Users() {
 
   // États pour les erreurs
   const [errors, setErrors] = useState("")
+
+  // Fonction pour afficher un toast
+  const showNotification = (message, type = "success") => {
+    setToastMessage(message)
+    setToastType(type)
+    setShowToast(true)
+  }
 
   // Colonnes disponibles
   const availableColumns = [
@@ -313,8 +324,12 @@ function Users() {
       .then(() => {
         fetchUsers()
         setShowConfirmModal(false)
+        showNotification("Utilisateur supprimé avec succès", "success")
       })
-      .catch((err) => console.log(err))
+      .catch((err) => {
+        console.log(err)
+        showNotification("Erreur lors de la suppression de l'utilisateur", "danger")
+      })
   }
 
   // Gestion des changements de formulaire
@@ -333,9 +348,28 @@ function Users() {
     setEditUser((prevState) => ({ ...prevState, [name]: value }))
   }
 
+  // Vérifier si le nom d'utilisateur existe déjà
+  const checkUsernameExists = async (username) => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/admin/users/users")
+      const existingUsers = response.data.users
+      return existingUsers.some((user) => user.username === username)
+    } catch (error) {
+      console.error("Error checking username:", error)
+      return false
+    }
+  }
+
   // Soumission du formulaire New User
   const handleNewUserSubmit = async (e) => {
     e.preventDefault()
+
+    // Vérifier si le nom d'utilisateur existe déjà
+    const usernameExists = await checkUsernameExists(newUser.username)
+    if (usernameExists) {
+      showNotification("Ce nom d'utilisateur existe déjà", "danger")
+      return
+    }
 
     const statusMapping = {
       Active: 1,
@@ -413,8 +447,10 @@ function Users() {
         numberOfSipUsers: 1,
         numberOfIax: 1,
       })
+      showNotification("Utilisateur ajouté avec succès", "success")
     } catch (error) {
       console.error("Error adding user:", error)
+      showNotification("Erreur lors de l'ajout de l'utilisateur", "danger")
     }
   }
   // Soumission du formulaire Edit User
@@ -470,9 +506,10 @@ function Users() {
       fetchUsers()
       setShowEditUserForm(false)
       resetEditUserForm()
+      showNotification("Utilisateur modifié avec succès", "success")
     } catch (error) {
       console.error("Error updating user:", error)
-      setErrors("Failed to update user. Please try again.")
+      showNotification("Erreur lors de la modification de l'utilisateur", "danger")
     }
   }
 
@@ -588,6 +625,20 @@ function Users() {
   // Rendu principal
   return (
     <div className="container mt-4">
+      {/* Toast Notifications */}
+      <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1060 }}>
+        <Toast onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide bg={toastType}>
+          <Toast.Header>
+            <strong className="me-auto">
+              {toastType === "success" && "Succès"}
+              {toastType === "danger" && "Erreur"}
+              {toastType === "warning" && "Attention"}
+            </strong>
+          </Toast.Header>
+          <Toast.Body className={toastType === "danger" ? "text-white" : ""}>{toastMessage}</Toast.Body>
+        </Toast>
+      </ToastContainer>
+
       <h1>Liste des utilisateurs</h1>
       <div className="mb-3 text-end">
         <Button variant="primary" onClick={() => setShowNewUserForm(true)}>

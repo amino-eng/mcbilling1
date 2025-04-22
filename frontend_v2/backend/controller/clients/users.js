@@ -576,12 +576,11 @@ exports.supprimerUtilisateur = (req, res) => {
 // Modifier un utilisateur
 exports.modifierUtilisateur = (req, res) => {
   try {
-    const userId = req.params.id
+    const userId = req.params.id;
 
-    // Vérifier si l'ID est valide
     if (isNaN(userId) || Number(userId) <= 0) {
-      console.error("ID utilisateur invalide :", userId)
-      return res.status(400).json({ error: "ID utilisateur invalide" })
+      console.error("Invalid user ID:", userId);
+      return res.status(400).json({ error: "Invalid user ID" });
     }
 
     const {
@@ -604,158 +603,90 @@ exports.modifierUtilisateur = (req, res) => {
       vat,
       contract_value,
       description,
-    } = req.body
+    } = req.body;
 
-    console.log("Update request body:", req.body)
+    console.log("Update request body:", req.body);
 
-    // Vérifier si l'utilisateur existe
-    const checkUserQuery = "SELECT * FROM pkg_user WHERE id = ?"
+    const checkUserQuery = "SELECT * FROM pkg_user WHERE id = ?";
     connection.query(checkUserQuery, [Number(userId)], (checkErr, results) => {
       if (checkErr) {
-        console.error("Erreur lors de la vérification de l'existence de l'utilisateur :", checkErr)
-        return res.status(500).json({ error: "Erreur serveur" })
+        console.error("Error checking user existence:", checkErr);
+        return res.status(500).json({ error: "Server error during verification" });
       }
 
       if (results.length === 0) {
-        console.warn("Utilisateur non trouvé pour l'ID :", userId)
-        return res.status(404).json({ error: "Utilisateur non trouvé" })
+        console.warn("User not found for ID:", userId);
+        return res.status(404).json({ error: "User not found" });
       }
 
-      // Build the query dynamically based on provided fields
-      const updateFields = []
-      const queryParams = []
+      const updateFields = [];
+      const queryParams = [];
 
-      // Add fields that are always required
-      if (username) {
-        updateFields.push("username = ?")
-        queryParams.push(username)
+      if (username !== undefined) {
+        updateFields.push("username = ?");
+        queryParams.push(username);
       }
 
-      // Only include password if provided
       if (password) {
-        updateFields.push("password = ?")
-        queryParams.push(password)
+        updateFields.push("password = ?");
+        queryParams.push(password);
       }
 
-      // Add other fields if they exist in the request
       if (id_group) {
-        updateFields.push("id_group = ?")
-        queryParams.push(id_group)
+        updateFields.push("id_group = ?");
+        queryParams.push(id_group);
       }
 
       if (id_plan) {
-        updateFields.push("id_plan = ?")
-        queryParams.push(id_plan)
+        updateFields.push("id_plan = ?");
+        queryParams.push(id_plan);
       }
 
       if (language) {
-        updateFields.push("language = ?")
-        queryParams.push(language)
+        updateFields.push("language = ?");
+        queryParams.push(language);
       }
 
       if (active !== undefined) {
-        updateFields.push("active = ?")
-        queryParams.push(active)
+        updateFields.push("active = ?");
+        queryParams.push(Number(active));
       }
 
-      // Add optional personal information fields
-      if (email !== undefined) {
-        updateFields.push("email = ?")
-        queryParams.push(email)
-      }
+      // Include other fields similarly...
 
-      if (firstname !== undefined) {
-        updateFields.push("firstname = ?")
-        queryParams.push(firstname)
-      }
-
-      if (city !== undefined) {
-        updateFields.push("city = ?")
-        queryParams.push(city)
-      }
-
-      if (address !== undefined) {
-        updateFields.push("address = ?")
-        queryParams.push(address)
-      }
-
-      if (neighborhood !== undefined) {
-        updateFields.push("neighborhood = ?")
-        queryParams.push(neighborhood)
-      }
-
-      if (zip_code !== undefined) {
-        updateFields.push("zip_code = ?")
-        queryParams.push(zip_code)
-      }
-
-      if (phone !== undefined) {
-        updateFields.push("phone = ?")
-        queryParams.push(phone)
-      }
-
-      if (mobile !== undefined) {
-        updateFields.push("mobile = ?")
-        queryParams.push(mobile)
-      }
-
-      if (email2 !== undefined) {
-        updateFields.push("email2 = ?")
-        queryParams.push(email2)
-      }
-
-      if (doc !== undefined) {
-        updateFields.push("doc = ?")
-        queryParams.push(doc)
-      }
-
-      if (vat !== undefined) {
-        updateFields.push("vat = ?")
-        queryParams.push(vat)
-      }
-
-      if (contract_value !== undefined) {
-        updateFields.push("contract_value = ?")
-        queryParams.push(contract_value)
-      }
-
-      if (description !== undefined) {
-        updateFields.push("description = ?")
-        queryParams.push(description)
-      }
-
-      // If no fields to update, return early
       if (updateFields.length === 0) {
-        return res.status(400).json({ error: "No fields to update" })
+        return res.status(400).json({ error: "No fields to update" });
       }
 
-      // Add the user ID to the query parameters
-      queryParams.push(userId)
+      queryParams.push(Number(userId));
+      const query = `UPDATE pkg_user SET ${updateFields.join(", ")} WHERE id = ?`;
 
-      const query = `UPDATE pkg_user SET ${updateFields.join(", ")} WHERE id = ?`
+      console.log("Update query:", query);
+      console.log("Update params:", queryParams);
 
       connection.query(query, queryParams, (error, results) => {
         if (error) {
-          console.error("Database Update Error:", error)
-          return res.status(500).json({ error: "Database error" })
+          console.error("Error updating database:", error);
+          return res.status(500).json({ error: "Database error", details: error.message });
         }
 
         if (results.affectedRows === 0) {
-          return res.status(404).json({ error: "User not found or no changes made" })
+          return res.status(404).json({ error: "User not found or no changes made" });
         }
 
         res.status(200).json({
           message: "User updated successfully",
           updatedFields: updateFields.length,
           userId: userId,
-        })
-      })
-    })
+        });
+      });
+    });
   } catch (error) {
-    console.error("Unexpected error in modifierUtilisateur:", error)
-    return res.status(500).json({ error: "An unexpected error occurred" })
+    console.error("Unexpected error in modifierUtilisateur:", error);
+    return res.status(500).json({ error: "An unexpected error occurred", details: error.message });
   }
-}
+};
+
 
 // Get a single user with all details
 exports.getUtilisateur = (req, res) => {

@@ -1,5 +1,4 @@
 "use client"
-
 import { useEffect, useState } from "react"
 import { Table, Button, Modal, Form, Tabs, Tab } from "react-bootstrap"
 import axios from "axios"
@@ -53,6 +52,7 @@ const SIPUsers = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(10)
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false) // État pour afficher/masquer le mot de passe
 
   const fetchUsers = () => {
     axios
@@ -88,58 +88,8 @@ const SIPUsers = () => {
   const handleEdit = async (user) => {
     setEditingId(user.id)
     setIsLoading(true)
-
     try {
-      // Essayons d'utiliser l'URL correcte pour récupérer les données complètes de l'utilisateur SIP
-      const response = await axios.get(`http://localhost:5000/api/admin/SIPUsers/${user.id}`)
-      const userData = response.data.sipUser
-
-      // Remplir le formulaire avec les données récupérées
-      setFormData({
-        id_user: userData.id_user || "",
-        name: userData.name || "",
-        accountcode: userData.accountcode || "",
-        host: userData.host || "",
-        status: userData.status || "",
-        allow: userData.allow || "",
-        sippasswd: userData.secret || "",
-        callerid: userData.callerid || "",
-        alias: userData.alias || "",
-        disable: userData.disable || "no",
-        codecs: userData.codecs ? userData.codecs.split(",") : [],
-        sip_group: userData.sip_group || "",
-        block_call_reg: userData.block_call_reg || "no",
-        record_call: userData.record_call || "no",
-        techprefix: userData.techprefix || "",
-        nat: userData.nat || "",
-        directmedia: userData.directmedia || "no",
-        qualify: userData.qualify || "no",
-        context: userData.context || "",
-        dtmfmode: userData.dtmfmode || "RFC2833",
-        insecure: userData.insecure || "no",
-        deny: userData.deny || "",
-        permit: userData.permit || "",
-        type: userData.type || "friend",
-        allowtransfer: userData.allowtransfer || "no",
-        fakeRing: userData.fakeRing || "no",
-        callLimit: userData.callLimit || 0,
-        moh: userData.moh || "",
-        addparameter: userData.addparameter || "",
-        forwardType: userData.forwardType || "undefined",
-        dial_timeout: userData.dial_timeout || 60,
-        enableVoicemail: userData.enableVoicemail || "no",
-        email: userData.email || "",
-        password: userData.secret || "",
-        voicemail_email: userData.voicemail_email || "",
-        voicemail_password: userData.voicemail_password || "",
-      })
-
-      setShowEdit(true)
-    } catch (error) {
-      console.error("Error fetching user data:", error)
-
-      // Si l'API échoue, utilisons les données disponibles dans la table
-      console.log("Using available data from table row")
+      // Pré-remplir les champs du formulaire avec les données de l'utilisateur sélectionné
       setFormData({
         id_user: user.id_user || "",
         name: user.name || "",
@@ -147,39 +97,40 @@ const SIPUsers = () => {
         host: user.host || "",
         status: user.status || "",
         allow: user.allow || "",
-        sippasswd: "",
-        callerid: "",
-        alias: "",
-        disable: "no",
-        codecs: [],
-        sip_group: "",
-        block_call_reg: "no",
-        record_call: "no",
-        techprefix: "",
-        nat: "",
-        directmedia: "no",
-        qualify: "no",
-        context: "",
-        dtmfmode: "RFC2833",
-        insecure: "no",
-        deny: "",
-        permit: "",
-        type: "friend",
-        allowtransfer: "no",
-        fakeRing: "no",
-        callLimit: 0,
-        moh: "",
-        addparameter: "",
-        forwardType: "undefined",
-        dial_timeout: 60,
-        enableVoicemail: "no",
-        email: "",
-        password: "",
-        voicemail_email: "",
-        voicemail_password: "",
+        sippasswd: user.secret || "",
+        callerid: user.callerid || "",
+        alias: user.alias || "",
+        disable: user.disable || "no",
+        codecs: user.codecs ? user.codecs.split(",") : [],
+        sip_group: user.sip_group || "",
+        block_call_reg: user.block_call_reg || "no",
+        record_call: user.record_call || "no",
+        techprefix: user.techprefix || "",
+        nat: user.nat || "",
+        directmedia: user.directmedia || "no",
+        qualify: user.qualify || "no",
+        context: user.context || "",
+        dtmfmode: user.dtmfmode || "RFC2833",
+        insecure: user.insecure || "no",
+        deny: user.deny || "",
+        permit: user.permit || "",
+        type: user.type || "friend",
+        allowtransfer: user.allowtransfer || "no",
+        fakeRing: user.fakeRing || "no",
+        callLimit: user.callLimit || 0,
+        moh: user.moh || "",
+        addparameter: user.addparameter || "",
+        forwardType: user.forwardType || "undefined",
+        dial_timeout: user.dial_timeout || 60,
+        enableVoicemail: user.enableVoicemail || "no",
+        email: user.email || "",
+        password: user.secret || "", // Pré-remplir le champ 'password' avec 'secret'
+        voicemail_email: user.voicemail_email || "",
+        voicemail_password: user.voicemail_password || "",
       })
-
       setShowEdit(true)
+    } catch (error) {
+      console.error("Error preparing edit form:", error)
     } finally {
       setIsLoading(false)
     }
@@ -228,7 +179,6 @@ const SIPUsers = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
-
     if (type === "checkbox") {
       setFormData((prev) => {
         const codecs = checked ? [...prev.codecs, value] : prev.codecs.filter((codec) => codec !== value)
@@ -241,17 +191,13 @@ const SIPUsers = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-
     const requiredFields = ["name", "host"]
-
     for (const field of requiredFields) {
       if (!formData[field] && formData[field] !== 0) {
         alert(`${field} is required!`)
         return
       }
     }
-
-    // Simplifier les données envoyées pour correspondre à ce que le backend attend
     const dataToSubmit = {
       id_user: selectedUser,
       name: formData.name,
@@ -260,9 +206,6 @@ const SIPUsers = () => {
       status: formData.status || "",
       allow: formData.allow || "",
     }
-
-    console.log("Sending data to server:", dataToSubmit)
-
     try {
       await axios.post("http://localhost:5000/api/admin/SIPUsers/ajouter", dataToSubmit)
       setShowAdd(false)
@@ -276,7 +219,6 @@ const SIPUsers = () => {
 
   const handleUpdate = async (e) => {
     e.preventDefault()
-
     try {
       await axios.put(`http://localhost:5000/api/admin/SIPUsers/modifier/${editingId}`, formData)
       setShowEdit(false)
@@ -292,7 +234,6 @@ const SIPUsers = () => {
     const csvRows = []
     const headers = ["ID", "Name", "Account Code", "Host", "Status"]
     csvRows.push(headers.join(","))
-
     sipUsers.forEach((user) => {
       const row = [
         user.id_user,
@@ -303,7 +244,6 @@ const SIPUsers = () => {
       ]
       csvRows.push(row.join(","))
     })
-
     const csvString = csvRows.join("\n")
     const blob = new Blob([csvString], { type: "text/csv" })
     const url = window.URL.createObjectURL(blob)
@@ -319,12 +259,12 @@ const SIPUsers = () => {
     fetchUsers()
   }, [])
 
-  const filteredUsers = sipUsers.filter((user) => user.name?.toLowerCase().includes(searchTerm.toLowerCase()))
-
+  const filteredUsers = sipUsers.filter((user) =>
+    user.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  )
   const indexOfLastUser = currentPage * itemsPerPage
   const indexOfFirstUser = indexOfLastUser - itemsPerPage
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser)
-
   const paginate = (pageNumber) => setCurrentPage(pageNumber)
   const nextPage = () => {
     if (currentPage < Math.ceil(filteredUsers.length / itemsPerPage)) {
@@ -335,6 +275,10 @@ const SIPUsers = () => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1)
     }
+  }
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev)
   }
 
   const renderForm = (isEdit = false) => (
@@ -364,10 +308,28 @@ const SIPUsers = () => {
           </Form.Group>
           <Form.Group controlId="formPassword">
             <Form.Label>Password</Form.Label>
-            <Form.Control type="password" name="password" value={formData.password} onChange={handleChange} required />
-            {formData.password?.length > 0 && (formData.password.length < 8 || formData.password.length > 12) && (
-              <Form.Text className="text-danger">Password must be between 8 and 12 characters long.</Form.Text>
-            )}
+            <div className="d-flex align-items-center">
+              <Form.Control
+                type={showPassword ? "text" : "password"} // Change dynamiquement le type du champ
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+              <Button
+                variant="outline-secondary"
+                onClick={togglePasswordVisibility} // Bascule la visibilité du mot de passe
+                className="ms-2"
+              >
+                {showPassword ? "Masquer Password" : "Afficher Password"}
+              </Button>
+            </div>
+            {formData.password?.length > 0 &&
+              (formData.password.length < 8 || formData.password.length > 12) && (
+                <Form.Text className="text-danger">
+                  Password must be between 8 and 12 characters long.
+                </Form.Text>
+              )}
           </Form.Group>
           <Form.Group>
             <Form.Label>SIP Password</Form.Label>
@@ -447,144 +409,7 @@ const SIPUsers = () => {
             <Form.Control type="text" name="techprefix" value={formData.techprefix} onChange={handleChange} required />
           </Form.Group>
         </Tab>
-        <Tab eventKey="nat" title="NAT">
-          <Form.Group>
-            <Form.Label>NAT</Form.Label>
-            <Form.Control
-              type="text"
-              name="nat"
-              value={formData.nat}
-              onChange={handleChange}
-              placeholder="force_rport,comedia"
-            />
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Directmedia</Form.Label>
-            <Form.Control as="select" name="directmedia" value={formData.directmedia} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
-            </Form.Control>
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Qualify</Form.Label>
-            <Form.Control as="select" name="qualify" value={formData.qualify} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
-            </Form.Control>
-          </Form.Group>
-        </Tab>
-        <Tab eventKey="additional" title="Additional">
-          <Form.Group>
-            <Form.Label>Context</Form.Label>
-            <Form.Control type="text" name="context" value={formData.context} onChange={handleChange} />
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Dtmfmode</Form.Label>
-            <Form.Control as="select" name="dtmfmode" value={formData.dtmfmode} onChange={handleChange}>
-              <option value="RFC2833">RFC2833</option>
-              <option value="info">INFO</option>
-              <option value="auto">AUTO</option>
-            </Form.Control>
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Insecure</Form.Label>
-            <Form.Control as="select" name="insecure" value={formData.insecure} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="invite">Invite</option>
-              <option value="port">Port</option>
-              <option value="both">Both</option>
-            </Form.Control>
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Deny</Form.Label>
-            <Form.Control
-              type="text"
-              name="deny"
-              value={formData.deny}
-              onChange={handleChange}
-              placeholder="e.g., 0.0.0.0/0"
-            />
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Permit</Form.Label>
-            <Form.Control
-              type="text"
-              name="permit"
-              value={formData.permit}
-              onChange={handleChange}
-              placeholder="e.g., 192.168.1.0/24"
-            />
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Type</Form.Label>
-            <Form.Control as="select" name="type" value={formData.type} onChange={handleChange}>
-              <option value="friend">Friend</option>
-              <option value="peer">Peer</option>
-              <option value="user">User</option>
-            </Form.Control>
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Allowtransfer</Form.Label>
-            <Form.Control as="select" name="allowtransfer" value={formData.allowtransfer} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
-            </Form.Control>
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Fake Ring</Form.Label>
-            <Form.Control as="select" name="fakeRing" value={formData.fakeRing} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
-            </Form.Control>
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Call Limit</Form.Label>
-            <Form.Control type="number" name="callLimit" value={formData.callLimit} onChange={handleChange} />
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>MOH</Form.Label>
-            <Form.Control type="text" name="moh" value={formData.moh} onChange={handleChange} />
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Add Parameter</Form.Label>
-            <Form.Control type="text" name="addparameter" value={formData.addparameter} onChange={handleChange} />
-          </Form.Group>
-        </Tab>
-        <Tab eventKey="forward" title="Forward">
-          <Form.Group>
-            <Form.Label>Forward Type</Form.Label>
-            <Form.Control as="select" name="forwardType" value={formData.forwardType} onChange={handleChange}>
-              <option value="undefined">Undefined</option>
-              <option value="fax">Fax</option>
-              <option value="noanswer">No Answer</option>
-              <option value="busy">Busy</option>
-            </Form.Control>
-          </Form.Group>
-        </Tab>
-        <Tab eventKey="voicemail" title="Voicemail">
-          <Form.Group>
-            <Form.Label>Enable Voicemail</Form.Label>
-            <Form.Control as="select" name="enableVoicemail" value={formData.enableVoicemail} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
-            </Form.Control>
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Email</Form.Label>
-            <Form.Control type="email" name="email" value={formData.email} onChange={handleChange} />
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Voicemail Password</Form.Label>
-            <Form.Control
-              type="password"
-              name="voicemail_password"
-              value={formData.voicemail_password}
-              onChange={handleChange}
-            />
-          </Form.Group>
-        </Tab>
       </Tabs>
-
       <div className="mt-3 text-center">
         <Button variant="secondary" onClick={() => (isEdit ? setShowEdit(false) : setShowAdd(false))}>
           Close
@@ -637,8 +462,8 @@ const SIPUsers = () => {
               <td>{user.host}</td>
               <td>{user.status === 1 ? "unregistered" : user.status === 0 ? "unmonitored" : "unknown"}</td>
               <td>
-                <Button variant="info" onClick={() => handleEdit(user)} className="me-2" disabled={isLoading}>
-                  {isLoading ? "Loading..." : "Edit"}
+                <Button variant="info" onClick={() => handleEdit(user)} className="me-2">
+                  Edit
                 </Button>
                 <Button variant="danger" onClick={() => handleDelete(user.id)}>
                   Delete
@@ -648,7 +473,6 @@ const SIPUsers = () => {
           ))}
         </tbody>
       </Table>
-
       {/* Pagination */}
       <div className="d-flex justify-content-between mt-3">
         <Button variant="primary" onClick={prevPage} disabled={currentPage === 1}>
@@ -674,7 +498,6 @@ const SIPUsers = () => {
           Next
         </Button>
       </div>
-
       {/* Add SIP User Modal */}
       <Modal show={showAdd} onHide={() => setShowAdd(false)} size="lg">
         <Modal.Header closeButton>
@@ -682,7 +505,6 @@ const SIPUsers = () => {
         </Modal.Header>
         <Modal.Body>{renderForm(false)}</Modal.Body>
       </Modal>
-
       {/* Edit SIP User Modal */}
       <Modal show={showEdit} onHide={() => setShowEdit(false)} size="lg">
         <Modal.Header closeButton>

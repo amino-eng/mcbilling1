@@ -134,7 +134,7 @@ exports.delete= async (req,res)=>{
             console.error('Erreur lors de la suppression:', err);
             return res.status(500).json({ error: 'Erreur lors de la suppression' });
           }
-          
+            
           if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Restriction non trouvée' });
           }

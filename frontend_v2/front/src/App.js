@@ -44,7 +44,7 @@ import DIDHistory from './Pages/DIDs/DIDHistory';
 import Refills from './Pages/Billing/Refills';
 import PaymentMethods from './Pages/Billing/PaymentMethods';
 import Voucher from './Pages/Billing/Voucher';
-import RefillProviders from './Pages/Billing/RefillRroviders';
+import RefillProviders from './Pages/Billing/RefillProviders';
 import Plans from './Pages/Rates/Plans';
 import Tariffs from './Pages/Rates/Tariffs';
 import Prefixes from './Pages/Rates/Prefixes';

@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Table, Button, Modal, Form, Alert, Spinner } from 'react-bootstrap';
+import { Table, Button, Modal, Form, Alert, Spinner, InputGroup } from 'react-bootstrap';
+import { BiSearch, BiEdit, BiTrash } from 'react-icons/bi';
 
 const ProviderTable = () => {
   const [providers, setProviders] = useState([]);
+  const [filteredProviders, setFilteredProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [currentProvider, setCurrentProvider] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -24,11 +27,26 @@ const ProviderTable = () => {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
 
   // Fetch providers from backend
   useEffect(() => {
     fetchProviders();
   }, []);
+
+  // Filter providers based on search query
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredProviders(providers);
+    } else {
+      const filtered = providers.filter(provider => 
+        provider.provider_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (provider.description && provider.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        provider.credit.toString().includes(searchQuery)
+      );
+      setFilteredProviders(filtered);
+    }
+  }, [searchQuery, providers]);
 
   // Update selected providers when providers list changes
   useEffect(() => {
@@ -44,12 +62,42 @@ const ProviderTable = () => {
     try {
       const response = await axios.get('http://localhost:5000/api/admin/providers/afficher');
       setProviders(response.data.providers);
+      setFilteredProviders(response.data.providers);
     } catch (error) {
       console.error("Error fetching providers:", error);
       setError('Failed to fetch providers');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDelete = async (providerId) => {
+    if (window.confirm('Are you sure you want to delete this provider?')) {
+      try {
+        setLoading(true);
+        // Use the correct route path for deletion
+        await axios.delete(`http://localhost:5000/api/admin/providers/supprimer/${providerId}`);
+        setSuccess('Provider deleted successfully');
+        fetchProviders();
+      } catch (error) {
+        console.error("Error deleting provider:", error);
+        setError('Failed to delete provider: ' + (error.response?.data?.message || error.message));
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleEdit = (provider) => {
+    setCurrentProvider(provider);
+    setFormData({
+      name: provider.provider_name,
+      description: provider.description || '',
+      credit: provider.credit,
+      credit_control: provider.credit_control === 1 ? 'yes' : 'no'
+    });
+    setIsEditing(true);
+    setShowModal(true);
   };
 
   // Format date for display
@@ -72,6 +120,10 @@ const ProviderTable = () => {
     }));
   };
 
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
   const handleBatchInputChange = (e) => {
     const { name, value } = e.target;
     setBatchData(prev => ({
@@ -83,62 +135,82 @@ const ProviderTable = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/admin/providers/ajouter', formData);
-      setSuccess('Provider added successfully');
+      if (isEditing) {
+        // Update existing provider
+        const updateData = {
+          providerIds: [currentProvider.id],
+          name: formData.name,
+          description: formData.description,
+          credit: formData.credit,
+          credit_control: formData.credit_control
+        };
+        
+        await axios.put('http://localhost:5000/api/admin/providers/batchUpdate', updateData);
+        setSuccess('Provider updated successfully');
+      } else {
+        // Add new provider
+        await axios.post('http://localhost:5000/api/admin/providers/ajouter', formData);
+        setSuccess('Provider added successfully');
+      }
+      
       setShowModal(false);
       fetchProviders();
-      setFormData({
-        name: '',
-        description: '',
-        credit: '',
-        creation_date: '',
-        credit_control: 'no'
-      });
+      resetForm();
     } catch (error) {
-      console.error("Error adding provider:", error);
-      setError('Failed to add provider');
+      console.error("Error with provider:", error);
+      setError(`Failed to ${isEditing ? 'update' : 'add'} provider`);
     }
   };
 
-    const handleBatchUpdate = async (e) => {
-      e.preventDefault();
-      
-      try {
-        // Prepare the data to send
-        const updateData = {
-          providerIds: batchData.selectedProviders,
-          description: batchData.description,
-          credit: batchData.credit_amount,
-          credit_control: batchData.credit_control
-        };
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      credit: '',
+      creation_date: '',
+      credit_control: 'no'
+    });
+    setCurrentProvider(null);
+    setIsEditing(false);
+  };
+
+  const handleBatchUpdate = async (e) => {
+    e.preventDefault();
     
-        const response = await axios.put(
-          'http://localhost:5000/api/admin/providers/batchUpdate',
-          updateData
-        );
-        
-        setSuccess(response.data.message);
-        setShowBatchModal(false);
-        fetchProviders();
-        
-        // Reset form
-        setBatchData({
-          credit_amount: '',
-          credit_percentage: '',
-          credit_control: '',
-          description: '',
-          selectedProviders: providers.map(p => p.id) // Keep all selected
-        });
-        
-      } catch (error) {
-        console.error("Update error:", error.response?.data || error);
-        setError(
-          error.response?.data?.error || 
-          error.response?.data?.message || 
-          'Failed to update providers'
-        );
-      }
-    };
+    try {
+      const updateData = {
+        providerIds: batchData.selectedProviders,
+        description: batchData.description,
+        credit: batchData.credit_amount,
+        credit_control: batchData.credit_control
+      };
+  
+      const response = await axios.put(
+        'http://localhost:5000/api/admin/providers/batchUpdate',
+        updateData
+      );
+      
+      setSuccess(response.data.message);
+      setShowBatchModal(false);
+      fetchProviders();
+      
+      setBatchData({
+        credit_amount: '',
+        credit_percentage: '',
+        credit_control: '',
+        description: '',
+        selectedProviders: providers.map(p => p.id)
+      });
+      
+    } catch (error) {
+      console.error("Update error:", error.response?.data || error);
+      setError(
+        error.response?.data?.error || 
+        error.response?.data?.message || 
+        'Failed to update providers'
+      );
+    }
+  };
 
   const resetAlerts = () => {
     setError('');
@@ -150,7 +222,14 @@ const ProviderTable = () => {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h4>Providers Management</h4>
         <div>
-          <Button variant="primary" onClick={() => setShowModal(true)} className="me-2">
+          <Button 
+            variant="primary" 
+            onClick={() => {
+              resetForm();
+              setShowModal(true);
+            }} 
+            className="me-2"
+          >
             Add New
           </Button>
           <Button variant="warning" onClick={() => setShowBatchModal(true)}>
@@ -161,6 +240,28 @@ const ProviderTable = () => {
 
       {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
       {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>}
+
+      {/* Search Bar */}
+      <div className="mb-3">
+        <InputGroup>
+          <InputGroup.Text>
+            <BiSearch />
+          </InputGroup.Text>
+          <Form.Control
+            placeholder="Search providers by name, description or credit..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+          />
+          {searchQuery && (
+            <Button 
+              variant="outline-secondary" 
+              onClick={() => setSearchQuery('')}
+            >
+              Clear
+            </Button>
+          )}
+        </InputGroup>
+      </div>
 
       {loading ? (
         <div className="text-center">
@@ -174,31 +275,58 @@ const ProviderTable = () => {
               <th>Description</th>
               <th>Credit</th>
               <th>Creation Date</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {providers.length > 0 ? (
-              providers.map(provider => (
+            {filteredProviders.length > 0 ? (
+              filteredProviders.map(provider => (
                 <tr key={provider.id}>
                   <td>{provider.provider_name}</td>
                   <td>{provider.description || 'vide'}</td>
                   <td>{provider.credit}</td>
                   <td>{formatDate(provider.creationdate)}</td>
+                  <td>
+                    <Button 
+                      variant="primary" 
+                      size="sm" 
+                      className="me-2"
+                      onClick={() => handleEdit(provider)}
+                    >
+                      <BiEdit /> Edit
+                    </Button>
+                    <Button 
+                      variant="danger" 
+                      size="sm" 
+                      onClick={() => handleDelete(provider.id)}
+                    >
+                      <BiTrash /> Delete
+                    </Button>
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="4" className="text-center py-3">No providers found</td>
+                <td colSpan="5" className="text-center py-3">
+                  {searchQuery ? 'No matching providers found' : 'No providers found'}
+                </td>
               </tr>
             )}
           </tbody>
         </Table>
       )}
 
-      {/* Add New Provider Modal */}
-      <Modal show={showModal} onHide={() => { setShowModal(false); resetAlerts(); }}>
+      {/* Add/Edit Provider Modal */}
+      <Modal 
+        show={showModal} 
+        onHide={() => { 
+          setShowModal(false); 
+          resetAlerts(); 
+          resetForm();
+        }}
+      >
         <Modal.Header closeButton>
-          <Modal.Title>Add New Provider</Modal.Title>
+          <Modal.Title>{isEditing ? 'Edit Provider' : 'Add New Provider'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form onSubmit={handleSubmit}>
@@ -244,11 +372,18 @@ const ProviderTable = () => {
               />
             </Form.Group>
             <div className="d-flex justify-content-end">
-              <Button variant="secondary" onClick={() => setShowModal(false)} className="me-2">
+              <Button 
+                variant="secondary" 
+                onClick={() => {
+                  setShowModal(false);
+                  resetForm();
+                }} 
+                className="me-2"
+              >
                 Cancel
               </Button>
               <Button variant="primary" type="submit">
-                Save
+                {isEditing ? 'Update' : 'Save'}
               </Button>
             </div>
           </Form>
@@ -281,7 +416,6 @@ const ProviderTable = () => {
                   required
                   style={{ width: '100px' }}
                 />
-                
               </div>
             </Form.Group>
 

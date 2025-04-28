@@ -28,9 +28,14 @@ const routeQueuesMembers = require("./route/DIDs/QueuesMembers");
 const routeQueues = require("./route/DIDs/Queues");
 const routeProviders = require("./route/routes/Providers");
 const routeTrunks = require("./route/routes/trunks");
-
-
-
+const routeTrunkGroup = require("./route/routes/trunkGroup");
+const routeServers = require("./route/routes/servers");
+const routePrefixes = require("./route/rates/prefixes");
+const routeProviderrates = require("./route/routes/providerrates");
+const routeTrunksErrors = require("./route/routes/trunkserrors");
+const routePlans = require("./route/rates/plans");
+const routeTariffs = require("./route/rates/tariffs");
+const routeUserrate = require("./route/rates/userrate");
 
 
 // cors
@@ -62,7 +67,14 @@ app.use("/api/admin/Queues", routeQueues);
 app.use("/api/admin/Iax", routeIax);
 app.use("/api/admin/Providers", routeProviders);
 app.use("/api/admin/Trunks", routeTrunks);
-
+app.use("/api/admin/TrunkGroup", routeTrunkGroup);
+app.use("/api/admin/Servers", routeServers);
+app.use("/api/admin/Prefixes", routePrefixes);
+app.use("/api/admin/providerrates", routeProviderrates);
+app.use("/api/admin/TrunksErrors", routeTrunksErrors);
+app.use("/api/admin/Plans", routePlans);
+app.use("/api/admin/Tariffs", routeTariffs);
+app.use("/api/admin/Userrate", routeUserrate);
 
 
 

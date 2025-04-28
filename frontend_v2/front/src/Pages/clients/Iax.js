@@ -38,6 +38,7 @@ const IaxTable = () => {
     const [searchField, setSearchField] = useState('all');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [successMessage, setSuccessMessage] = useState(null);
     const [idFieldName, setIdFieldName] = useState(null);
 
     const fetchIax = async () => {
@@ -187,7 +188,7 @@ const IaxTable = () => {
             await axios.delete(`http://localhost:5000/api/admin/Iax/delete/${deleteItemId}`);
             setData(prevData => prevData.filter(item => item[idFieldName] !== deleteItemId));
             setDeleteItemId(null);
-            alert("Enregistrement supprimé avec succès");
+            setSuccessMessage("Enregistrement supprimé avec succès");
             fetchData();
         } catch (error) {
             console.error('Error during deletion:', error);
@@ -212,6 +213,7 @@ const IaxTable = () => {
     const handleAddNew = async () => {
         setIsLoading(true);
         setError(null);
+        setSuccessMessage(null);
         
         try {
             const entryToAdd = { 
@@ -220,19 +222,32 @@ const IaxTable = () => {
                 secret: newEntry.secret || generatePassword(),
                 id_user: parseInt(newEntry.id_user) || 0
             };
-
-            await axios.post('http://localhost:5000/api/admin/Iax/ajouter', entryToAdd);
+    
+            // Log the data to be sent
+            console.log('Data to be sent:', entryToAdd);
+    
+            // Attempt to add the new entry
+            const response = await axios.post('http://localhost:5000/api/admin/Iax/ajouter', entryToAdd);
+            
+            // Handle successful response
+            setSuccessMessage("IAX entry added successfully.");
             fetchData();
             setShowAddModal(false);
             resetForm();
         } catch (error) {
             console.error('Error adding new entry:', error);
-            setError('Failed to add new entry: ' + (error.response?.data?.error || error.message));
+            console.error('Error details:', error.response.data);
+    
+            // Handle specific error for duplicate entry
+            if (error.response && error.response.data && error.response.data.error === "Duplicate entry for user_name") {
+                setError("This username already exists. Please choose a different username.");
+            } else {
+                setError('Failed to add new entry: ' + (error.response?.data?.error || error.message));
+            }
         } finally {
             setIsLoading(false);
         }
     };
-
     const resetForm = () => {
         setNewEntry({
             user_name: '',
@@ -312,6 +327,12 @@ const IaxTable = () => {
             {error && (
                 <div className="alert alert-danger" role="alert">
                     {error}
+                </div>
+            )}
+            
+            {successMessage && (
+                <div className="alert alert-success" role="alert">
+                    {successMessage}
                 </div>
             )}
             
@@ -520,120 +541,119 @@ const IaxTable = () => {
                                         type="text" 
                                         name="host"
                                         value={newEntry.host} 
-                                        onChange={handleInputChange}
-                                    />
-                                </Form.Group>
-                                
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Codecs</Form.Label>
-                                    <div className="row">
-                                        {['g729', 'g726', 'ulaw', 'speex', 'h264', 'g723', 'opus', 'g722', 'h263p', 'vp8', 'gsm', 'alaw', 'ilbc', 'h263'].map(codec => (
-                                            <div className="col-4" key={codec}>
-                                                <Form.Check
-                                                    type="checkbox"
-                                                    label={codec}
-                                                    name="codecs"
-                                                    value={codec}
-                                                    onChange={handleChange}
-                                                    checked={formData.codecs.includes(codec)}
-                                                />
+                                        onChange={handleInputChange}/>
+                                        </Form.Group>
+                                        
+                                        <Form.Group className="mb-3">
+                                            <Form.Label>Codecs</Form.Label>
+                                            <div className="row">
+                                                {['g729', 'g726', 'ulaw', 'speex', 'h264', 'g723', 'opus', 'g722', 'h263p', 'vp8', 'gsm', 'alaw', 'ilbc', 'h263'].map(codec => (
+                                                    <div className="col-4" key={codec}>
+                                                        <Form.Check
+                                                            type="checkbox"
+                                                            label={codec}
+                                                            name="codecs"
+                                                            value={codec}
+                                                            onChange={handleChange}
+                                                            checked={formData.codecs.includes(codec)}
+                                                        />
+                                                    </div>
+                                                ))}
                                             </div>
-                                        ))}
-                                    </div>
-                                </Form.Group>
-                            </Tab>
-                            <Tab eventKey="NAT details" title="NAT details">
-                                <Form.Group className="mb-3" controlId="formNAT">
-                                    <Form.Label>NAT</Form.Label>
-                                    <Form.Control 
-                                        type="text" 
-                                        name="nat"
-                                        value={newEntry.nat} 
-                                        onChange={handleInputChange}
-                                    />
-                                </Form.Group>
-                            </Tab>
-                            <Tab eventKey="Supplementary info" title="Supplementary info">
-                                <Form.Group className="mb-3" controlId="formContext">
-                                    <Form.Label>Context</Form.Label>
-                                    <Form.Control 
-                                        type="text" 
-                                        name="context"
-                                        value={newEntry.context} 
-                                        onChange={handleInputChange}
-                                    />
-                                </Form.Group>
-                                <Form.Group className="mb-3" controlId="formDtmfmode">
-                                    <Form.Label>Dtmfmode</Form.Label>
-                                    <Form.Control 
-                                        type="text" 
-                                        name="dtmfmode"
-                                        value={newEntry.dtmfmode} 
-                                        onChange={handleInputChange}
-                                    />
-                                </Form.Group>
-                                <Form.Group className="mb-3" controlId="formInsecure">
-                                    <Form.Label>Insecure</Form.Label>
-                                    <Form.Control 
-                                        type="text" 
-                                        name="insecure"
-                                        value={newEntry.insecure} 
-                                        onChange={handleInputChange}
-                                    />
-                                </Form.Group>
-                                <Form.Group className="mb-3" controlId="formType">
-                                    <Form.Label>Type</Form.Label>
-                                    <Form.Control 
-                                        type="text" 
-                                        name="type"
-                                        value={newEntry.type} 
-                                        onChange={handleInputChange}
-                                    />
-                                </Form.Group>
-                                <Form.Group className="mb-3" controlId="formCallerID">
-                                    <Form.Label>Caller ID</Form.Label>
-                                    <Form.Control 
-                                        type="text" 
-                                        name="callerid"
-                                        value={newEntry.callerid} 
-                                        onChange={handleInputChange}
-                                    />
-                                </Form.Group>
-                            </Tab>
-                        </Tabs>
-                    </Form>
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowAddModal(false)}>
-                        Fermer
-                    </Button>
-                    <Button variant="primary" onClick={isEditMode ? handleAddNew : handleAddNew} disabled={isLoading}>
-                        {isLoading ? 'Adding...' : (isEditMode ? 'Modifier' : 'Ajouter')}
-                    </Button>
-                </Modal.Footer>
-            </Modal>
-
-            <Modal show={deleteItemId !== null} onHide={() => setDeleteItemId(null)}>
-                <Modal.Header closeButton>
-                    <Modal.Title>Confirmer la suppression</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <p>Êtes-vous sûr de vouloir supprimer cet élément ?</p>
-                    {idFieldName && (
-                        <p><strong>ID ({idFieldName}):</strong> {deleteItemId}</p>
-                    )}
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setDeleteItemId(null)}>
-                        Annuler
-                    </Button>
-                    <Button variant="danger" onClick={confirmDelete} disabled={isLoading}>
-                        {isLoading ? 'Deleting...' : 'Supprimer'}
-                    </Button>
-                </Modal.Footer>
-            </Modal>
-        </Container>
-    );
-};
-
-export default IaxTable;
+                                        </Form.Group>
+                                    </Tab>
+                                    <Tab eventKey="NAT details" title="NAT details">
+                                        <Form.Group className="mb-3" controlId="formNAT">
+                                            <Form.Label>NAT</Form.Label>
+                                            <Form.Control 
+                                                type="text" 
+                                                name="nat"
+                                                value={newEntry.nat} 
+                                                onChange={handleInputChange}
+                                            />
+                                        </Form.Group>
+                                    </Tab>
+                                    <Tab eventKey="Supplementary info" title="Supplementary info">
+                                        <Form.Group className="mb-3" controlId="formContext">
+                                            <Form.Label>Context</Form.Label>
+                                            <Form.Control 
+                                                type="text" 
+                                                name="context"
+                                                value={newEntry.context} 
+                                                onChange={handleInputChange}
+                                            />
+                                        </Form.Group>
+                                        <Form.Group className="mb-3" controlId="formDtmfmode">
+                                            <Form.Label>Dtmfmode</Form.Label>
+                                            <Form.Control 
+                                                type="text" 
+                                                name="dtmfmode"
+                                                value={newEntry.dtmfmode} 
+                                                onChange={handleInputChange}
+                                            />
+                                        </Form.Group>
+                                        <Form.Group className="mb-3" controlId="formInsecure">
+                                            <Form.Label>Insecure</Form.Label>
+                                            <Form.Control 
+                                                type="text" 
+                                                name="insecure"
+                                                value={newEntry.insecure} 
+                                                onChange={handleInputChange}
+                                            />
+                                        </Form.Group>
+                                        <Form.Group className="mb-3" controlId="formType">
+                                            <Form.Label>Type</Form.Label>
+                                            <Form.Control 
+                                                type="text" 
+                                                name="type"
+                                                value={newEntry.type} 
+                                                onChange={handleInputChange}
+                                            />
+                                        </Form.Group>
+                                        <Form.Group className="mb-3" controlId="formCallerID">
+                                            <Form.Label>Caller ID</Form.Label>
+                                            <Form.Control 
+                                                type="text" 
+                                                name="callerid"
+                                                value={newEntry.callerid} 
+                                                onChange={handleInputChange}
+                                            />
+                                        </Form.Group>
+                                    </Tab>
+                                </Tabs>
+                            </Form>
+                        </Modal.Body>
+                        <Modal.Footer>
+                            <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+                                Fermer
+                            </Button>
+                            <Button variant="primary" onClick={isEditMode ? handleAddNew : handleAddNew} disabled={isLoading}>
+                                {isLoading ? 'Processing...' : (isEditMode ? 'Modifier' : 'Ajouter')}
+                            </Button>
+                        </Modal.Footer>
+                    </Modal>
+        
+                    <Modal show={deleteItemId !== null} onHide={() => setDeleteItemId(null)}>
+                        <Modal.Header closeButton>
+                            <Modal.Title>Confirmer la suppression</Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body>
+                            <p>Êtes-vous sûr de vouloir supprimer cet élément ?</p>
+                            {idFieldName && (
+                                <p><strong>ID ({idFieldName}):</strong> {deleteItemId}</p>
+                            )}
+                        </Modal.Body>
+                        <Modal.Footer>
+                            <Button variant="secondary" onClick={() => setDeleteItemId(null)}>
+                                Annuler
+                            </Button>
+                            <Button variant="danger" onClick={confirmDelete} disabled={isLoading}>
+                                {isLoading ? 'Deleting...' : 'Supprimer'}
+                            </Button>
+                        </Modal.Footer>
+                    </Modal>
+                </Container>
+            );
+        };
+        
+        export default IaxTable;

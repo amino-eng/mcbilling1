@@ -64,97 +64,114 @@ exports.afficherIax = async (req, res) => {
 exports.ajouterIax = (req, res) => {
     // Check if connection is available
     if (!connection) {
-      console.error("Database connection not established");
-      return res.status(500).json({ error: "Database connection error" });
+        console.error("Database connection not established");
+        return res.status(500).json({ error: "Database connection error" });
     }
-  
+
     const {
-      id_user,
-      user_name,
-      secret,
-      host,
-      port,
-      context,
-      callerid,
-      allow,
-      disallow,
-      nat,
-      qualify,
-      dtmfmode,
-      insecure,
-      type,
-      permit,
-      deny
+        id_user,
+        user_name,
+        secret,
+        host,
+        port,
+        context,
+        callerid,
+        allow,
+        disallow,
+        nat,
+        qualify,
+        dtmfmode,
+        insecure,
+        type,
+        permit,
+        deny
     } = req.body;
-  
+
     console.log("Incoming request body:", req.body); // Log the incoming data
-  
+
     // Validate required fields
     if (!user_name || !secret) {
-      return res.status(400).json({ error: "user_name and secret are required." });
+        return res.status(400).json({ error: "user_name and secret are required." });
     }
-  
-    const query = `
-      INSERT INTO pkg_iax (
-        id_user, name, username, accountcode, regexten,
-        fromuser, fromdomain, mailbox, md5secret,
-        secret, host, port, context, callerid,
-        allow, disallow, nat, qualify, dtmfmode, insecure,
-        type, permit, deny
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-  
-    // Set default values for optional parameters
-    const params = [
-      id_user || 0,
-      user_name,
-      user_name,
-      user_name,
-      user_name,
-      "default_fromuser",
-      "default_fromdomain",
-      "default_mailbox",
-      "default_md5secret",
-      secret,
-      host || "dynamic",
-      port || "4569",
-      context || "default",
-      callerid || "",
-      allow || "",
-      disallow || "all",
-      nat || "yes",
-      qualify || "yes",
-      dtmfmode || "rfc2833",
-      insecure || "port,invite",
-      type || "friend",
-      permit || "0.0.0.0/0.0.0.0",
-      deny || "0.0.0.0/0.0.0.0"
-    ];
-  
-    // Add timeout to prevent hanging requests
-    const queryTimeout = setTimeout(() => {
-      return res.status(504).json({ error: "Database query timeout" });
-    }, 30000); // 30 seconds timeout
-  
-    connection.query(query, params, (error, results) => {
-      // Clear the timeout since we got a response
-      clearTimeout(queryTimeout);
-  
-      if (error) {
-        console.error("Database error:", error);
-        return res.status(500).json({ 
-          error: "Database error", 
-          details: error.sqlMessage || error.message 
+
+    // Check for existing user_name
+    const checkUserQuery = "SELECT * FROM pkg_iax WHERE username = ?";
+    connection.query(checkUserQuery, [user_name], (checkError, checkResults) => {
+        if (checkError) {
+            console.error("Error checking existing user:", checkError);
+            return res.status(500).json({ error: "Database error", details: checkError.message });
+        }
+
+        // Log results of the duplicate check
+        console.log("Check results:", checkResults);
+
+        if (checkResults.length > 0) {
+            return res.status(400).json({ error: "Duplicate entry for user_name" });
+        }
+
+        // Proceed with the insertion
+        const query = `
+            INSERT INTO pkg_iax (
+                id_user, name, username, accountcode, regexten,
+                fromuser, fromdomain, mailbox, md5secret,
+                secret, host, port, context, callerid,
+                allow, disallow, nat, qualify, dtmfmode, insecure,
+                type, permit, deny
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        // Set default values for optional parameters
+        const params = [
+            id_user || 0,
+            user_name,
+            user_name,
+            user_name,
+            user_name,
+            "default_fromuser",
+            "default_fromdomain",
+            "default_mailbox",
+            "default_md5secret",
+            secret,
+            host || "dynamic",
+            port || 4569,
+            context || "default",
+            callerid || "",
+            allow || "",
+            disallow || "all",
+            nat || "yes",
+            qualify || "yes",
+            dtmfmode || "rfc2833",
+            insecure || "port,invite",
+            type || "friend",
+            permit || "0.0.0.0/0.0.0.0",
+            deny || "0.0.0.0/0.0.0.0"
+        ];
+
+        // Add timeout to prevent hanging requests
+        const queryTimeout = setTimeout(() => {
+            return res.status(504).json({ error: "Database query timeout" });
+        }, 30000); // 30 seconds timeout
+
+        connection.query(query, params, (error, results) => {
+            // Clear the timeout since we got a response
+            clearTimeout(queryTimeout);
+
+            if (error) {
+                console.error("Database error:", error);
+                return res.status(500).json({ 
+                    error: "Database error", 
+                    details: error.sqlMessage || error.message 
+                });
+            }
+
+            res.status(201).json({ 
+                message: "IAX entry added successfully",
+                id: results.insertId
+            });
         });
-      }
-      
-      res.status(201).json({ 
-        message: "IAX entry added successfully",
-        id: results.insertId
-      });
     });
-  };
+};
 // Fetch users for the dropdown
 exports.UsersIax = async (req, res) => {
     try {

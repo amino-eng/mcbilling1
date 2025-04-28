@@ -26,6 +26,7 @@ const CallerIdTable = () => {
     status: "1",
   });
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState(""); // New state for success messages
   const [searchTerm, setSearchTerm] = useState("");
 
   const itemsPerPage = 5;
@@ -68,7 +69,8 @@ const CallerIdTable = () => {
         fetchCallerIds();
         setNewCallerId({ callerid: "", username: "", name: "", description: "", status: "1" });
         setShowAddModal(false);
-        setError("");
+        setSuccessMessage("Caller ID ajouté avec succès."); // Set success message
+        clearMessages();
       }
     } catch (error) {
       console.error("Erreur lors de l'ajout du Caller ID :", error.response?.data || error.message);
@@ -98,22 +100,13 @@ const CallerIdTable = () => {
         fetchCallerIds();
         setShowEditModal(false);
         setEditCallerId({ id: "", callerid: "", username: "", name: "", description: "", status: "1" });
-        setError("");
+        setSuccessMessage("Caller ID modifié avec succès."); // Set success message
+        clearMessages();
       }
     } catch (error) {
       console.error("Erreur lors de la modification du Caller ID :", error.response?.data || error.message);
       setError("Erreur lors de la modification du Caller ID.");
     }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewCallerId({ ...newCallerId, [name]: value });
-  };
-
-  const handleEditInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditCallerId({ ...editCallerId, [name]: value });
   };
 
   const handleDeleteCallerId = async (id) => {
@@ -124,11 +117,19 @@ const CallerIdTable = () => {
     try {
       await axios.delete(`http://localhost:5000/api/admin/CallerId/delete/${id}`);
       fetchCallerIds();
-      setError("");
+      setSuccessMessage("Caller ID supprimé avec succès."); // Set success message
+      clearMessages();
     } catch (error) {
       console.error("Erreur lors de la suppression :", error.response?.data || error.message);
       setError("Erreur lors de la suppression. Veuillez réessayer.");
     }
+  };
+
+  const clearMessages = () => {
+    setTimeout(() => {
+      setSuccessMessage("");
+      setError("");
+    }, 3000); // Clear messages after 3 seconds
   };
 
   const openEditModal = (caller) => {
@@ -170,6 +171,7 @@ const CallerIdTable = () => {
     <div className="container mt-4">
       <h2>Liste des Caller IDs</h2>
       {error && <Alert variant="danger">{error}</Alert>}
+      {successMessage && <Alert variant="success">{successMessage}</Alert>} {/* Display success message */}
       <Form.Control
         type="text"
         placeholder="Rechercher par Caller ID ou Nom"
@@ -255,7 +257,7 @@ const CallerIdTable = () => {
                 type="text"
                 name="callerid"
                 value={newCallerId.callerid}
-                onChange={handleInputChange}
+                onChange={(e) => setNewCallerId({ ...newCallerId, callerid: e.target.value })}
                 required
               />
             </Form.Group>
@@ -265,7 +267,7 @@ const CallerIdTable = () => {
                 type="text"
                 name="name"
                 value={newCallerId.name}
-                onChange={handleInputChange}
+                onChange={(e) => setNewCallerId({ ...newCallerId, name: e.target.value })}
                 required
               />
             </Form.Group>
@@ -293,7 +295,7 @@ const CallerIdTable = () => {
                 type="text"
                 name="description"
                 value={newCallerId.description}
-                onChange={handleInputChange}
+                onChange={(e) => setNewCallerId({ ...newCallerId, description: e.target.value })}
               />
             </Form.Group>
             <Form.Group>
@@ -301,7 +303,7 @@ const CallerIdTable = () => {
               <Form.Select
                 name="status"
                 value={newCallerId.status}
-                onChange={handleInputChange}
+                onChange={(e) => setNewCallerId({ ...newCallerId, status: e.target.value })}
               >
                 <option value="1">Actif</option>
                 <option value="0">Inactif</option>
@@ -332,7 +334,7 @@ const CallerIdTable = () => {
                 type="text"
                 name="callerid"
                 value={editCallerId.callerid}
-                onChange={handleEditInputChange}
+                onChange={(e) => setEditCallerId({ ...editCallerId, callerid: e.target.value })}
                 required
               />
             </Form.Group>
@@ -342,7 +344,7 @@ const CallerIdTable = () => {
                 type="text"
                 name="name"
                 value={editCallerId.name}
-                onChange={handleEditInputChange}
+                onChange={(e) => setEditCallerId({ ...editCallerId, name: e.target.value })}
                 required
               />
             </Form.Group>
@@ -370,7 +372,7 @@ const CallerIdTable = () => {
                 type="text"
                 name="description"
                 value={editCallerId.description}
-                onChange={handleEditInputChange}
+                onChange={(e) => setEditCallerId({ ...editCallerId, description: e.target.value })}
               />
             </Form.Group>
             <Form.Group>
@@ -378,7 +380,7 @@ const CallerIdTable = () => {
               <Form.Select
                 name="status"
                 value={editCallerId.status}
-                onChange={handleEditInputChange}
+                onChange={(e) => setEditCallerId({ ...editCallerId, status: e.target.value })}
               >
                 <option value="1">Actif</option>
                 <option value="0">Inactif</option>

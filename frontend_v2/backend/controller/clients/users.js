@@ -447,131 +447,78 @@ exports.ajouterUtilisateur = (req, res) => {
   }
 }
 
-// Supprimer un utilisateur - Version simplifiée qui ne supprime que l'utilisateur
+// Supprimer un utilisateur
 exports.supprimerUtilisateur = (req, res) => {
-  const { id } = req.params
+  const { id } = req.params;
 
   // Vérifier si l'ID est valide
   if (isNaN(id) || Number(id) <= 0) {
-    console.error("ID utilisateur invalide :", id)
-    return res.status(400).json({ error: "ID utilisateur invalide" })
+    console.error("ID utilisateur invalide :", id);
+    return res.status(400).json({ error: "ID utilisateur invalide" });
   }
 
-  console.log(`Tentative de suppression de l'utilisateur avec l'ID : ${id}`)
+  console.log(`Tentative de suppression de l'utilisateur avec l'ID : ${id}`);
 
   // Vérifier si l'utilisateur existe
-  const checkUserQuery = "SELECT * FROM pkg_user WHERE id = ?"
+  const checkUserQuery = "SELECT * FROM pkg_user WHERE id = ?";
   connection.query(checkUserQuery, [Number(id)], (checkErr, results) => {
     if (checkErr) {
-      console.error("Erreur lors de la vérification de l'existence de l'utilisateur :", checkErr)
-      return res.status(500).json({ error: "Erreur serveur" })
+      console.error("Erreur lors de la vérification de l'existence de l'utilisateur :", checkErr);
+      return res.status(500).json({ error: "Erreur serveur" });
     }
     if (results.length === 0) {
-      console.warn("Utilisateur non trouvé pour l'ID :", id)
-      return res.status(404).json({ error: "Utilisateur non trouvé" })
+      console.warn("Utilisateur non trouvé pour l'ID :", id);
+      return res.status(404).json({ error: "Utilisateur non trouvé" });
     }
 
-    // Supprimer d'abord les enregistrements SIP liés
-    const deleteSipQuery = "DELETE FROM pkg_sip WHERE id_user = ?"
-    connection.query(deleteSipQuery, [Number(id)], (sipErr) => {
+    // Vérifier les enregistrements SIP, IAX et DID
+    const checkSipQuery = "SELECT COUNT(*) AS count FROM pkg_sip WHERE id_user = ?";
+    const checkIaxQuery = "SELECT COUNT(*) AS count FROM pkg_iax WHERE id_user = ?";
+    const checkDidQuery = "SELECT COUNT(*) AS count FROM pkg_did WHERE id_user = ?";
+
+    connection.query(checkSipQuery, [Number(id)], (sipErr, sipResults) => {
       if (sipErr) {
-        console.error("Erreur lors de la suppression des enregistrements SIP :", sipErr)
-        return res.status(500).json({ error: "Erreur lors de la suppression des enregistrements SIP" })
+        console.error("Erreur lors de la vérification des enregistrements SIP :", sipErr);
+        return res.status(500).json({ error: "Erreur serveur" });
       }
-      console.log("Enregistrements SIP supprimés avec succès.")
 
-      // Supprimer ensuite les enregistrements IAX liés
-      const deleteIaxQuery = "DELETE FROM pkg_iax WHERE id_user = ?"
-      connection.query(deleteIaxQuery, [Number(id)], (iaxErr) => {
+      connection.query(checkIaxQuery, [Number(id)], (iaxErr, iaxResults) => {
         if (iaxErr) {
-          console.error("Erreur lors de la suppression des enregistrements IAX :", iaxErr)
-          return res.status(500).json({ error: "Erreur lors de la suppression des enregistrements IAX" })
+          console.error("Erreur lors de la vérification des enregistrements IAX :", iaxErr);
+          return res.status(500).json({ error: "Erreur serveur" });
         }
-        console.log("Enregistrements IAX supprimés avec succès.")
 
-        // Supprimer les enregistrements dans pkg_did_destination
-        const deleteDidDestinationQuery = "DELETE FROM pkg_did_destination WHERE id_user = ?"
-        connection.query(deleteDidDestinationQuery, [Number(id)], (didDestErr) => {
-          if (didDestErr) {
-            console.error("Erreur lors de la suppression des enregistrements pkg_did_destination :", didDestErr)
-            return res.status(500).json({ error: "Erreur lors de la suppression des enregistrements liés" })
+        connection.query(checkDidQuery, [Number(id)], (didErr, didResults) => {
+          if (didErr) {
+            console.error("Erreur lors de la vérification des enregistrements DID :", didErr);
+            return res.status(500).json({ error: "Erreur serveur" });
           }
-          console.log("Enregistrements pkg_did_destination supprimés avec succès.")
 
-          // Supprimer les enregistrements dans pkg_ivr
-          const deleteIvrQuery = "DELETE FROM pkg_ivr WHERE id_user = ?"
-          connection.query(deleteIvrQuery, [Number(id)], (ivrErr) => {
-            if (ivrErr) {
-              console.error("Erreur lors de la suppression des enregistrements pkg_ivr :", ivrErr)
-              return res.status(500).json({ error: "Erreur lors de la suppression des enregistrements IVR" })
+          // Check counts from the results
+          const sipCount = sipResults[0].count;
+          const iaxCount = iaxResults[0].count;
+          const didCount = didResults[0].count;
+
+          if (sipCount > 0 || iaxCount > 0 || didCount > 0) {
+            return res.status(400).json({ error: "Cet utilisateur est lié à des enregistrements SIP, IAX ou DID. Suppression non autorisée." });
+          }
+
+          // Proceed to delete the user if no associations are found
+          const deleteUserQuery = "DELETE FROM pkg_user WHERE id = ?";
+          connection.query(deleteUserQuery, [Number(id)], (userErr) => {
+            if (userErr) {
+              console.error("Erreur lors de la suppression de l'utilisateur :", userErr);
+              return res.status(500).json({ error: "Erreur lors de la suppression de l'utilisateur" });
             }
-            console.log("Enregistrements pkg_ivr supprimés avec succès.")
 
-            // Supprimer les enregistrements dans pkg_campaign_phonebook
-            const deleteCampaignPhonebookQuery = "DELETE FROM pkg_campaign_phonebook WHERE id_user = ?"
-            connection.query(deleteCampaignPhonebookQuery, [Number(id)], (campaignErr) => {
-              if (campaignErr) {
-                console.error("Erreur lors de la suppression des enregistrements pkg_campaign_phonebook :", campaignErr)
-                // Continue même en cas d'erreur
-              }
-
-              // Supprimer les enregistrements dans pkg_did
-              const deleteDidQuery = "DELETE FROM pkg_did WHERE id_user = ?"
-              connection.query(deleteDidQuery, [Number(id)], (didErr) => {
-                if (didErr) {
-                  console.error("Erreur lors de la suppression des enregistrements pkg_did :", didErr)
-                  // Continue même en cas d'erreur
-                }
-
-                // Supprimer les enregistrements dans pkg_rate_agent
-                const deleteRateAgentQuery = "DELETE FROM pkg_rate_agent WHERE id_user = ?"
-                connection.query(deleteRateAgentQuery, [Number(id)], (rateErr) => {
-                  if (rateErr) {
-                    console.error("Erreur lors de la suppression des enregistrements pkg_rate_agent :", rateErr)
-                    // Continue même en cas d'erreur
-                  }
-
-                  // Supprimer les enregistrements dans pkg_refill
-                  const deleteRefillQuery = "DELETE FROM pkg_refill WHERE id_user = ?"
-                  connection.query(deleteRefillQuery, [Number(id)], (refillErr) => {
-                    if (refillErr) {
-                      console.error("Erreur lors de la suppression des enregistrements pkg_refill :", refillErr)
-                      // Continue même en cas d'erreur
-                    }
-
-                    // Supprimer les enregistrements dans pkg_trunk
-                    const deleteTrunkQuery = "DELETE FROM pkg_trunk WHERE id_user = ?"
-                    connection.query(deleteTrunkQuery, [Number(id)], (trunkErr) => {
-                      if (trunkErr) {
-                        console.error("Erreur lors de la suppression des enregistrements pkg_trunk :", trunkErr)
-                        // Continue même en cas d'erreur
-                      }
-
-                      // Enfin, supprimer l'utilisateur
-                      const deleteUserQuery = "DELETE FROM pkg_user WHERE id = ?"
-                      connection.query(deleteUserQuery, [Number(id)], (userErr) => {
-                        if (userErr) {
-                          console.error("Erreur lors de la suppression de l'utilisateur :", userErr)
-                          return res.status(500).json({
-                            error: "Erreur lors de la suppression de l'utilisateur",
-                            details: userErr.sqlMessage,
-                          })
-                        }
-
-                        console.log("Utilisateur supprimé avec succès.")
-                        res.status(200).json({ message: "Utilisateur et enregistrements liés supprimés avec succès" })
-                      })
-                    })
-                  })
-                })
-              })
-            })
-          })
-        })
-      })
-    })
-  })
-}
+            console.log("Utilisateur supprimé avec succès.");
+            res.status(200).json({ message: "Utilisateur supprimé avec succès" });
+          });
+        });
+      });
+    });
+  });
+};
 
 // Modifier un utilisateur
 exports.modifierUtilisateur = (req, res) => {

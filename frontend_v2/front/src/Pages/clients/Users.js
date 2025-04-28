@@ -322,15 +322,19 @@ function Users() {
     axios
       .delete(`http://localhost:5000/api/admin/users/supprimer/${userIdToDelete}`)
       .then(() => {
-        fetchUsers()
-        setShowConfirmModal(false)
-        showNotification("Utilisateur supprimé avec succès", "success")
+        fetchUsers();
+        setShowConfirmModal(false);
+        showNotification("Utilisateur supprimé avec succès", "success");
       })
       .catch((err) => {
-        console.log(err)
-        showNotification("Erreur lors de la suppression de l'utilisateur", "danger")
-      })
-  }
+        console.error(err);
+        if (err.response && err.response.data) {
+          showNotification(err.response.data.error, "danger"); // Display the error message
+        } else {
+          showNotification("Erreur lors de la suppression de l'utilisateur", "danger");
+        }
+      });
+  };
 
   // Gestion des changements de formulaire
   const handleNewUserChange = (e) => {

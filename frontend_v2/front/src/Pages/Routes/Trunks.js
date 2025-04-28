@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Table, Button, Form, Modal, Tabs, Tab, Row, Col } from "react-bootstrap";
+import { Table, Button, Form, Modal, Tabs, Tab, Row, Col, InputGroup } from "react-bootstrap";
 import { CSVLink } from "react-csv";
+import { BiSearch, BiEdit, BiTrash } from "react-icons/bi";
 
 // ------------------ AddTrunkModal Component ------------------
-const AddTrunkModal = ({ show, onHide, onTrunkAdded }) => {
+const AddTrunkModal = ({ show, onHide, onTrunkAdded, trunkToEdit, setTrunkToEdit }) => {
   const [key, setKey] = useState("general");
   const [formData, setFormData] = useState({
     provider: "",
@@ -42,7 +43,58 @@ const AddTrunkModal = ({ show, onHide, onTrunkAdded }) => {
 
   useEffect(() => {
     fetchProviders();
-  }, []);
+    if (trunkToEdit) {
+      // Populate form with trunk data when editing
+      setFormData({
+        provider: trunkToEdit.id_provider,
+        name: trunkToEdit.trunkcode,
+        username: trunkToEdit.user,
+        password: trunkToEdit.secret,
+        host: trunkToEdit.host,
+        addprefix: trunkToEdit.trunkprefix,
+        removeprefix: trunkToEdit.removeprefix,
+        fromuser: trunkToEdit.fromuser,
+        fromdomain: trunkToEdit.fromdomain,
+        context: trunkToEdit.context,
+        dtmfmode: trunkToEdit.dtmfmode,
+        insecure: trunkToEdit.insecure,
+        nat: trunkToEdit.nat,
+        qualify: trunkToEdit.qualify,
+        type: trunkToEdit.type,
+        port: trunkToEdit.port,
+        sendrpid: trunkToEdit.sendrpid,
+        directmedia: trunkToEdit.directmedia,
+        // Add other fields as needed
+      });
+    } else {
+      // Reset form when adding new trunk
+      setFormData({
+        provider: "",
+        name: "",
+        username: "",
+        password: "",
+        host: "",
+        addprefix: "",
+        removeprefix: "",
+        fromuser: "",
+        fromdomain: "",
+        cidadd: "",
+        cidremove: "",
+        context: "billing",
+        dtmfmode: "RFC2833",
+        insecure: "port,invite",
+        maxuse: -1,
+        nat: "force_rport,comedia",
+        directmedia: "no",
+        qualify: "yes",
+        type: "peer",
+        sendrpid: "no",
+        addparameter: "",
+        port: 5060,
+        asteriskParams: ""
+      });
+    }
+  }, [trunkToEdit]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -65,34 +117,59 @@ const AddTrunkModal = ({ show, onHide, onTrunkAdded }) => {
       nat: formData.nat,
       qualify: formData.qualify,
       type: formData.type,
-      disallow: "", // if needed, you can add logic here
-      allow: "ulaw,alaw", // or make this dynamic with selected codecs
+      disallow: "",
+      allow: "ulaw,alaw",
       port: formData.port,
       sendrpid: formData.sendrpid,
       directmedia: formData.directmedia,
-      creationdate: new Date().toISOString().slice(0, 19).replace("T", " "),
       providertech: formData.providertech,
-      providerip: "", // if available, add this to formData
     };
-  
-    axios
-      .post("http://localhost:5000/api/admin/Trunks/ajouter", payload)
-      .then((res) => {
-        console.log("Trunk added:", res.data);
-        onTrunkAdded?.(); // Refresh list
-        onHide(); // Close modal
-      })
-      .catch((err) => {
-        console.error("Error adding trunk:", err);
-        alert("Failed to add trunk. Please check required fields.");
-      });
+
+    if (trunkToEdit) {
+      // Update existing trunk - THIS IS THE FIXED PART
+      const updateData = {
+        trunkIds: [trunkToEdit.id], // Send as array since batchUpdate expects an array
+        ...payload // Include all the updated fields
+      };
+      
+      axios
+        .put(`http://localhost:5000/api/admin/Trunks/batchUpdate`, updateData)
+        .then((res) => {
+          console.log("Trunk updated:", res.data);
+          onTrunkAdded?.();
+          onHide();
+          setTrunkToEdit(null);
+        })
+        .catch((err) => {
+          console.error("Error updating trunk:", err);
+          alert("Failed to update trunk. Please check required fields.");
+        });
+    } else {
+      // Add new trunk
+      payload.creationdate = new Date().toISOString().slice(0, 19).replace("T", " ");
+      payload.providerip = "";
+
+      axios
+        .post("http://localhost:5000/api/admin/Trunks/ajouter", payload)
+        .then((res) => {
+          console.log("Trunk added:", res.data);
+          onTrunkAdded?.();
+          onHide();
+        })
+        .catch((err) => {
+          console.error("Error adding trunk:", err);
+          alert("Failed to add trunk. Please check required fields.");
+        });
+    }
   };
-  
-  
+
   return (
-    <Modal show={show} onHide={onHide} size="lg">
+    <Modal show={show} onHide={() => {
+      onHide();
+      setTrunkToEdit(null);
+    }} size="lg">
       <Modal.Header closeButton>
-        <Modal.Title>Add New Trunk</Modal.Title>
+        <Modal.Title>{trunkToEdit ? "Edit Trunk" : "Add New Trunk"}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <Tabs activeKey={key} onSelect={(k) => setKey(k)} className="mb-3">
@@ -102,7 +179,7 @@ const AddTrunkModal = ({ show, onHide, onTrunkAdded }) => {
                 <Col md={6}>
                   <Form.Group controlId="provider">
                     <Form.Label>Provider</Form.Label>
-                    <Form.Control as="select" name="provider" onChange={handleChange}>
+                    <Form.Control as="select" name="provider" value={formData.provider} onChange={handleChange}>
                       <option value="">Select a provider</option>
                       {providers?.map((p) => (
                         <option key={p.id} value={p.id}>
@@ -113,24 +190,49 @@ const AddTrunkModal = ({ show, onHide, onTrunkAdded }) => {
                   </Form.Group>
 
                   {["name", "username", "password", "host", "addprefix", "removeprefix"].map((field) => (
-                    <Form.Group key={field} controlId={field}>
-                      <Form.Label>{field.charAt(0).toUpperCase() + field.slice(1)}</Form.Label>
-                      <Form.Control
-                        name={field}
-                        type={field === "password" ? "password" : "text"}
-                        onChange={handleChange}
-                      />
-                    </Form.Group>
-                  ))}
+  <Form.Group key={field} controlId={field}>
+    <Form.Label>{field.charAt(0).toUpperCase() + field.slice(1)}</Form.Label>
+    <Form.Control
+      name={field}
+      type={field === "password" ? "password" : "text"}
+      value={formData[field]}
+      onChange={(e) => {
+        const value = e.target.value;
+
+        // Champs qui doivent contenir uniquement des chiffres
+        const numericOnly = ["host", "addprefix", "removeprefix"];
+
+        if (numericOnly.includes(field)) {
+          // N'autoriser que les chiffres
+          if (/^\d*$/.test(value)) {
+            handleChange(e);
+          }
+        } else {
+          // Pour les autres champs, autoriser tout
+          handleChange(e);
+        }
+      }}
+    />
+  </Form.Group>
+))}
+
                 </Col>
 
                 <Col md={6}>
-                  <Form.Label>Codec</Form.Label>
-                  <div>
-                    {["g729", "g723", "gsm", "g726", "opus", "alaw", "ulaw", "g722", "ilbc", "speex", "h261", "h263"].map(codec => (
-                      <Form.Check inline key={codec} type="checkbox" label={codec} />
-                    ))}
-                  </div>
+                <Form.Label>Codec</Form.Label>
+<div>
+  {["g729", "g723", "gsm", "g726", "opus", "alaw", "ulaw", "g722", "ilbc", "speex", "h261", "h263"].map(codec => (
+    <Form.Check
+      inline
+      key={codec}
+      type="checkbox"
+      label={codec}
+      name="codec"
+      value={codec}
+      defaultChecked={["g729", "gsm", "opus", "alaw", "ulaw"].includes(codec)}
+    />
+  ))}
+</div>
 
                   {[
                     { name: "providertech", options: ["sip", "iax", "dahdi", "dgf", "extra", "local"] },
@@ -145,7 +247,7 @@ const AddTrunkModal = ({ show, onHide, onTrunkAdded }) => {
                   ].map(({ name, options }) => (
                     <Form.Group key={name} controlId={name}>
                       <Form.Label>{name.charAt(0).toUpperCase() + name.slice(1)}</Form.Label>
-                      <Form.Control as="select" name={name} onChange={handleChange}>
+                      <Form.Control as="select" name={name} value={formData[name]} onChange={handleChange}>
                         {options.map((opt, idx) =>
                           typeof opt === "string" ? (
                             <option key={idx}>{opt}</option>
@@ -170,7 +272,11 @@ const AddTrunkModal = ({ show, onHide, onTrunkAdded }) => {
                   {["fromuser", "fromdomain", "cidadd", "cidremove", "context", "dtmfmode", "insecure"].map(field => (
                     <Form.Group key={field} controlId={field}>
                       <Form.Label>{field}</Form.Label>
-                      <Form.Control name={field} defaultValue={formData[field]} onChange={handleChange} />
+                      <Form.Control 
+                        name={field} 
+                        value={formData[field]} 
+                        onChange={handleChange} 
+                      />
                     </Form.Group>
                   ))}
                 </Col>
@@ -181,7 +287,7 @@ const AddTrunkModal = ({ show, onHide, onTrunkAdded }) => {
                       <Form.Control
                         name={field}
                         type={field === "maxuse" || field === "port" ? "number" : "text"}
-                        defaultValue={formData[field]}
+                        value={formData[field]}
                         onChange={handleChange}
                       />
                     </Form.Group>
@@ -194,59 +300,27 @@ const AddTrunkModal = ({ show, onHide, onTrunkAdded }) => {
           <Tab eventKey="asterisk" title="Asterisk Extra Config">
             <Form.Group controlId="asteriskParams">
               <Form.Label>Parameters</Form.Label>
-              <Form.Control as="textarea" rows={10} name="asteriskParams" onChange={handleChange} />
+              <Form.Control 
+                as="textarea" 
+                rows={10} 
+                name="asteriskParams" 
+                value={formData.asteriskParams} 
+                onChange={handleChange} 
+              />
             </Form.Group>
           </Tab>
         </Tabs>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={onHide}>Cancel</Button>
-        <Button variant="primary" onClick={handleSubmit}>Save</Button>
-      </Modal.Footer>
-    </Modal>
-  );
-};
-
-// ------------------ AddNewModalManual Component ------------------
-const AddNewModalManual = ({ show, onHide }) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    provider: "",
-    host: ""
-  });
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = () => {
-    console.log("Manual form submitted:", formData);
-    onHide();
-  };
-
-  return (
-    <Modal show={show} onHide={onHide} backdrop="static">
-      <Modal.Header closeButton>
-        <Modal.Title>Add New Trunk (Manual)</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <Form>
-          {["name", "provider", "host"].map((field) => (
-            <Form.Group className="mb-3" controlId={`form${field}`}>
-              <Form.Label>{field.charAt(0).toUpperCase() + field.slice(1)}</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder={`Enter ${field}`}
-                name={field}
-                onChange={handleChange}
-              />
-            </Form.Group>
-          ))}
-        </Form>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={onHide}>Close</Button>
-        <Button variant="primary" onClick={handleSubmit}>Save Changes</Button>
+        <Button variant="secondary" onClick={() => {
+          onHide();
+          setTrunkToEdit(null);
+        }}>
+          Cancel
+        </Button>
+        <Button variant="primary" onClick={handleSubmit}>
+          {trunkToEdit ? "Update" : "Save"}
+        </Button>
       </Modal.Footer>
     </Modal>
   );
@@ -255,20 +329,58 @@ const AddNewModalManual = ({ show, onHide }) => {
 // ------------------ Main Trunks Component ------------------
 const Trunks = () => {
   const [trunks, setTrunks] = useState([]);
+  const [filteredTrunks, setFilteredTrunks] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [showManualModal, setShowManualModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [trunkToDelete, setTrunkToDelete] = useState(null);
+  const [trunkToEdit, setTrunkToEdit] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchTrunks = () => {
     axios.get("http://localhost:5000/api/admin/Trunks/afficher")
       .then((response) => {
         setTrunks(response.data.trunks);
-      });
+        setFilteredTrunks(response.data.trunks);
+      })
+      .catch(err => console.error("Error fetching trunks:", err));
   };
 
   useEffect(() => {
     fetchTrunks();
   }, []);
+
+  useEffect(() => {
+    const filtered = trunks.filter(trunk =>
+      Object.values(trunk).some(
+        value =>
+          value &&
+          value.toString().toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    );
+    setFilteredTrunks(filtered);
+  }, [searchQuery, trunks]);
+
+  const handleDelete = (id) => {
+    setTrunkToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const handleEdit = (trunk) => {
+    setTrunkToEdit(trunk);
+    setShowAddModal(true);
+  };
+
+  const confirmDelete = () => {
+    axios.delete(`http://localhost:5000/api/admin/Trunks/supprimer/${trunkToDelete}`)
+      .then(() => {
+        fetchTrunks();
+        setShowDeleteModal(false);
+      })
+      .catch(err => {
+        console.error("Error deleting trunk:", err);
+        alert("Failed to delete trunk");
+      });
+  };
 
   const formatDate = (dateString) => {
     const options = {
@@ -290,14 +402,30 @@ const Trunks = () => {
   return (
     <div className="container mt-4">
       <h2 className="mb-4">Trunks</h2>
-
-      <div className="mb-3 d-flex gap-2">
-        <CSVLink data={trunks} filename="trunks.csv" className="btn btn-primary">Export CSV</CSVLink>
-        <Button variant="success" onClick={() => setShowAddModal(true)}>Add New Trunk</Button>
+      
+      <div className="mb-3 d-flex justify-content-between align-items-center">
+        <div className="d-flex gap-2">
+          <CSVLink data={filteredTrunks} filename="trunks.csv" className="btn btn-primary">
+            Export CSV
+          </CSVLink>
+          <Button variant="success" onClick={() => setShowAddModal(true)}>
+            Add New Trunk
+          </Button>
+        </div>
         
+        <InputGroup style={{ width: '300px' }}>
+          <Form.Control
+            placeholder="Search trunks..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <InputGroup.Text>
+            <BiSearch />
+          </InputGroup.Text>
+        </InputGroup>
       </div>
 
-      <Table striped bordered hover>
+      <Table striped bordered hover responsive>
         <thead>
           <tr>
             <th>Name</th>
@@ -308,10 +436,11 @@ const Trunks = () => {
             <th>Time Used</th>
             <th>Status</th>
             <th>Creation Date</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {trunks.map((trunk) => (
+          {filteredTrunks.map((trunk) => (
             <tr key={trunk.id}>
               <td>{trunk.trunkcode}</td>
               <td>{trunk.trunkprefix}</td>
@@ -321,6 +450,23 @@ const Trunks = () => {
               <td>{trunk.secondusedreal}</td>
               <td>{statusLabels[trunk.status] || "pending"}</td>
               <td>{formatDate(trunk.creationdate)}</td>
+              <td>
+                <Button 
+                  variant="primary" 
+                  size="sm" 
+                  className="me-2"
+                  onClick={() => handleEdit(trunk)}
+                >
+                  <BiEdit /> Edit
+                </Button>
+                <Button 
+                  variant="danger" 
+                  size="sm"
+                  onClick={() => handleDelete(trunk.id)}
+                >
+                  <BiTrash /> Delete
+                </Button>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -330,20 +476,25 @@ const Trunks = () => {
         show={showAddModal}
         onHide={() => setShowAddModal(false)}
         onTrunkAdded={fetchTrunks}
+        trunkToEdit={trunkToEdit}
+        setTrunkToEdit={setTrunkToEdit}
       />
 
-      <AddNewModalManual show={showManualModal} onHide={() => setShowManualModal(false)} />
-
-      <Modal show={showUpdateModal} onHide={() => setShowUpdateModal(false)}>
+      {/* Delete Confirmation Modal */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Batch Update</Modal.Title>
+          <Modal.Title>Confirm Delete</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form>{/* batch update form fields here */}</Form>
+          Are you sure you want to delete this trunk? This action cannot be undone.
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowUpdateModal(false)}>Close</Button>
-          <Button variant="warning">Update</Button>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={confirmDelete}>
+            Delete
+          </Button>
         </Modal.Footer>
       </Modal>
     </div>

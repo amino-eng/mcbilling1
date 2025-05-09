@@ -1,8 +1,8 @@
 const express = require('express');
-const cors = require('cors');
+const mysql = require('mysql2');
+const cors =require ("cors")
 const app = express();
 const port = 5000;
-
 const {connect} = require("./config/dataBase");
 const routeClient=require("./route/client");
 const routeCDR=require("./route/rapport/CDRroute");
@@ -36,7 +36,7 @@ const routeTrunksErrors = require("./route/routes/trunkserrors");
 const routePlans = require("./route/rates/plans");
 const routeTariffs = require("./route/rates/tariffs");
 const routeUserrate = require("./route/rates/userrate");
-
+const routeOffer = require("./route/rates/offer");
 
 // cors
 app.use(cors())
@@ -75,9 +75,10 @@ app.use("/api/admin/TrunksErrors", routeTrunksErrors);
 app.use("/api/admin/Plans", routePlans);
 app.use("/api/admin/Tariffs", routeTariffs);
 app.use("/api/admin/Userrate", routeUserrate);
+app.use("/api/admin/Offers", routeOffer);
 
 
 // Start the server
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log("Server is running on",port );
 });

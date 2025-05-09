@@ -6,14 +6,13 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 // Menu data structure
 const menuItems = {
   DIDs: [
-    { path: "/DIDs/DIDs", icon: "bi-telephone", label: "DIDs" },
+    { path: "/DIDs", icon: "bi-telephone", label: "DIDs" },
     { path: "/DIDs/DIDDestination", icon: "bi-signpost", label: "DID Destination" },
     { path: "/DIDs/DIDsUse", icon: "bi-person", label: "DIDs Use" },
     { path: "/DIDs/IVRs", icon: "bi-sliders", label: "IVRs" },
     { path: "/DIDs/Queues", icon: "bi-speedometer2", label: "Queues" },
     { path: "/DIDs/QueuesMembres", icon: "bi-people", label: "Queues Membres" },
     { path: "/DIDs/QueuesDashboard", icon: "bi-speedometer2", label: "Queues Dashboard" },
-    { path: "/DIDs/Holidays", icon: "bi-calendar-event", label: "Holidays" },
     { path: "/DIDs/DIDHistory", icon: "bi-clock-history", label: "DID History" }
   ],
   clients: [

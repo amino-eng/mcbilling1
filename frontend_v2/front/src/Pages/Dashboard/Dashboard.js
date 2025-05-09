@@ -51,7 +51,7 @@ const Dashboard = () => {
         setLoading(prev => ({ ...prev, callStats: true }));
         
         // Fetch call summary data
-        const response = await axios.get("http://localhost:5002/api/admin/SummaryPerDay");
+        const response = await axios.get("http://localhost:5000/api/admin/SummaryPerDay");
         
         if (response.data && response.data.data) {
           const summaryData = response.data.data;
@@ -88,7 +88,7 @@ const Dashboard = () => {
         setLoading(prev => ({ ...prev, callTrends: true }));
         
         // Fetch call summary data
-        const response = await axios.get("http://localhost:5002/api/admin/SummaryPerDay");
+        const response = await axios.get("http://localhost:5000/api/admin/SummaryPerDay");
         
         if (response.data && response.data.data) {
           const summaryData = response.data.data;
@@ -158,10 +158,10 @@ const Dashboard = () => {
         setLoading(prev => ({ ...prev, recentActivity: true }));
         
         // Fetch recent calls from CDR
-        const cdrResponse = await axios.get("http://localhost:5002/api/admin/CDR/affiche");
+        const cdrResponse = await axios.get("http://localhost:5000/api/admin/CDR/affiche");
         
         // Fetch user history
-        const userHistoryResponse = await axios.get("http://localhost:5002/api/admin/UserHistory/affiche");
+        const userHistoryResponse = await axios.get("http://localhost:5000/api/admin/UserHistory/affiche");
         
         const activities = [];
         

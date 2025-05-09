@@ -16,7 +16,6 @@ import DIDDestination from './Pages/DIDs/DIDDestination';
 import DIDsUse from './Pages/DIDs/DIDsUse';
 import QueuesMembres from './Pages/DIDs/QueuesMembres';
 import QueuesDashboard from './Pages/DIDs/QueuesDashboard';
-import Holidays from './Pages/DIDs/Holidays';
 import Sda from './Pages/titleside/Sda';
 import Clients from './Pages/clients/clients';
 import Reports from './Pages/Reports/Reports';
@@ -38,7 +37,7 @@ import SummaryDayTrunk from './Pages/Reports/SummaryDayTrunk';
 import ReportsDestination from './Pages/Reports/ReportsDestination';
 import InboundReports from './Pages/Reports/InboundReports';
 import SummaryPerUser from './Pages/Reports/SummaryPerUser';
-import CallArchive from './Pages/Reports/callArchive';
+import CallArchive from './Pages/Reports/CallArchive';
 import ActivityDash from './Pages/Dashboard/ActivityDash';
 import RechargeHistory from './Pages/Dashboard/RechargeHistory';
 import Profile from './components/UserProfile/profile';
@@ -384,6 +383,36 @@ function AppContent() {
       } />
       
       <Route path="/DIDs/DIDsUse" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <DIDsUse />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+<Route path="/DIDs/Queues" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <DIDsUse />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+<Route path="/DIDs/QueuesMembres" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <DIDsUse />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+<Route path="/DIDs/QueuesDashboard" element={
         isAuthenticated ? (
           <Layout user={user}>
             <DIDsUse />

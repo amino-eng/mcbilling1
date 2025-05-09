@@ -4,7 +4,7 @@ const cors = require("cors");
 const fs = require('fs');
 const path = require('path');
 const app = express();
-const port = 5001; // Changed to 5001 since 5000 is busy
+const port = 5000; // Changed to 5001 since 5000 is busy
 const {connect} = require("./config/dataBase");
 const routeAuth = require("./route/auth");
 const routeClient=require("./route/client");
@@ -111,31 +111,8 @@ if (!fs.existsSync(configDir)) {
   fs.mkdirSync(configDir, { recursive: true });
 }
 
-// Start the server with port fallback
-const startServer = async (attemptPort) => {
-  const server = app.listen(attemptPort, () => {
-    console.log(`\n=== SERVER STARTED SUCCESSFULLY ===`);
-    console.log(`Server is running on port ${attemptPort}`);
-    console.log(`API available at http://localhost:${attemptPort}/api`);
-    console.log(`===================================\n`);
-    
-    // Write the port to a config file that the frontend can read
-    const configPath = path.join(configDir, 'api-config.json');
-    const config = {
-      apiPort: attemptPort,
-      apiUrl: `http://localhost:${attemptPort}/api`
-    };
-    
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-    console.log(`API configuration written to ${configPath}`);
-  }).on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      console.log(`Port ${attemptPort} is busy, trying port ${attemptPort + 1}`);
-      startServer(attemptPort + 1);
-    } else {
-      console.error('Server error:', err);
-    }
-  });
-};
-
-startServer(port);
+// 
+app.listen(port,()=>{
+  console.log("server listening on port",port);
+  
+})

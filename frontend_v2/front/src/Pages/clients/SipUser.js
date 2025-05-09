@@ -1,8 +1,29 @@
 "use client"
+
 import { useEffect, useState } from "react";
-import { Table, Button, Modal, Form, Tabs, Tab } from "react-bootstrap";
+import { Table, Button, Modal, Form, Tabs, Tab, Dropdown, Alert, Card, Container, Row, Col, Badge, Spinner } from "react-bootstrap";
+import { CSVLink } from "react-csv";
+import ReactPaginate from "react-paginate";
 import axios from "axios";
 import { Eye, EyeSlash } from 'react-bootstrap-icons';
+import {
+  FaCheckCircle,
+  FaTimesCircle,
+  FaEdit,
+  FaSearch,
+  FaDownload,
+  FaPlusCircle,
+  FaTrashAlt,
+  FaPhoneAlt,
+  FaUsers,
+  FaCog,
+  FaSignOutAlt,
+  FaUserAlt,
+  FaEllipsisV,
+  FaExclamationCircle,
+  FaQuestionCircle,
+  FaFilter
+} from "react-icons/fa";
 
 const SIPUsers = () => {
   const [sipUsers, setSipUsers] = useState([]);
@@ -54,6 +75,9 @@ const SIPUsers = () => {
   const [itemsPerPage] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const fetchUsers = () => {
     axios
@@ -570,96 +594,566 @@ const SIPUsers = () => {
     </Form>
   );
 
-  return (
-    <div className="container mt-4">
-      <h2>SIP Users Management</h2>
-      <Button
-        variant="primary"
-        onClick={() => {
-          setShowAdd(true);
-          resetForm();
-        }}
-        className="mb-3"
-      >
-        Add SIP User
-      </Button>
-      <Button variant="success" onClick={exportToCSV} className="mb-3 ms-2">
-        Export to CSV
-      </Button>
-      <Form.Control
-        type="text"
-        placeholder="Search by Name"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="mb-3"
-      />
-      <Table striped bordered hover>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Account Code</th>
-            <th>Host</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentUsers.map((user) => (
-            <tr key={user.id}>
-              <td>{user.name}</td>
-              <td>{user.accountcode}</td>
-              <td>{user.host}</td>
-              <td>{user.status === 1 ? "unregistered" : user.status === 0 ? "unmonitored" : "unknown"}</td>
-              <td>
-                <Button variant="info" onClick={() => handleEdit(user)} className="me-2">
-                  Edit
-                </Button>
-                <Button variant="danger" onClick={() => handleDelete(user.id)}>
-                  Delete
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-      {/* Pagination */}
-      <div className="d-flex justify-content-between mt-3">
-        <Button variant="primary" onClick={prevPage} disabled={currentPage === 1}>
-          Previous
-        </Button>
-        <div>
-          {Array.from({ length: Math.ceil(filteredUsers.length / itemsPerPage) }, (_, i) => (
-            <Button
-              key={i + 1}
-              variant={currentPage === i + 1 ? "primary" : "outline-primary"}
-              onClick={() => paginate(i + 1)}
-              className="ms-1"
-            >
-              {i + 1}
-            </Button>
-          ))}
+  // Clear messages after 3 seconds
+  const clearMessages = () => {
+    setTimeout(() => {
+      setError(null);
+      setSuccessMessage(null);
+    }, 3000);
+  };
+
+  // Header Component
+  const SIPUserHeader = () => {
+    const csvData = [
+      ["Name", "Account Code", "Host", "Status"],
+      ...sipUsers.map((user) => [
+        user.name,
+        user.accountcode || "",
+        user.host || "",
+        user.status === 1 ? "unregistered" : user.status === 0 ? "unmonitored" : "unknown",
+      ]),
+    ];
+
+    return (
+      <Card.Header className="d-flex flex-wrap align-items-center p-0 rounded-top overflow-hidden">
+        <div className="bg-primary p-3 w-100 position-relative shiny-header">
+          <div className="position-absolute top-0 end-0 p-2 d-none d-md-block">
+            {Array(5)
+              .fill()
+              .map((_, i) => (
+                <div
+                  key={i}
+                  className="floating-icon position-absolute"
+                  style={{
+                    top: `${Math.random() * 100}%`,
+                    left: `${Math.random() * 100}%`,
+                    animationDelay: `${i * 0.5}s`,
+                  }}
+                >
+                  <FaUserAlt
+                    className="text-white opacity-25"
+                    style={{
+                      fontSize: `${Math.random() * 1.5 + 0.5}rem`,
+                    }}
+                  />
+                </div>
+              ))}
+          </div>
+          <div className="d-flex align-items-center position-relative z-2">
+            <div className="bg-white rounded-circle p-3 me-3 shadow pulse-effect">
+              <FaUserAlt className="text-primary fs-3" />
+            </div>
+            <div>
+              <h2 className="fw-bold mb-0 text-white">SIP Users Management</h2>
+              <p className="text-white-50 mb-0 d-none d-md-block">Manage your SIP users easily</p>
+            </div>
+          </div>
         </div>
-        <Button
-          variant="primary"
-          onClick={nextPage}
-          disabled={currentPage === Math.ceil(filteredUsers.length / itemsPerPage)}
-        >
-          Next
-        </Button>
+        <div className="w-100 bg-white p-2 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
+          <div className="d-flex align-items-center gap-3">
+            <Badge bg="primary" className="d-flex align-items-center p-2 ps-3 rounded-pill">
+              <span className="me-2 fw-normal">
+                Total: <span className="fw-bold">{sipUsers.length}</span>
+              </span>
+              <span
+                className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center"
+                style={{ width: "24px", height: "24px" }}
+              >
+                <FaUserAlt size={12} />
+              </span>
+            </Badge>
+          </div>
+          <div className="d-flex gap-2">
+            <Button
+              variant="primary"
+              onClick={() => {
+                setShowAdd(true);
+                resetForm();
+              }}
+              className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+            >
+              <div className="icon-container">
+                <FaPlusCircle />
+              </div>
+              <span>Add SIP User</span>
+            </Button>
+            <CSVLink
+              data={csvData}
+              filename={"sip_users.csv"}
+              className="btn btn-success d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+              onClick={() => setIsExporting(true)}
+              onDownloaded={() => setIsExporting(false)}
+            >
+              <div className="icon-container">
+                {isExporting ? <Spinner animation="border" size="sm" /> : <FaDownload />}
+              </div>
+              <span>{isExporting ? "Exporting..." : "Export"}</span>
+            </CSVLink>
+          </div>
+        </div>
+      </Card.Header>
+    );
+  };
+
+  // Search Bar Component
+  const SearchBar = () => {
+    return (
+      <div className="position-relative mb-4">
+        <Form.Control
+          type="text"
+          placeholder="Search by name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="ps-4 shadow-sm border-0"
+          style={{ height: "48px", borderRadius: "24px" }}
+        />
+        <FaSearch className="position-absolute text-muted" style={{ top: "16px", left: "16px" }} />
       </div>
+    );
+  };
+
+  // Status Badge Component
+  const StatusBadge = ({ status }) => {
+    if (status === 1) {
+      return (
+        <Badge bg="warning" pill className="px-3 py-2">
+          <FaExclamationCircle className="me-1" /> Unregistered
+        </Badge>
+      );
+    } else if (status === 0) {
+      return (
+        <Badge bg="secondary" pill className="px-3 py-2">
+          <FaTimesCircle className="me-1" /> Unmonitored
+        </Badge>
+      );
+    } else {
+      return (
+        <Badge bg="info" pill className="px-3 py-2">
+          <FaQuestionCircle className="me-1" /> Unknown
+        </Badge>
+      );
+    }
+  };
+
+  // Action Buttons Component
+  const ActionButtons = ({ onEdit, onDelete }) => {
+    return (
+      <div className="d-flex gap-2 justify-content-center">
+        <Button variant="outline-primary" onClick={onEdit} size="sm" className="action-btn">
+          <FaEdit className="btn-icon" />
+        </Button>
+        <Button variant="outline-danger" onClick={onDelete} size="sm" className="action-btn">
+          <FaTrashAlt className="btn-icon" />
+        </Button>
+        <Dropdown align="end">
+          <Dropdown.Toggle as={Button} variant="light" size="sm" className="p-1 action-btn">
+            <FaEllipsisV className="btn-icon" />
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            <Dropdown.Item onClick={onEdit}>Edit</Dropdown.Item>
+            <Dropdown.Item onClick={onDelete} className="text-danger">Delete</Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
+      </div>
+    );
+  };
+
+  // Empty State Component
+  const EmptyState = () => {
+    return (
+      <div className="text-center py-5">
+        <div className="mb-3">
+          <div className="bg-light rounded-circle mx-auto d-flex align-items-center justify-content-center" style={{ width: "80px", height: "80px" }}>
+            <FaUserAlt className="text-muted" style={{ fontSize: "2rem" }} />
+          </div>
+        </div>
+        <h5>No SIP Users Found</h5>
+        <p className="text-muted">Add a new SIP user or modify your search</p>
+      </div>
+    );
+  };
+
+  // Pagination Component
+  const PaginationSection = () => {
+    const pageCount = Math.ceil(filteredUsers.length / itemsPerPage);
+    
+    if (pageCount <= 1) return null;
+
+    return (
+      <div className="d-flex justify-content-center mt-4">
+        <ReactPaginate
+          previousLabel={"Previous"}
+          nextLabel={"Next"}
+          breakLabel={"..."}
+          pageCount={pageCount}
+          marginPagesDisplayed={2}
+          pageRangeDisplayed={3}
+          onPageChange={({ selected }) => paginate(selected + 1)}
+          forcePage={currentPage - 1}
+          containerClassName={"pagination mb-0"}
+          pageClassName={"page-item"}
+          pageLinkClassName={"page-link"}
+          previousClassName={"page-item"}
+          previousLinkClassName={"page-link"}
+          nextClassName={"page-item"}
+          nextLinkClassName={"page-link"}
+          breakClassName={"page-item"}
+          breakLinkClassName={"page-link"}
+          activeClassName={"active"}
+        />
+      </div>
+    );
+  };
+
+  return (
+    <div className="dashboard-container">
+      <style jsx="true">{`
+        .dashboard-container {
+          min-height: 100vh;
+          background-color: #f8f9fa;
+        }
+        .dashboard-main {
+          transition: all 0.3s ease;
+        }
+        .floating-icon {
+          animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .pulse-effect {
+          animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4); }
+          70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+        }
+        .btn-hover-effect {
+          transition: all 0.3s ease;
+        }
+        .btn-hover-effect:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .icon-container {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .action-btn {
+          border-radius: 50%;
+          width: 32px;
+          height: 32px;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+        }
+        .btn-icon {
+          transition: transform 0.2s ease;
+        }
+        .action-btn:hover .btn-icon {
+          transform: scale(1.2);
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        /* Table styles */
+        .table {
+          box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+        .table th, .table td, .table tr {
+          border: none !important;
+          position: relative;
+          overflow: hidden;
+        }
+        
+        /* Supprimer toutes les bordures Bootstrap */
+        .table, .table * {
+          border-collapse: collapse;
+          border-spacing: 0;
+          border: none !important;
+          outline: none !important;
+        }
+        
+        /* Supprimer les bordures de Bootstrap */
+        .table-bordered,
+        .table-bordered thead th,
+        .table-bordered tbody + tbody,
+        .table-bordered td,
+        .table-bordered th,
+        .table-bordered tr {
+          border: 0 !important;
+        }
+        .table thead th {
+          background: linear-gradient(135deg, #212529 0%, #343a40 100%);
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .table-header-bold thead th {
+          padding-top: 15px;
+          padding-bottom: 15px;
+          position: relative;
+        }
+        
+        .table-header-bold thead th::after {
+          display: none;
+        }
+        .table-bordered tbody tr:hover {
+          background: linear-gradient(to right, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .table-bordered tbody tr:hover td {
+          position: relative;
+        }
+        .table-bordered tbody tr:hover td::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+          transform: translateX(-100%);
+          animation: shine 1.5s infinite;
+        }
+        @keyframes shine {
+          100% {
+            transform: translateX(100%);
+          }
+        }
+        
+        /* Shiny card effect */
+        .shiny-card {
+          position: relative;
+          background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+          overflow: hidden;
+        }
+        
+        .shiny-card::before {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
+          transform: rotate(30deg);
+          animation: shineCard 6s infinite;
+          pointer-events: none;
+        }
+        
+        @keyframes shineCard {
+          0% { transform: rotate(30deg) translateX(-100%); }
+          20%, 100% { transform: rotate(30deg) translateX(100%); }
+        }
+        
+        /* Button shine effects */
+        .btn-hover-effect {
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .btn-hover-effect::after {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
+          transform: rotate(30deg) translateX(-100%);
+          transition: all 0.3s ease;
+        }
+        
+        .btn-hover-effect:hover::after {
+          transform: rotate(30deg) translateX(100%);
+          transition: all 0.7s ease;
+        }
+        
+        /* Shiny header effect */
+        .shiny-header {
+          background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .shiny-header::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 50%;
+          height: 100%;
+          background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
+          transform: skewX(-25deg);
+          animation: shineHeader 5s infinite;
+        }
+        
+        @keyframes shineHeader {
+          0%, 100% { left: -100%; }
+          50% { left: 100%; }
+        }
+        
+        /* Badge shine effects */
+        .badge {
+          position: relative;
+          overflow: hidden;
+          box-shadow: 0 3px 6px rgba(0,0,0,0.16);
+          transition: all 0.3s ease;
+        }
+        
+        .badge::after {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
+          transform: rotate(30deg) translateX(-100%);
+          animation: shineBadge 3s infinite;
+        }
+        
+        @keyframes shineBadge {
+          0%, 100% { transform: rotate(30deg) translateX(-100%); }
+          30%, 60% { transform: rotate(30deg) translateX(100%); }
+        }
+      `}</style>
+      
+      <div className="dashboard-main">
+        <Container fluid className="px-4 py-4">
+          <Row className="justify-content-center">
+            <Col xs={12} lg={11}>
+              <Card className="shadow-lg border-0 overflow-hidden main-card shiny-card">
+                <SIPUserHeader />
+                <Card.Body className="p-4" style={{ animation: "fadeIn 0.5s ease-in-out" }}>
+                  {error && (
+                    <Alert variant="danger" className="d-flex align-items-center mb-4 shadow-sm">
+                      <FaTimesCircle className="me-2" />
+                      {error}
+                    </Alert>
+                  )}
+                  {successMessage && (
+                    <Alert variant="success" className="d-flex align-items-center mb-4 shadow-sm">
+                      <FaCheckCircle className="me-2" />
+                      {successMessage}
+                    </Alert>
+                  )}
+
+                  <Row className="mb-4">
+                    <Col md={6} lg={4}>
+                      <SearchBar />
+                    </Col>
+                  </Row>
+
+                  <Card className="shadow-sm border-0">
+                    <Card.Body className="p-0">
+                      <div className="table-responsive">
+                        <Table hover className="mb-0 table-header-bold">
+                          <thead className="bg-dark text-white">
+                            <tr>
+                              <th className="py-3 px-4 fw-bold">Name</th>
+                              <th className="py-3 px-4 fw-bold">Account Code</th>
+                              <th className="py-3 px-4 fw-bold">Host</th>
+                              <th className="py-3 px-4 text-center fw-bold">Status</th>
+                              <th className="py-3 px-4 text-center fw-bold">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {isLoading ? (
+                              <tr>
+                                <td colSpan="5" className="text-center py-5">
+                                  <Spinner animation="border" variant="primary" />
+                                  <p className="mt-3 text-muted">Loading data...</p>
+                                </td>
+                              </tr>
+                            ) : currentUsers.length === 0 ? (
+                              <tr>
+                                <td colSpan="5">
+                                  <EmptyState />
+                                </td>
+                              </tr>
+                            ) : (
+                              currentUsers.map((user) => (
+                                <tr key={user.id}>
+                                  <td className="py-3 px-4">{user.name}</td>
+                                  <td className="py-3 px-4">{user.accountcode || <span className="text-muted fst-italic">Not specified</span>}</td>
+                                  <td className="py-3 px-4">{user.host}</td>
+                                  <td className="py-3 px-4 text-center">
+                                    <StatusBadge status={user.status} />
+                                  </td>
+                                  <td className="py-3 px-4 text-center">
+                                    <ActionButtons 
+                                      onEdit={() => handleEdit(user)} 
+                                      onDelete={() => handleDelete(user.id)} 
+                                    />
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </Table>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                  
+                  <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
+                    <div className="text-muted small">
+                      {!isLoading && (
+                        <>
+                          <Badge bg="light" text="dark" className="me-2 shadow-sm">
+                            <span className="fw-semibold">{currentUsers.length}</span> of {filteredUsers.length} SIP Users
+                          </Badge>
+                          {searchTerm && (
+                            <Badge bg="light" text="dark" className="shadow-sm">
+                              Filtered from {sipUsers.length} total
+                            </Badge>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    <PaginationSection />
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </Container>
+      </div>
+
       {/* Add SIP User Modal */}
-      <Modal show={showAdd} onHide={() => setShowAdd(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Add SIP User</Modal.Title>
+      <Modal show={showAdd} onHide={() => setShowAdd(false)} size="lg" centered className="sip-user-modal">
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold">Add SIP User</Modal.Title>
         </Modal.Header>
-        <Modal.Body>{renderForm(false)}</Modal.Body>
+        <Modal.Body className="pt-0">{renderForm(false)}</Modal.Body>
       </Modal>
+      
       {/* Edit SIP User Modal */}
-      <Modal show={showEdit} onHide={() => setShowEdit(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Edit SIP User</Modal.Title>
+      <Modal show={showEdit} onHide={() => setShowEdit(false)} size="lg" centered className="sip-user-modal">
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold">Edit SIP User</Modal.Title>
         </Modal.Header>
-        <Modal.Body>{isLoading ? <div className="text-center">Loading...</div> : renderForm(true)}</Modal.Body>
+        <Modal.Body className="pt-0">
+          {isLoading ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" variant="primary" />
+              <p className="mt-3 text-muted">Loading user data...</p>
+            </div>
+          ) : (
+            renderForm(true)
+          )}
+        </Modal.Body>
       </Modal>
     </div>
   );

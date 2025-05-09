@@ -1,17 +1,221 @@
+"use client"
+
 import React, { useState, useEffect } from 'react';
 import { CSVLink } from 'react-csv';
-import { Table, Dropdown, Pagination, Container, Row, Col, Form, Button, Modal, Tabs, Tab, InputGroup } from 'react-bootstrap';
+import { 
+    Table, 
+    Dropdown, 
+    Pagination, 
+    Container, 
+    Row, 
+    Col, 
+    Form, 
+    Button, 
+    Modal, 
+    Tabs, 
+    Tab, 
+    InputGroup,
+    Card,
+    Badge,
+    Spinner,
+    Alert,
+    ToastContainer,
+    Toast
+} from 'react-bootstrap';
 import axios from 'axios';
-import { Search, X } from 'lucide-react';
+import {
+    FaChevronDown,
+    FaCheckCircle,
+    FaTimesCircle,
+    FaExclamationCircle,
+    FaLock,
+    FaUnlock,
+    FaEdit,
+    FaTrash,
+    FaEye,
+    FaEyeSlash,
+    FaSearch,
+    FaDownload,
+    FaPlusCircle,
+    FaUserPlus,
+    FaUsers,
+    FaFilter,
+    FaSyncAlt,
+    FaPhone,
+    FaPhoneAlt,
+    FaPhoneVolume,
+    FaKey
+} from 'react-icons/fa';
+
+const IaxHeader = ({ onAddClick, data, onExportClick }) => (
+    <Card.Header className="d-flex flex-wrap align-items-center p-0 rounded-top overflow-hidden">
+        <div className="bg-primary p-3 w-100 position-relative">
+            <div className="position-absolute top-0 end-0 p-2 d-none d-md-block">
+                {Array(5).fill().map((_, i) => (
+                    <div key={i} className="floating-icon position-absolute" style={{
+                        top: `${Math.random() * 100}%`,
+                        left: `${Math.random() * 100}%`,
+                        animationDelay: `${i * 0.5}s`,
+                    }}>
+                        <FaPhoneVolume className="text-white opacity-25" style={{
+                            fontSize: `${Math.random() * 1.5 + 0.5}rem`,
+                        }} />
+                    </div>
+                ))}
+            </div>
+            <div className="d-flex align-items-center position-relative z-2">
+                <div className="bg-white rounded-circle p-3 me-3 shadow pulse-effect">
+                    <FaPhoneAlt className="text-primary fs-3" />
+                </div>
+                <div>
+                    <h2 className="fw-bold mb-0 text-white">Gestion des IAX</h2>
+                    <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos comptes IAX facilement</p>
+                </div>
+            </div>
+        </div>
+        <div className="w-100 bg-white p-2 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
+            <div className="d-flex align-items-center gap-3">
+                <Badge bg="primary" className="d-flex align-items-center p-2 ps-3 rounded-pill">
+                    <span className="me-2 fw-normal">Total: <span className="fw-bold">{data.length}</span></span>
+                    <span className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center" style={{width: "24px", height: "24px"}}>
+                        <FaPhoneAlt size={12} />
+                    </span>
+                </Badge>
+            </div>
+            <div className="d-flex gap-2">
+                <Button 
+                    variant="primary" 
+                    onClick={onAddClick} 
+                    className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+                >
+                    <div className="icon-container">
+                        <FaPlusCircle />
+                    </div>
+                    <span>Ajouter</span>
+                </Button>
+                <CSVLink 
+                    data={data} 
+                    filename={"iax-data.csv"}
+                    className="btn btn-success d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+                >
+                    <div className="icon-container">
+                        <FaDownload />
+                    </div>
+                    <span>Exporter</span>
+                </CSVLink>
+            </div>
+        </div>
+    </Card.Header>
+)
+
+const SearchBar = ({ searchTerm, onSearchChange, searchField, onSearchFieldChange }) => (
+    <div className="search-container position-relative mb-4">
+        <div className="position-absolute top-50 start-0 translate-middle-y ps-3 search-icon">
+            <FaSearch className="text-primary" />
+        </div>
+        <Form.Control
+            type="text"
+            placeholder="Rechercher..."
+            value={searchTerm}
+            onChange={onSearchChange}
+            className="py-2 ps-5 shadow-sm border-0 search-input"
+            style={{
+                borderRadius: "50rem",
+                background: "#f8f9fa",
+                transition: "all 0.3s ease",
+                borderLeft: "4px solid transparent",
+            }}
+        />
+        <div className="position-absolute top-50 end-0 translate-middle-y pe-3">
+            <Dropdown>
+                <Dropdown.Toggle variant="link" id="dropdown-search-field" className="text-muted p-0 shadow-none">
+                    <FaFilter size={14} />
+                </Dropdown.Toggle>
+                <Dropdown.Menu align="end">
+                    <Dropdown.Item active={searchField === 'all'} onClick={() => onSearchFieldChange('all')}>Tous les champs</Dropdown.Item>
+                    <Dropdown.Item active={searchField === 'name'} onClick={() => onSearchFieldChange('name')}>Nom</Dropdown.Item>
+                    <Dropdown.Item active={searchField === 'user_name'} onClick={() => onSearchFieldChange('user_name')}>Utilisateur</Dropdown.Item>
+                    <Dropdown.Item active={searchField === 'host'} onClick={() => onSearchFieldChange('host')}>Host</Dropdown.Item>
+                </Dropdown.Menu>
+            </Dropdown>
+        </div>
+    </div>
+)
+
+const StatusBadge = ({ status }) => {
+    let variant, icon, text;
+    
+    if (status === 'dynamic') {
+        variant = "success";
+        icon = <FaCheckCircle />;
+        text = "Dynamic";
+    } else if (status === 'static') {
+        variant = "info";
+        icon = <FaLock />;
+        text = "Static";
+    } else {
+        variant = "secondary";
+        icon = <FaTimesCircle />;
+        text = status || "Unknown";
+    }
+    
+    return (
+        <Badge
+            bg={variant}
+            pill
+            className="d-flex align-items-center gap-1 py-2 px-3 position-relative status-badge"
+            style={{
+                background: variant === "success" ? "linear-gradient(45deg, #28a745, #20c997)" :
+                          variant === "info" ? "linear-gradient(45deg, #17a2b8, #5bc0de)" :
+                          "linear-gradient(45deg, #6c757d, #adb5bd)",
+                overflow: "hidden",
+                transition: "all 0.3s ease",
+            }}
+        >
+            <span className="status-icon">{icon}</span>{" "}
+            {text}
+        </Badge>
+    );
+};
+
+const PaginationSection = ({ currentPage, totalPages, onPageChange }) => (
+    <div className="d-flex justify-content-center">
+        <nav>
+            <ul className="pagination pagination-md">
+                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                    <button className="page-link" onClick={() => onPageChange(currentPage - 1)}>
+                        &laquo;
+                    </button>
+                </li>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <li key={page} className={`page-item ${page === currentPage ? 'active' : ''}`}>
+                        <button className="page-link" onClick={() => onPageChange(page)}>
+                            {page}
+                        </button>
+                    </li>
+                ))}
+                
+                <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                    <button className="page-link" onClick={() => onPageChange(currentPage + 1)}>
+                        &raquo;
+                    </button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+)
 
 const IaxTable = () => {
     const [data, setData] = useState([]);
     const [users, setUsers] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const [itemsPerPage] = useState(10);
     const [hiddenColumns, setHiddenColumns] = useState([
         'Context', 'CallerID', 'Codec', 'NAT', 'Qualify', 'Dtmfmode', 'Insecure', 'Type', 'IP',
     ]);
+    
+    // Column definitions are below
     const [showAddModal, setShowAddModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [newEntry, setNewEntry] = useState({
@@ -33,13 +237,15 @@ const IaxTable = () => {
     const [formData, setFormData] = useState({
         codecs: ['g729', 'alaw', 'gsm', 'ulaw']
     });
-    const [deleteItemId, setDeleteItemId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [searchField, setSearchField] = useState('all');
-    const [isLoading, setIsLoading] = useState(false);
+    const [searchField, setSearchField] = useState('username');
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
+    const [deleteItemId, setDeleteItemId] = useState(null);
     const [idFieldName, setIdFieldName] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [totalPages, setTotalPages] = useState(0);
 
     const fetchIax = async () => {
         try {
@@ -110,27 +316,35 @@ const IaxTable = () => {
     }, []);
 
     const filterData = (data, searchTerm, searchField) => {
-        if (!searchTerm) return data;
-        
-        return data.filter(item => {
-            if (searchField === 'all') {
-                return Object.keys(item).some(key => {
-                    const value = item[key];
-                    if (value === null || value === undefined) return false;
-                    return String(value).toLowerCase().includes(searchTerm.toLowerCase());
-                });
-            }
+        try {
+            if (!searchTerm) return data;
             
-            const value = item[searchField];
-            if (value === null || value === undefined) return false;
-            return String(value).toLowerCase().includes(searchTerm.toLowerCase());
-        });
+            return data.filter(item => {
+                if (searchField === 'all') {
+                    return Object.values(item).some(val => 
+                        val && val.toString().toLowerCase().includes(searchTerm.toLowerCase())
+                    );
+                } else {
+                    return item[searchField] && 
+                        item[searchField].toString().toLowerCase().includes(searchTerm.toLowerCase());
+                }
+            });
+        } catch (err) {
+            console.error("Error filtering data:", err);
+            return data;
+        }
     };
 
     const filteredData = filterData(data, searchTerm, searchField);
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+    
+    // Calculate total pages
+    useEffect(() => {
+        const calculatedTotalPages = Math.ceil(filteredData.length / itemsPerPage);
+        setTotalPages(calculatedTotalPages);
+    }, [filteredData, itemsPerPage]);
 
     useEffect(() => {
         setCurrentPage(1);
@@ -145,7 +359,7 @@ const IaxTable = () => {
     };
 
     const columns = [
-        'Username', 'IAX User', 'IAX Pass', 'Host', 'IP', 'Context',
+        'Nom d\'utilisateur', 'IAX User', 'IAX Pass', 'Host', 'IP', 'Context',
         'CallerID', 'Codec', 'NAT', 'Dtmfmode', 'Insecure', 'Type', 'Actions'
     ];
 
@@ -320,169 +534,216 @@ const IaxTable = () => {
         setShowAddModal(true);
     };
 
+    // Add CSS for animations and effects
+    const styles = {
+        floatingIcon: {
+            animation: 'float 3s ease-in-out infinite',
+        },
+        pulseEffect: {
+            animation: 'pulse 2s infinite',
+        },
+        tableContainer: {
+            borderRadius: '12px',
+            overflow: 'hidden',
+            border: '1px solid #e9ecef',
+            transition: 'all 0.3s ease',
+        },
+        actionBtn: {
+            transition: 'all 0.2s ease',
+        },
+        emptyState: {
+            animation: 'fadeIn 0.5s ease-in-out',
+        }
+    };
+
+    // Handle search term change
+    const handleSearchTermChange = (e) => {
+        setSearchTerm(e.target.value);
+    };
+
+    // Handle search field change
+    const handleSearchFieldChange = (field) => {
+        setSearchField(field);
+    };
+
     return (
-        <Container className="mt-4">
-            <h2 className="mb-4">IAX Table</h2>
-            
-            {error && (
-                <div className="alert alert-danger" role="alert">
-                    {error}
-                </div>
-            )}
-            
-            {successMessage && (
-                <div className="alert alert-success" role="alert">
-                    {successMessage}
-                </div>
-            )}
-            
-            {!idFieldName && (
-                <div className="alert alert-warning" role="alert">
-                    Warning: Could not identify ID field. Delete functionality may not work correctly.
-                </div>
-            )}
-            
-            <Row className="mb-3">
-                <Col md={3}>
-                    <CSVLink data={data} filename="iax_data.csv" className="btn btn-primary me-2">
-                        Export CSV
-                    </CSVLink>
-                </Col>
-                <Col md={3}>
-                    <Dropdown>
-                        <Dropdown.Toggle variant="secondary" id="dropdown-basic">
-                            Toggle Columns
-                        </Dropdown.Toggle>
-                        <Dropdown.Menu>
-                            {columns.map((column) => (
-                                <Dropdown.Item key={column}>
-                                    <Form.Check
-                                        inline
-                                        label={column}
-                                        type="checkbox"
-                                        checked={!hiddenColumns.includes(column)}
-                                        onChange={() => toggleColumnVisibility(column)}
-                                    />
-                                </Dropdown.Item>
-                            ))}
-                        </Dropdown.Menu>
-                    </Dropdown>
-                </Col>
-                <Col md={3}>
-                    <Button variant="success" onClick={() => {
-                        setIsEditMode(false);
-                        setShowAddModal(true);
-                    }}>
-                        Ajouter
-                    </Button>
-                </Col>
-                <Col md={3}>
-                    <InputGroup>
-                        <InputGroup.Text>
-                            <Search size={16} />
-                        </InputGroup.Text>
-                        <Form.Control
-                            type="text"
-                            placeholder="Search..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                        {searchTerm && (
-                            <Button 
-                                variant="outline-secondary" 
-                                onClick={() => setSearchTerm('')}
-                            >
-                                <X size={16} />
-                            </Button>
-                        )}
-                        <Form.Select 
-                            value={searchField} 
-                            onChange={(e) => setSearchField(e.target.value)}
-                        >
-                            <option value="all">All Fields</option>
-                            {Object.keys(data[0] || {}).map(field => (
-                                <option key={field} value={field}>
-                                    {field}
-                                </option>
-                            ))}
-                        </Form.Select>
-                    </InputGroup>
-                </Col>
-            </Row>
+        <div className="py-4" style={{ minHeight: '100vh', background: '#f8f9fa' }}>
+            {/* Toast notifications */}
+            <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1060 }}>
+                {successMessage && (
+                    <Toast 
+                        onClose={() => setSuccessMessage(null)} 
+                        show={successMessage !== null} 
+                        delay={3000} 
+                        autohide 
+                        bg="success"
+                    >
+                        <Toast.Header closeButton>
+                            <strong className="me-auto">Succès</strong>
+                        </Toast.Header>
+                        <Toast.Body className="text-white">{successMessage}</Toast.Body>
+                    </Toast>
+                )}
+                {error && (
+                    <Toast 
+                        onClose={() => setError(null)} 
+                        show={error !== null} 
+                        delay={3000} 
+                        autohide 
+                        bg="danger"
+                    >
+                        <Toast.Header closeButton>
+                            <strong className="me-auto">Erreur</strong>
+                        </Toast.Header>
+                        <Toast.Body className="text-white">{error}</Toast.Body>
+                    </Toast>
+                )}
+            </ToastContainer>
 
-            {isLoading && !currentItems.length ? (
-                <div className="text-center my-4">
-                    <div className="spinner-border" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-            ) : (
-                <>
-                    <Table striped bordered hover responsive>
-                        <thead>
-                            <tr>
-                                {columns.map(
-                                    (column) => !hiddenColumns.includes(column) && <th key={column}>{column}</th>
+            <Container fluid className="px-4 py-4">
+                <Row className="justify-content-center">
+                    <Col xs={12} lg={11}>
+                        <Card className="shadow border-0 overflow-hidden main-card">
+                            <IaxHeader 
+                                onAddClick={() => { setIsEditMode(false); setShowAddModal(true); }} 
+                                data={data} 
+                            />
+                            <Card.Body className="p-4" style={{ animation: "fadeIn 0.5s ease-in-out" }}>
+                                {error && (
+                                    <Alert variant="danger" className="d-flex align-items-center mb-4 shadow-sm">
+                                        <FaTimesCircle className="me-2" />
+                                        {error}
+                                    </Alert>
                                 )}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {currentItems.length > 0 ? (
-                                currentItems.map((item, index) => (
-                                    <tr key={index}>
-                                        {!hiddenColumns.includes('Username') && <td>{item.name || item.user_name}</td>}
-                                        {!hiddenColumns.includes('IAX User') && <td>{item.user_name}</td>}
-                                        {!hiddenColumns.includes('IAX Pass') && <td>{item.secret}</td>}
-                                        {!hiddenColumns.includes('Host') && <td>{item.host}</td>}
-                                        {!hiddenColumns.includes('IP') && <td>{item.ip || 'N/A'}</td>}
-                                        {!hiddenColumns.includes('Context') && <td>{item.context}</td>}
-                                        {!hiddenColumns.includes('CallerID') && <td>{item.callerid}</td>}
-                                        {!hiddenColumns.includes('Codec') && <td>{item.allow}</td>}
-                                        {!hiddenColumns.includes('NAT') && <td>{item.nat}</td>}
-                                        {!hiddenColumns.includes('Dtmfmode') && <td>{item.dtmfmode}</td>}
-                                        {!hiddenColumns.includes('Insecure') && <td>{item.insecure}</td>}
-                                        {!hiddenColumns.includes('Type') && <td>{item.type}</td>}
-                                        <td>
-                                            <Button 
-                                                variant="warning" 
-                                                onClick={() => handleEdit(item)}
-                                            >
-                                                Edit
+                                
+                                <Row className="mb-4">
+                                    <Col md={6} lg={4}>
+                                        <SearchBar 
+                                            searchTerm={searchTerm} 
+                                            onSearchChange={handleSearchTermChange} 
+                                            searchField={searchField} 
+                                            onSearchFieldChange={handleSearchFieldChange} 
+                                        />
+                                    </Col>
+                                    <Col md={6} lg={4} className="ms-auto d-flex justify-content-end align-items-center">
+                                        <div className="d-flex align-items-center gap-2">
+                                            <span className="text-muted">Colonnes:</span>
+                                            <Dropdown>
+                                                <Dropdown.Toggle variant="light" id="dropdown-columns" className="d-flex align-items-center gap-2">
+                                                    <FaFilter size={14} /> Filtrer
+                                                </Dropdown.Toggle>
+                                                <Dropdown.Menu>
+                                                    {columns.map((column) => (
+                                                        <Dropdown.Item 
+                                                            key={column} 
+                                                            onClick={() => toggleColumnVisibility(column)}
+                                                            active={!hiddenColumns.includes(column)}
+                                                        >
+                                                            {column}
+                                                        </Dropdown.Item>
+                                                    ))}
+                                                </Dropdown.Menu>
+                                            </Dropdown>
+                                        </div>
+                                    </Col>
+                                </Row>
+                                
+                                {/* Table container with modern styling */}
+                                <div className="table-responsive" style={styles.tableContainer}>
+                                    {loading ? (
+                                        <div className="text-center py-5">
+                                            <Spinner animation="border" variant="primary" />
+                                            <p className="mt-3 text-muted">Chargement des données...</p>
+                                        </div>
+                                    ) : filteredData.length === 0 ? (
+                                        <div className="text-center py-5" style={styles.emptyState}>
+                                            <div className="mb-3 position-relative d-inline-block">
+                                                <div className="position-relative">
+                                                    <div className="rounded-circle bg-light p-4 d-inline-block">
+                                                        <FaPhone className="text-primary" size={40} style={styles.floatingIcon} />
+                                                    </div>
+                                                    <div className="position-absolute top-0 start-0 w-100 h-100 rounded-circle border border-3 border-primary" style={{ borderStyle: 'dashed', animation: 'spin 10s linear infinite' }}></div>
+                                                </div>
+                                            </div>
+                                            <h5 className="mb-2">Aucun compte IAX trouvé</h5>
+                                            <p className="text-muted mb-4">Aucune donnée correspondant à vos critères de recherche</p>
+                                            <Button variant="primary" onClick={() => { setIsEditMode(false); setShowAddModal(true); }}>
+                                                <FaPlusCircle className="me-2" /> Ajouter un compte IAX
                                             </Button>
-                                            <Button 
-                                                variant="danger" 
-                                                onClick={() => handleDelete(item)}
-                                                disabled={isLoading || !idFieldName}
-                                            >
-                                                Supprimer
-                                            </Button>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={columns.length - hiddenColumns.length} className="text-center">
-                                        {searchTerm ? 'No matching records found' : 'No data available'}
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </Table>
-                    
-                    {filteredData.length > 0 && (
-                        <div className="d-flex justify-content-between align-items-center">
-                            <div>
-                                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredData.length)} of {filteredData.length} entries
-                                {searchTerm && ` (filtered from ${data.length} total entries)`}
-                            </div>
-                            <div className="d-flex justify-content-center">
-                                {renderPagination()}
-                            </div>
-                        </div>
-                    )}
-                </>
-            )}
+                                        </div>
+                                    ) : (
+                                        <Table hover responsive className="mb-0">
+                                            <thead className="bg-light">
+                                                <tr>
+                                                    {columns.map(column => !hiddenColumns.includes(column) && (
+                                                        <th key={column} className="py-3">{column}</th>
+                                                    ))}
+                                                    {!hiddenColumns.includes('Actions') && <th className="text-end">Actions</th>}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {currentItems.map((item, index) => (
+                                                    <tr key={index} className="align-middle">
+                                                        {!hiddenColumns.includes('ID') && <td>{item.id}</td>}
+                                                        {!hiddenColumns.includes('Nom d\'utilisateur') && <td>{item.name}</td>}
+                                                        {!hiddenColumns.includes('Password') && <td>••••••••</td>}
+                                                        {!hiddenColumns.includes('Host') && <td>{item.host}</td>}
+                                                        {!hiddenColumns.includes('Type') && <td>{item.type}</td>}
+                                                        {!hiddenColumns.includes('Context') && <td>{item.context}</td>}
+                                                        {!hiddenColumns.includes('Status') && (
+                                                            <td>
+                                                                <StatusBadge status={item.status} />
+                                                            </td>
+                                                        )}
+                                                        {!hiddenColumns.includes('Actions') && (
+                                                            <td className="text-end">
+                                                                <Button 
+                                                                    variant="outline-primary" 
+                                                                    size="sm" 
+                                                                    className="me-2" 
+                                                                    onClick={() => handleEdit(item)}
+                                                                    style={styles.actionBtn}
+                                                                >
+                                                                    <FaEdit />
+                                                                </Button>
+                                                                <Button 
+                                                                    variant="outline-danger" 
+                                                                    size="sm" 
+                                                                    onClick={() => handleDelete(item)}
+                                                                    style={styles.actionBtn}
+                                                                >
+                                                                    <FaTrash />
+                                                                </Button>
+                                                            </td>
+                                                        )}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </Table>
+                                    )}
+                                </div>
+                                
+                                {/* Pagination section */}
+                                {filteredData.length > 0 && (
+                                    <div className="d-flex justify-content-between align-items-center mt-4">
+                                        <div className="text-muted small">
+                                            Affichage de {indexOfFirstItem + 1} à {Math.min(indexOfLastItem, filteredData.length)} sur {filteredData.length} entrées
+                                            {searchTerm && ` (filtrées depuis ${data.length} entrées totales)`}
+                                        </div>
+                                        <PaginationSection 
+                                            currentPage={currentPage} 
+                                            totalPages={totalPages} 
+                                            onPageChange={paginate} 
+                                        />
+                                    </div>
+                                )}
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                </Row>
+            </Container>
 
+            {/* Modals */}
             <Modal show={showAddModal} onHide={() => setShowAddModal(false)} size="lg">
                 <Modal.Header closeButton>
                     <Modal.Title>{isEditMode ? "Modifier l'utilisateur IAX" : "Ajouter un nouvel utilisateur IAX"}</Modal.Title>
@@ -652,8 +913,51 @@ const IaxTable = () => {
                             </Button>
                         </Modal.Footer>
                     </Modal>
-                </Container>
-            );
-        };
-        
-        export default IaxTable;
+                {/* Add CSS for animations */}
+                <style jsx>{`
+                    @keyframes float {
+                        0% { transform: translateY(0px); }
+                        50% { transform: translateY(-10px); }
+                        100% { transform: translateY(0px); }
+                    }
+                    @keyframes pulse {
+                        0% { transform: scale(1); }
+                        50% { transform: scale(1.05); }
+                        100% { transform: scale(1); }
+                    }
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    @keyframes spin {
+                        from { transform: rotate(0deg); }
+                        to { transform: rotate(360deg); }
+                    }
+                    .floating-icon {
+                        animation: float 3s ease-in-out infinite;
+                    }
+                    .pulse-effect {
+                        animation: pulse 2s infinite;
+                    }
+                    .btn-hover-effect:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                    }
+                    .main-card {
+                        transition: all 0.3s ease;
+                    }
+                    .main-card:hover {
+                        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+                    }
+                    tr {
+                        transition: all 0.2s;
+                    }
+                    tr:hover {
+                        background-color: rgba(0,123,255,0.03);
+                    }
+                `}</style>
+            </div>
+        );
+    };
+    
+    export default IaxTable;

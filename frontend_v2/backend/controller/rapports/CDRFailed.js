@@ -7,17 +7,17 @@ exports.afficher = async (req, res) => {
   try {
     const query = `
       SELECT 
-        cdrf.*,   
-        u.username, 
-        t.trunkcode,
-        s.name AS server
+        cdrf.*,
+        IFNULL(u.username, 'N/A') AS username, 
+        IFNULL(t.trunkcode, '') AS trunkcode,
+        IFNULL(s.name, 'N/A') AS server
       FROM 
         pkg_cdr_failed cdrf
-      JOIN 
+      LEFT JOIN 
         pkg_user u ON cdrf.id_user = u.id  
-      JOIN 
+      LEFT JOIN 
         pkg_trunk t ON cdrf.id_trunk = t.id  
-      JOIN 
+      LEFT JOIN 
         pkg_servers s ON cdrf.id_server = s.id
       ORDER BY 
         cdrf.id_user, cdrf.id_trunk, cdrf.id_server;
@@ -25,19 +25,25 @@ exports.afficher = async (req, res) => {
     
     connection.query(query, (err, results) => {
       if (err) {
-        console.error("Error fetching CDR failed data with joins:", err);
-        return res.status(500).json({ error: "Database error" });
+        console.error("Error fetching CDR failed data:", err);
+        return res.status(500).json({ 
+          error: "Database error",
+          details: err.message 
+        });
       }
       
-      if (results.length === 0) {
-        return res.status(404).json({ message: "No data found" });
-      }
-
-      res.json({ cdr_failed: results });
+      res.json({ 
+        success: true,
+        count: results.length,
+        cdr_failed: results 
+      });
     });
   } catch (error) {
-    console.error("Error fetching data:", error);
-    res.status(500).send("Internal server error");
+    console.error("Unexpected error:", error);
+    res.status(500).json({ 
+      error: "Internal server error",
+      details: error.message 
+    });
   }
 };
 

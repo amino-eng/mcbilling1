@@ -1,20 +1,104 @@
-.container {
-    width: 100%;
-    height: auto; /* Adjust height as needed */
-  }
-  
-  .table-responsive {
-    width: 100%;
-    overflow-x: auto; /* Allow horizontal scrolling if needed */
-  }
-  
-  .table {
-    width: 100%; /* Make the table take the full width */
-    height: 100%; /* Make the table take the full height */
-  }
-  
-  .table th,
-  .table td {
-    text-align: left; /* Align text to the left */
-    padding: 1rem; /* Add padding for better spacing */
-  }
+.dashboard-container {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.dashboard-main {
+  transition: all 0.3s ease;
+}
+
+.main-card {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+/* Table styles */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 1rem;
+  vertical-align: middle;
+}
+
+.table th {
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background-color: rgba(13, 110, 253, 0.05);
+}
+
+/* Animation effects */
+.floating-icon {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.pulse-effect {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+}
+
+.btn-hover-effect {
+  transition: all 0.3s ease;
+}
+
+.btn-hover-effect:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn {
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-icon {
+  transition: transform 0.2s ease;
+}
+
+.action-btn:hover .btn-icon {
+  transform: scale(1.2);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

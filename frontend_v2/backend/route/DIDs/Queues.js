@@ -1,17 +1,17 @@
 const express = require('express');
-const { afficherQueues, ajouterQueue, modifierQueue, delQueue } = require('../../controller/DIDs/Queues');
+const { afficher, ajouter, modifier, del } = require('../../controller/DIDs/Queues');
 const router = express.Router();
 
-// Fetch all Queues with user details
-router.get('/', afficherQueues);
+// Fetch all Queues
+router.get('/afficher', afficher);
 
 // Add a new Queue
-router.post('/add-queue', ajouterQueue);
+router.post('/ajouter', ajouter);
 
 // Update an existing Queue
-router.put('/:id', modifierQueue);
+router.put('/modifier/:id', modifier);
 
 // Delete a Queue
-router.delete('/:id', delQueue);
+router.delete('/supprimer/:id', del);
 
 module.exports = router;

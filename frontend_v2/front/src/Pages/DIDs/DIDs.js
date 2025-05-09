@@ -211,7 +211,7 @@ function DIDs() {
               <th>Username</th>
               <th>Setup Price €</th>
               <th>Monthly Price €</th>
-              <th>Acti ns</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>

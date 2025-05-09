@@ -11,6 +11,8 @@ const PrefixesTable = () => {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ prefix: "", destination: "" });
   const [prefixId, setPrefixId] = useState(null);
+  const [prefixError, setPrefixError] = useState("");
+
 
   const fetchPrefixes = async () => {
     try {
@@ -36,8 +38,22 @@ const PrefixesTable = () => {
   }, [search, prefixes]);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+  
+    if (name === "prefix") {
+      if (/\D/.test(value)) {
+        setPrefixError("Le préfixe ne doit contenir que des chiffres.");
+      } else {
+        setPrefixError("");
+      }
+      const numericValue = value.replace(/\D/g, "");
+      setForm({ ...form, [name]: numericValue });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
   };
+  
+  
 
   const openModalToAdd = () => {
     setForm({ prefix: "", destination: "" });
@@ -162,15 +178,20 @@ const PrefixesTable = () => {
         </Modal.Header>
         <Modal.Body>
           <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Préfixe</Form.Label>
-              <Form.Control
-                type="text"
-                name="prefix"
-                value={form.prefix}
-                onChange={handleChange}
-              />
-            </Form.Group>
+          <Form.Group className="mb-3">
+  <Form.Label>Préfixe</Form.Label>
+  <Form.Control
+    type="text"
+    name="prefix"
+    value={form.prefix}
+    onChange={handleChange}
+    isInvalid={!!prefixError}
+  />
+  <Form.Control.Feedback type="invalid">
+    {prefixError}
+  </Form.Control.Feedback>
+</Form.Group>
+
             <Form.Group>
               <Form.Label>Destination</Form.Label>
               <Form.Control

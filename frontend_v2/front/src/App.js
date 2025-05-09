@@ -48,7 +48,7 @@ import RefillProviders from './Pages/Billing/RefillProviders';
 import Plans from './Pages/Rates/Plans';
 import Tariffs from './Pages/Rates/Tariffs';
 import Prefixes from './Pages/Rates/Prefixes';
-import UserCostomRates from './Pages/Rates/UserCustomRates';
+import UserCustomRates from './Pages/Rates/UserCustomRates';
 import Offers from './Pages/Rates/offers';
 import OfferCDR from './Pages/Rates/OffersCDR';
 import Providers from './Pages/Routes/Providers';
@@ -164,7 +164,7 @@ function App() {
               <Route path="/Rates/Plans" element={<Plans/>} />
               <Route path="/Rates/Tariffs" element={<Tariffs/>} />
               <Route path="/Rates/Prefixes" element={<Prefixes/>} />
-              <Route path="/Rates/UserCostomRates" element={<UserCostomRates/>} />
+              <Route path="/Rates/UserCustomRates" element={<UserCustomRates />} />
               <Route path="/Rates/Offers" element={<Offers/>} />
               <Route path="/Rates/OfferCDR" element={<OfferCDR/>} />
               <Route path="/Rates/OfferUse" element={<OfferCDR/>} />

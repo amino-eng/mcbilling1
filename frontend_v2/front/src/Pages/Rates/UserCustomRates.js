@@ -1,183 +1,282 @@
-import React, { useEffect, useState } from "react";
-import { Table, Button, Modal, Form, InputGroup, Spinner, Toast } from "react-bootstrap";
-import axios from "axios";
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { CSVLink } from 'react-csv';
 
-const UserRateTable = () => {
+function UserCustomRates() {
   const [userRates, setUserRates] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ id_user: "", id_prefix: "", rate: "" });
-  const [editingId, setEditingId] = useState(null);
-  const [toast, setToast] = useState({ show: false, message: "", bg: "success" });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 5;
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get("http://localhost:5000/api/admin/Userrate/afficher");
+  const [editingRate, setEditingRate] = useState(null); // 🖊️ state to manage editing
+  const [editFormData, setEditFormData] = useState({}); // 📑 form data
 
-      setUserRates(res.data.userRates);
-    } catch (err) {
-      showToast("Erreur lors du chargement", "danger");
-    }
-    setLoading(false);
-  };
+  const [newRate, setNewRate] = useState({
+    username: '',
+    prefix: '',
+    destination: '',
+    rateinitial: '',
+    initblock: '',
+    billingblock: ''
+  }); // State for new rate form
 
-  const showToast = (message, bg = "success") => {
-    setToast({ show: true, message, bg });
-    setTimeout(() => setToast({ ...toast, show: false }), 3000);
-  };
+  useEffect(() => {
+    fetchUserRates();
+  }, []);
 
-  const handleSubmit = async () => {
-    if (!formData.id_user || !formData.id_prefix || formData.rate === "") {
-      showToast("Veuillez remplir tous les champs", "warning");
-      return;
-    }
-
-    try {
-      if (editingId) {
-        await axios.put(`/api/admin/UserRate/modifier/${editingId}`, formData);
-        showToast("Tarif utilisateur modifié avec succès");
-      } else {
-        await axios.post("/api/admin/UserRate/ajouter", formData);
-        showToast("Tarif utilisateur ajouté avec succès");
-      }
-      fetchData();
-      handleClose();
-    } catch (err) {
-      showToast("Erreur lors de l’enregistrement", "danger");
-    }
+  const fetchUserRates = () => {
+    axios.get('http://localhost:5000/api/admin/Userrate/afficher')
+      .then((response) => {
+        setUserRates(response.data.userRates);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error fetching user rates:', error);
+        setError('Failed to fetch user rates');
+        setLoading(false);
+      });
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Supprimer ce tarif ?")) return;
+    if (window.confirm('Are you sure you want to delete this rate?')) {
+      try {
+        await axios.delete(`http://localhost:5000/api/admin/Userrate/supprimer/${id}`);
+        fetchUserRates(); // refresh after delete
+      } catch (error) {
+        console.error('Error deleting rate:', error);
+      }
+    }
+  };
+
+  const handleEditClick = (rate) => {
+    setEditingRate(rate.id);
+    setEditFormData({ ...rate });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingRate(null);
+    setEditFormData({});
+  };
+
+  const handleSaveEdit = async () => {
     try {
-      await axios.delete(`/api/admin/UserRate/supprimer/${id}`);
-      showToast("Tarif supprimé");
-      fetchData();
-    } catch (err) {
-      showToast("Erreur lors de la suppression", "danger");
+      await axios.put(`http://localhost:5000/api/admin/Userrate/modifier/${editingRate}`, editFormData);
+      fetchUserRates();
+      setEditingRate(null);
+    } catch (error) {
+      console.error('Error updating rate:', error);
     }
   };
 
-  const handleShow = (data = null) => {
-    if (data) {
-      setFormData({ id_user: data.id_user, id_prefix: data.id_prefix, rate: data.rate });
-      setEditingId(data.id);
-    } else {
-      setFormData({ id_user: "", id_prefix: "", rate: "" });
-      setEditingId(null);
+  const handleChange = (e) => {
+    setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
+  };
+
+  const filteredRates = userRates.filter(rate =>
+    rate.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    rate.prefix.toString().includes(searchTerm) ||
+    rate.destination.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleCreateChange = (e) => {
+    setNewRate({ ...newRate, [e.target.name]: e.target.value });
+  };
+
+  const handleCreateSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post('http://localhost:5000/api/admin/Userrate/ajouter', newRate);
+      fetchUserRates(); // Refresh list
+      setNewRate({ username: '', prefix: '', destination: '', rateinitial: '', initblock: '', billingblock: '' }); // Reset form
+    } catch (error) {
+      console.error('Error creating new rate:', error);
     }
-    setShowModal(true);
   };
 
-  const handleClose = () => {
-    setShowModal(false);
-    setFormData({ id_user: "", id_prefix: "", rate: "" });
-    setEditingId(null);
-  };
+  const indexOfLastRow = currentPage * rowsPerPage;
+  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+  const currentRows = filteredRates.slice(indexOfFirstRow, indexOfLastRow);
+  const totalPages = Math.ceil(filteredRates.length / rowsPerPage);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  if (loading) return <p>Loading user rates...</p>;
+  if (error) return <p>{error}</p>;
 
   return (
-    <div className="container mt-4">
-      <h4>Tarifs Utilisateurs</h4>
-      <Button variant="primary" className="mb-3" onClick={() => handleShow()}>
-        + Ajouter
-      </Button>
+    <div>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h2>User Custom Rates</h2>
+        <CSVLink data={userRates} filename="user_rates.csv" className="btn btn-success">
+          Export CSV
+        </CSVLink>
+      </div>
 
-      {loading ? (
-        <div className="text-center"><Spinner animation="border" /></div>
-      ) : (
-        <Table striped bordered hover responsive>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Utilisateur</th>
-              <th>Préfixe</th>
-              <th>Destination</th>
-              <th>Tarif</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {userRates.length > 0 ? userRates.map((rate) => (
+      <div className="mb-3">
+        <input
+          type="text"
+          placeholder="Search by Username, Prefix, or Destination"
+          className="form-control"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
+      <table className="table table-bordered table-striped">
+        <thead className="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Prefix</th>
+            <th>Destination</th>
+            <th>Initial Rate</th>
+            <th>Init Block</th>
+            <th>Billing Block</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {currentRows.length > 0 ? currentRows.map(rate => (
+            editingRate === rate.id ? (
+              <tr key={rate.id}>
+                <td>{rate.id}</td>
+                <td><input type="text" name="username" value={editFormData.username} onChange={handleChange} /></td>
+                <td><input type="text" name="prefix" value={editFormData.prefix} onChange={handleChange} /></td>
+                <td><input type="text" name="destination" value={editFormData.destination} onChange={handleChange} /></td>
+                <td><input type="text" name="rateinitial" value={editFormData.rateinitial} onChange={handleChange} /></td>
+                <td><input type="text" name="initblock" value={editFormData.initblock} onChange={handleChange} /></td>
+                <td><input type="text" name="billingblock" value={editFormData.billingblock} onChange={handleChange} /></td>
+                <td>
+                  <button className="btn btn-success btn-sm me-2" onClick={handleSaveEdit}>Save</button>
+                  <button className="btn btn-secondary btn-sm" onClick={handleCancelEdit}>Cancel</button>
+                </td>
+              </tr>
+            ) : (
               <tr key={rate.id}>
                 <td>{rate.id}</td>
                 <td>{rate.username}</td>
                 <td>{rate.prefix}</td>
                 <td>{rate.destination}</td>
-                <td>{rate.rate}</td>
+                <td>{rate.rateinitial}</td>
+                <td>{rate.initblock}</td>
+                <td>{rate.billingblock}</td>
                 <td>
-                  <Button variant="warning" size="sm" onClick={() => handleShow(rate)}>Modifier</Button>{" "}
-                  <Button variant="danger" size="sm" onClick={() => handleDelete(rate.id)}>Supprimer</Button>
+                  <button className="btn btn-primary btn-sm me-2" onClick={() => handleEditClick(rate)}>Edit</button>
+                  <button className="btn btn-danger btn-sm" onClick={() => handleDelete(rate.id)}>Delete</button>
                 </td>
               </tr>
-            )) : (
-              <tr><td colSpan="6" className="text-center">Aucun tarif trouvé</td></tr>
-            )}
-          </tbody>
-        </Table>
-      )}
+            )
+          )) : (
+            <tr>
+              <td colSpan="8" className="text-center">No data found</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
 
-      {/* Modal */}
-      <Modal show={showModal} onHide={handleClose}>
-        <Modal.Header closeButton>
-          <Modal.Title>{editingId ? "Modifier" : "Ajouter"} Tarif</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group>
-              <Form.Label>ID Utilisateur</Form.Label>
-              <Form.Control
-                type="number"
-                value={formData.id_user}
-                onChange={(e) => setFormData({ ...formData, id_user: e.target.value })}
-              />
-            </Form.Group>
+      {/* Pagination Controls */}
+      <div className="d-flex justify-content-center">
+        <nav>
+          <ul className="pagination">
+            {[...Array(totalPages)].map((_, index) => (
+              <li key={index} className={`page-item ${currentPage === index + 1 ? 'active' : ''}`}>
+                <button className="page-link" onClick={() => setCurrentPage(index + 1)}>
+                  {index + 1}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
 
-            <Form.Group>
-              <Form.Label>ID Préfixe</Form.Label>
-              <Form.Control
-                type="number"
-                value={formData.id_prefix}
-                onChange={(e) => setFormData({ ...formData, id_prefix: e.target.value })}
-              />
-            </Form.Group>
+      {/* Add New User Rate Form */}
+      <div className="card mb-4">
+        <div className="card-header">
+          <h4>Add New User Rate</h4>
+        </div>
+        <div className="card-body">
+          <form onSubmit={handleCreateSubmit}>
+            <div className="row mb-3">
+              <div className="col">
+                <input
+                  type="text"
+                  name="username"
+                  placeholder="Username"
+                  className="form-control"
+                  value={newRate.username}
+                  onChange={handleCreateChange}
+                  required
+                />
+              </div>
+              <div className="col">
+                <input
+                  type="text"
+                  name="prefix"
+                  placeholder="Prefix"
+                  className="form-control"
+                  value={newRate.prefix}
+                  onChange={handleCreateChange}
+                  required
+                />
+              </div>
+            </div>
 
-            <Form.Group>
-              <Form.Label>Tarif</Form.Label>
-              <Form.Control
-                type="number"
-                step="0.0001"
-                value={formData.rate}
-                onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>Annuler</Button>
-          <Button variant="primary" onClick={handleSubmit}>
-            {editingId ? "Modifier" : "Ajouter"}
-          </Button>
-        </Modal.Footer>
-      </Modal>
+            <div className="row mb-3">
+              <div className="col">
+                <input
+                  type="text"
+                  name="destination"
+                  placeholder="Destination"
+                  className="form-control"
+                  value={newRate.destination}
+                  onChange={handleCreateChange}
+                  required
+                />
+              </div>
+              <div className="col">
+                <input
+                  type="text"
+                  name="rateinitial"
+                  placeholder="Initial Rate"
+                  className="form-control"
+                  value={newRate.rateinitial}
+                  onChange={handleCreateChange}
+                  required
+                />
+              </div>
+            </div>
 
-      {/* Toast */}
-      <Toast
-        onClose={() => setToast({ ...toast, show: false })}
-        show={toast.show}
-        delay={3000}
-        autohide
-        bg={toast.bg}
-        className="position-fixed bottom-0 end-0 m-3"
-      >
-        <Toast.Body className="text-white">{toast.message}</Toast.Body>
-      </Toast>
+            <div className="row mb-3">
+              <div className="col">
+                <input
+                  type="text"
+                  name="initblock"
+                  placeholder="Init Block"
+                  className="form-control"
+                  value={newRate.initblock}
+                  onChange={handleCreateChange}
+                  required
+                />
+              </div>
+              <div className="col">
+                <input
+                  type="text"
+                  name="billingblock"
+                  placeholder="Billing Block"
+                  className="form-control"
+                  value={newRate.billingblock}
+                  onChange={handleCreateChange}
+                  required
+                />
+              </div>
+            </div>
+
+            <button type="submit" className="btn btn-primary">Add Rate</button>
+          </form>
+        </div>
+      </div>
     </div>
   );
-};
+}
 
-export default UserRateTable;
+export default UserCustomRates;

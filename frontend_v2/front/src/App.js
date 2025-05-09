@@ -3,7 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
+import Login from './Pages/Login/Login';
+import { initAuth, getCurrentUser } from './utils/auth';
 
 import Sidebar from './layout/Sidebar';
 import Navbar from './layout/Navbar';
@@ -35,11 +38,11 @@ import SummaryDayTrunk from './Pages/Reports/SummaryDayTrunk';
 import ReportsDestination from './Pages/Reports/ReportsDestination';
 import InboundReports from './Pages/Reports/InboundReports';
 import SummaryPerUser from './Pages/Reports/SummaryPerUser';
-import CallArchive from './Pages/Reports/CallArchive';
+import CallArchive from './Pages/Reports/callArchive';
 import ActivityDash from './Pages/Dashboard/ActivityDash';
 import RechargeHistory from './Pages/Dashboard/RechargeHistory';
 import Profile from './components/UserProfile/profile';
-import RestricNumber from './Pages/clients/RestricNumber'; // Import the renamed component
+import RestricNumber from './Pages/clients/RestricNumber';
 import DIDHistory from './Pages/DIDs/DIDHistory';
 import Refills from './Pages/Billing/Refills';
 import PaymentMethods from './Pages/Billing/PaymentMethods';
@@ -51,6 +54,7 @@ import Prefixes from './Pages/Rates/Prefixes';
 import UserCustomRates from './Pages/Rates/UserCustomRates';
 import Offers from './Pages/Rates/offers';
 import OfferCDR from './Pages/Rates/OffersCDR';
+import OfferUse from './Pages/Rates/OfferUse';
 import Providers from './Pages/Routes/Providers';
 import TrunkGroups from './Pages/Routes/TrunkGroups';
 import ProviderRates from './Pages/Routes/ProviderRates';
@@ -58,23 +62,95 @@ import Servers from './Pages/Routes/Servers';
 import Trunks from './Pages/Routes/Trunks';
 import TrunkErrors from './Pages/Routes/TrunkErrors';
 import Queues from './Pages/DIDs/Queues';
+import Dashboard from './Pages/Dashboard/Dashboard';
 
+// Layout component to wrap authenticated pages
+const Layout = ({ children, user }) => {
+  return (
+    <div className="d-flex flex-column vh-100">
+      <Navbar username={user.username} email={user.email} />
+      <div className="d-flex flex-grow-1">
+        <Sidebar />
+        <div className="p-4 flex-grow-1">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
 
-
-function App() {
-  const user = {
-    username: 'Eya',
-    email: 'eya@example.com'
-  };
-
-  // 🔹 State for storing backend data
+// AppContent component that uses the useNavigate hook
+function AppContent() {
+  const navigate = useNavigate();
+  
+  // Use state for authentication and user data
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    localStorage.getItem('isAuthenticated') === 'true'
+  );
+  
+  const [user, setUser] = useState(
+    getCurrentUser() || {
+      username: 'Admin',
+      email: 'admin@example.com'
+    }
+  );
+  
+  // State for storing backend data
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 🔹 useEffect to fetch data from the backend on component mount
+  // Listen for authentication changes
   useEffect(() => {
-    axios.get('http://localhost:3000/api/data')
+    // Function to handle storage events (when localStorage changes)
+    const handleStorageChange = () => {
+      const authStatus = localStorage.getItem('isAuthenticated') === 'true';
+      setIsAuthenticated(authStatus);
+      
+      if (authStatus) {
+        const updatedUser = getCurrentUser();
+        if (updatedUser) {
+          setUser(updatedUser);
+        }
+      } else {
+        // If authentication status is false, redirect to login page
+        navigate('/login');
+      }
+    };
+    
+    // Check auth status on mount
+    handleStorageChange();
+    
+    // Add event listener for storage changes
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Custom event for auth changes within the same window
+    window.addEventListener('auth-change', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth-change', handleStorageChange);
+    };
+  }, [navigate]);
+
+  // useEffect to fetch data from the backend on component mount
+  useEffect(() => {
+    // Skip API call if not authenticated
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+    
+    // Use the correct API endpoint based on the API config
+    const apiUrl = localStorage.getItem('apiUrl') || 'http://localhost:5001/api';
+    
+    // Temporarily disable data fetching to prevent 404 errors
+    setData([]);
+    setLoading(false);
+    
+    // Uncomment this when your API endpoint is ready
+    /*
+    axios.get(`${apiUrl}/data`)
       .then((response) => {
         setData(response.data);
         setLoading(false);
@@ -84,105 +160,252 @@ function App() {
         setError('Error fetching data');
         setLoading(false);
       });
+    */
+  }, [isAuthenticated]);
+
+  // Set default authorization header if token exists
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
   }, []);
 
+  // Ensure all components are properly loaded before rendering
+  if (!Profile || !DIDs) {
+    return <div className="container mt-5">Loading components...</div>;
+  }
+
+  return (
+    <Routes>
+      <Route path="/login" element={
+        !isAuthenticated ? <Login /> : <Navigate to="/" replace />
+      } />
+      
+      {/* Protected routes */}
+      <Route path="/" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <Dashboard />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/profile" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <Profile username={user.username} email={user.email} />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/Sda" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <Sda />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/clients" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <Clients />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/clients/caller-id" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <CallerID />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/clients/live-calls" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <LiveCalls />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/clients/Users" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <Users />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/clients/RestricNumber" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <RestricNumber />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/clients/SipUser" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <SipUser />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/clients/Iax" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <Iax />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/reports" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <Reports />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/reports/summary-day" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <SummaryPerDay />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/reports/summaryperuser" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <SummaryPerUser />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/reports/summarypertrunk" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <SummaryPerTrunk />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/reports/CDR" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <CDR />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/reports/CDRFailed" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <CDRFailed />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/reports/summaryMonthTrunk" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <SummaryMonthTrunk />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/DIDs" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <DIDs />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/DIDs/IVRs" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <IVRs />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/DIDs/DIDDestination" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <DIDDestination />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="/DIDs/DIDsUse" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <DIDsUse />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+      
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+// Main App component
+function App() {
+  // Initialize authentication state
+  initAuth();
+  
   return (
     <Router>
-      <div className="d-flex flex-column vh-100">
-        {/* Navbar at the top */}
-        <Navbar username={user.username} email={user.email} />
-
-        <div className="d-flex flex-grow-1">
-          {/* Sidebar on the left */}
-          <Sidebar />
-
-          {/* Main content */}
-          <div className="p-4 flex-grow-1">
-            <Routes>
-              <Route path="/" element={
-                <div>
-                  <h2>Dashboard</h2>
-                  <h3>Data from Backend:</h3>
-                  {loading ? <p>Loading data...</p> : 
-                    error ? <p>{error}</p> :
-                    <ul>
-                      {data.map(item => (
-                        <li key={item.id}>{item.name}</li>
-                      ))}
-                    </ul>
-                  }
-                </div>
-              } />
-              
-              <Route path="/profile" element={<Profile username={user.username} email={user.email} />} />
-              
-              <Route path="/Sda" element={<Sda />} />
-              <Route path="/clients" element={<Clients />} />
-              <Route path="/clients/caller-id" element={<CallerID />} />
-              <Route path="/clients/live-calls" element={<LiveCalls />} />
-              <Route path="/clients/Users" element={<Users />} />
-              <Route path="/clients/RestricNumber" element={<RestricNumber />} /> {/* Use the renamed route */}
-
- 
-              <Route path="/clients/SipUser" element={<SipUser />} />
-
-              <Route path="/clients/sipUser" element={<SipUser />} />
-
-
-              <Route path="/clients/SipUser" element={<SipUser />} />
-
-              <Route path="/clients/Iax" element={<Iax />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/reports/summary-day" element={<SummaryPerDay />} />
-              <Route path="/reports/summaryperuser" element={<SummaryPerUser />} />
-              <Route path="/reports/summarypertrunk" element={<SummaryPerTrunk />} />
-              <Route path="/reports/CDR" element={<CDR />} />
-              <Route path="/reports/CDRFailed" element={<CDRFailed />} />
-              <Route path="/reports/summaryMonthTrunk" element={<SummaryMonthTrunk />} />
-              <Route path="/reports/SummaryDayTrunk" element={<SummaryDayTrunk />} />
-              <Route path="/reports/summary-month" element={<SummaryPerMonth />} />
-              <Route path="/reports/summaryMonthUser" element={<SummaryMonthUser />} />
-              <Route path="/reports/SummaryDayUser" element={<SummaryDayUser />} />
-              <Route path="/reports/destination" element={<ReportsDestination />} />
-              <Route path="/reports/inbound" element={<InboundReports />} />
-              <Route path="/reports/CallArchive" element={<CallArchive />} />
-              <Route path="/dashboard/activitydash" element={<ActivityDash />} />
-              <Route path="/dashboard/rechargehistory" element={<RechargeHistory />} />
-              <Route path="/DIDs/DIDs" element={<DIDs />} />
-              <Route path="/DIDs/DIDDestination" element={<DIDDestination />} />
-              <Route path="/DIDs/DIDsUse" element={<DIDsUse />} />
-              <Route path="/DIDs/IVRs" element={<IVRs />} />
-              <Route path="/DIDs/QueuesMembres" element={<QueuesMembres/>} />
-              <Route path="/DIDs/QueuesDashboard" element={<QueuesDashboard/>} />
-              <Route path="/DIDs/Holidays" element={<Holidays/>} />
-              <Route path="/DIDs/Queues" element={<Queues/>} />
-              <Route path="/DIDs/DIDHistory" element={<DIDHistory/>} />
-              <Route path="/Billing/Refills" element={<Refills/>} />
-              <Route path="/Billing/PaymentMethods" element={<PaymentMethods/>} />
-              <Route path="/Billing/Voucher" element={<Voucher/>} />
-              <Route path="/Billing/RefillProviders" element={<RefillProviders/>} />
-              <Route path="/Rates/Plans" element={<Plans/>} />
-              <Route path="/Rates/Tariffs" element={<Tariffs/>} />
-              <Route path="/Rates/Prefixes" element={<Prefixes/>} />
-              <Route path="/Rates/UserCustomRates" element={<UserCustomRates />} />
-              <Route path="/Rates/Offers" element={<Offers/>} />
-              <Route path="/Rates/OfferCDR" element={<OfferCDR/>} />
-              <Route path="/Rates/OfferUse" element={<OfferCDR/>} />
-              <Route path="/Routes/Providers" element={<Providers/>} />
-              <Route path="/Routes/TrunkGroups" element={<TrunkGroups/>} />
-              <Route path="/Routes/ProviderRates" element={<ProviderRates/>} />
-              <Route path="/Routes/Servers" element={<Servers/>} />
-              <Route path="/Routes/Trunks" element={<Trunks/>} />
-              <Route path="/Routes/TrunkErrors" element={<TrunkErrors/>} />
-              
-              
-
-
-              <Route path="/clients/UserHistory" element={<UserHistory/>} />
-            </Routes>
-          </div>
-        </div>
-      </div>
+      <AppContent />
     </Router>
   );
 }

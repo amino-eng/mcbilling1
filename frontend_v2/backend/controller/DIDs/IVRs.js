@@ -11,8 +11,7 @@ exports.afficher = (req, res) => {
       ivr.satStart, 
       ivr.sunStart 
     FROM pkg_ivr ivr
-    JOIN pkg_user user ON ivr.id_user = user.id
-    ;
+    JOIN pkg_user user ON ivr.id_user = user.id;
   `;
 
   connection.query(query, (err, results) => {
@@ -34,6 +33,7 @@ exports.getById = (req, res) => {
       ivr.name, 
       ivr.monFriStart, 
       ivr.satStart, 
+      ivr.sunStart 
     FROM pkg_ivr ivr
     JOIN pkg_user user ON ivr.id_user = user.id
     WHERE ivr.id = ?;
@@ -55,31 +55,55 @@ exports.getById = (req, res) => {
 
 // Ajouter un IVR
 exports.add = (req, res) => {
-    // Extract required fields from the request body
-    const { id_user, name } = req.body;
-  
-    // Check if required fields are present
-    if (!id_user || !name) {
-      return res.status(400).json({ error: "Missing required fields: id_user and name are required" });
+  const { id_user, name, monFriStart, satStart, sunStart } = req.body;
+
+  if (!id_user || !name) {
+    return res.status(400).json({ error: "Missing required fields: id_user and name are required" });
+  }
+
+  const query = `
+    INSERT INTO pkg_ivr (id_user, name, monFriStart, satStart, sunStart) 
+    VALUES (?, ?, ?, ?, ?);
+  `;
+
+  connection.query(query, [id_user, name, monFriStart, satStart, sunStart], (err, result) => {
+    if (err) {
+      console.error("Error adding IVR:", err);
+      return res.status(500).json({ error: "Database error" });
     }
-  
-    // Define the SQL query to insert data into the pkg_ivr table
-    const query = `
-      INSERT INTO pkg_ivr (id_user, name) 
-      VALUES (?, ?);
-    `;
-  
-    // Execute the query with the required fields
-    connection.query(query, [id_user, name], (err, result) => {
-      if (err) {
-        console.error("Error adding IVR:", err);
-        return res.status(500).json({ error: "Database error" });
-      }
-  
-      // Return success response with the ID of the newly inserted record
-      res.status(201).json({ message: "IVR added successfully", id: result.insertId });
-    });
-  };
+
+    res.status(201).json({ message: "IVR added successfully", id: result.insertId });
+  });
+};
+
+// Modifier un IVR par ID
+exports.modify = (req, res) => {
+  const ivrId = req.params.id;
+  const { id_user, name, monFriStart, satStart, sunStart } = req.body;
+
+  if (!id_user || !name) {
+    return res.status(400).json({ error: "Missing required fields: id_user and name are required" });
+  }
+
+  const query = `
+    UPDATE pkg_ivr 
+    SET id_user = ?, name = ?, monFriStart = ?, satStart = ?, sunStart = ?
+    WHERE id = ?;
+  `;
+
+  connection.query(query, [id_user, name, monFriStart, satStart, sunStart, ivrId], (err, result) => {
+    if (err) {
+      console.error("Error updating IVR:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "IVR not found" });
+    }
+
+    res.json({ message: "IVR updated successfully" });
+  });
+};
 
 // Supprimer un IVR par ID
 exports.del = (req, res) => {

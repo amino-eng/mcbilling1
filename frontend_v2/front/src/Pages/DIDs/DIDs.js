@@ -33,11 +33,11 @@ function DIDs() {
     fixrate: ''
   });
   const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [didToDelete, setDidToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const fetchDIDs = () => {
     axios.get('http://localhost:5000/api/admin/DIDs/afficher')
@@ -98,8 +98,14 @@ function DIDs() {
         document.getElementById('addModal').classList.remove('show');
         document.querySelector('.modal-backdrop').remove();
         fetchDIDs();
+        setSuccessMessage('DID added successfully!');
+        setErrorMessage('');
       })
-      .catch((error) => console.error('Error adding DID:', error));
+      .catch((error) => {
+        console.error('Error adding DID:', error);
+        setErrorMessage(`Failed to add DID: ${error.response?.data?.message || error.message}`);
+        setSuccessMessage('');
+      });
   };
 
   const updateDID = (didId, updatedDID) => {
@@ -107,10 +113,13 @@ function DIDs() {
       .then(() => {
         fetchDIDs();
         setShowUpdateModal(false);
+        setSuccessMessage('DID updated successfully!');
+        setErrorMessage('');
       })
       .catch((error) => {
         console.error('Error updating DID:', error);
-        alert(`Failed to update DID: ${error.response?.data?.message || error.message}`);
+        setErrorMessage(`Failed to update DID: ${error.response?.data?.message || error.message}`);
+        setSuccessMessage('');
       });
   };
 
@@ -118,14 +127,19 @@ function DIDs() {
     axios.delete(`http://localhost:5000/api/admin/DIDs/supprimer/${didId}`)
       .then(() => {
         setDids(dids.filter((did) => did.id !== didId));
-        setShowDeleteModal(false);
+        setSuccessMessage('DID deleted successfully!');
+        setErrorMessage('');
       })
-      .catch((error) => console.error('Error deleting DID:', error));
+      .catch((error) => {
+        console.error('Error deleting DID:', error);
+        setErrorMessage(`Failed to delete DID: ${error.response?.data?.message || error.message}`);
+        setSuccessMessage('');
+      });
   };
 
-  const handleDelete = () => {
-    if (didToDelete) {
-      deleteDID(didToDelete);
+  const handleDelete = (didId) => {
+    if (window.confirm("Are you sure you want to delete this DID?")) {
+      deleteDID(didId);
     }
   };
 
@@ -139,6 +153,8 @@ function DIDs() {
       fixrate: did.fixrate
     });
     setShowUpdateModal(true);
+    setSuccessMessage('');
+    setErrorMessage('');
   };
 
   const handleInputChange = (e) => {
@@ -164,6 +180,16 @@ function DIDs() {
   return (
     <div className="container mt-4">
       <h1 className="mb-4">Manage DIDs</h1>
+      {successMessage && (
+        <div className="alert alert-success" role="alert">
+          {successMessage}
+        </div>
+      )}
+      {errorMessage && (
+        <div className="alert alert-danger" role="alert">
+          {errorMessage}
+        </div>
+      )}
       <div className="d-flex justify-content-between mb-3">
         <button
           type="button"
@@ -243,10 +269,7 @@ function DIDs() {
                     </button>
                     <button
                       className="btn btn-danger btn-sm d-flex align-items-center gap-1"
-                      onClick={() => {
-                        setDidToDelete(did.id);
-                        setShowDeleteModal(true);
-                      }}
+                      onClick={() => handleDelete(did.id)}
                     >
                       <FaTrash /> Delete
                     </button>
@@ -561,31 +584,6 @@ function DIDs() {
           </div>
         </div>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Confirm Delete</h5>
-                <button type="button" className="btn-close" onClick={() => setShowDeleteModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                <p>Are you sure you want to delete this DID?</p>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>
-                  Cancel
-                </button>
-                <button type="button" className="btn btn-danger" onClick={handleDelete}>
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

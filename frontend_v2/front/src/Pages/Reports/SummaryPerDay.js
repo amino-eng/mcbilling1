@@ -31,7 +31,7 @@ const SummaryPerDay = () => {
     setError("");
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/admin/SummaryPerDay"
+        "http://localhost:5002/api/admin/SummaryPerDay"
       );
       setData(response.data.data);
     } catch (err) {

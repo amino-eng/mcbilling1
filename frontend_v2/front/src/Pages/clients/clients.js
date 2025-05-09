@@ -1,7 +1,8 @@
 import React from 'react'
 
-export default function clients() {
+// Changed function name to start with uppercase letter (React component naming convention)
+export default function Clients() {
   return (
-    <div><h1>client</h1></div>
+    <div><h1>Clients</h1></div>
   )
 }

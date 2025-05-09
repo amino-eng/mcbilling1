@@ -1,9 +1,12 @@
 const express = require('express');
 const mysql = require('mysql2');
-const cors =require ("cors")
+const cors = require("cors");
+const fs = require('fs');
+const path = require('path');
 const app = express();
-const port = 5000;
+const port = 5001; // Changed to 5001 since 5000 is busy
 const {connect} = require("./config/dataBase");
+const routeAuth = require("./route/auth");
 const routeClient=require("./route/client");
 const routeCDR=require("./route/rapport/CDRroute");
 const routeSummaryPerDay=require("./route/rapport/SummaryPerDay");
@@ -38,11 +41,17 @@ const routeTariffs = require("./route/rates/tariffs");
 const routeUserrate = require("./route/rates/userrate");
 const routeOffer = require("./route/rates/offer");
 
-// cors
-app.use(cors())
+// Configure CORS with specific options
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3001'], // Allow these origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow these methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow these headers
+  credentials: true // Allow cookies
+}))
 
 app.use(express.json())
 // Simple route to query the database
+app.use("/api/auth", routeAuth);
 app.use("/api/admin/agent",routeClient)
 app.use("/api/admin/CDR",routeCDR)
 app.use("/api/admin/SummaryPerDay",routeSummaryPerDay)
@@ -78,7 +87,55 @@ app.use("/api/admin/Userrate", routeUserrate);
 app.use("/api/admin/Offers", routeOffer);
 
 
-// Start the server
-app.listen(port, () => {
-  console.log("Server is running on",port );
-});
+// Try to kill any process using port 5000 before starting the server
+const { exec } = require('child_process');
+
+// Function to check if a port is in use
+const isPortInUse = (port) => {
+  return new Promise((resolve) => {
+    const server = require('net').createServer()
+    server.once('error', () => {
+      resolve(true); // Port is in use
+    });
+    server.once('listening', () => {
+      server.close();
+      resolve(false); // Port is free
+    });
+    server.listen(port);
+  });
+};
+
+// Create a config directory if it doesn't exist
+const configDir = path.join(__dirname, '..', 'config');
+if (!fs.existsSync(configDir)) {
+  fs.mkdirSync(configDir, { recursive: true });
+}
+
+// Start the server with port fallback
+const startServer = async (attemptPort) => {
+  const server = app.listen(attemptPort, () => {
+    console.log(`\n=== SERVER STARTED SUCCESSFULLY ===`);
+    console.log(`Server is running on port ${attemptPort}`);
+    console.log(`API available at http://localhost:${attemptPort}/api`);
+    console.log(`===================================\n`);
+    
+    // Write the port to a config file that the frontend can read
+    const configPath = path.join(configDir, 'api-config.json');
+    const config = {
+      apiPort: attemptPort,
+      apiUrl: `http://localhost:${attemptPort}/api`
+    };
+    
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    console.log(`API configuration written to ${configPath}`);
+  }).on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`Port ${attemptPort} is busy, trying port ${attemptPort + 1}`);
+      startServer(attemptPort + 1);
+    } else {
+      console.error('Server error:', err);
+    }
+  });
+};
+
+startServer(port);

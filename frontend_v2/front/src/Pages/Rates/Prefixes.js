@@ -1,26 +1,326 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Table, Button, Modal, Form, InputGroup, FormControl } from "react-bootstrap";
-import { toast } from "react-toastify";
+import "bootstrap/dist/css/bootstrap.min.css";
+import { Button, Table, Form, Modal, Alert, Card, Container, Row, Col, Badge, Spinner, FormControl } from "react-bootstrap";
 import { CSVLink } from "react-csv";
+import ReactPaginate from "react-paginate";
+import {
+  FaCheckCircle,
+  FaTimesCircle,
+  FaEdit,
+  FaSearch,
+  FaDownload,
+  FaPlusCircle,
+  FaTrashAlt,
+  FaFileAlt,
+  FaCog
+} from "react-icons/fa";
+
+// Constants
+const ITEMS_PER_PAGE = 10;
+
+const DEFAULT_MODAL_DATA = {
+  prefix: "",
+  destination: "",
+};
+
+// Header Component
+function PrefixesHeader({ onAddClick, prefixes, isExporting = false }) {
+  const csvData = [
+    ["Préfixe", "Destination"],
+    ...prefixes.map(prefix => [
+      prefix.prefix,
+      prefix.destination
+    ])
+  ];
+
+  return (
+    <Card.Header className="d-flex flex-wrap align-items-center p-0 rounded-top overflow-hidden">
+      <div className="bg-primary p-3 w-100 position-relative">
+        <div className="position-absolute top-0 end-0 p-2 d-none d-md-block">
+          {Array(5)
+            .fill()
+            .map((_, i) => (
+              <div
+                key={i}
+                className="floating-icon position-absolute"
+                style={{
+                  top: `${Math.random() * 100}%`,
+                  left: `${Math.random() * 100}%`,
+                  animationDelay: `${i * 0.5}s`,
+                }}
+              >
+                <FaFileAlt
+                  className="text-white opacity-25"
+                  style={{
+                    fontSize: `${Math.random() * 1.5 + 0.5}rem`,
+                  }}
+                />
+              </div>
+            ))}
+        </div>
+        <div className="d-flex align-items-center position-relative z-2">
+          <div className="bg-white rounded-circle p-3 me-3 shadow pulse-effect">
+            <FaFileAlt className="text-primary fs-3" />
+          </div>
+          <div>
+            <h2 className="fw-bold mb-0 text-white">Liste des Préfixes</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos préfixes facilement</p>
+          </div>
+        </div>
+      </div>
+      <div className="w-100 bg-white p-2 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
+        <div className="d-flex align-items-center gap-3">
+          <Badge bg="primary" className="d-flex align-items-center p-2 ps-3 rounded-pill">
+            <span className="me-2 fw-normal">
+              Total: <span className="fw-bold">{prefixes.length}</span>
+            </span>
+            <span
+              className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center"
+              style={{ width: "24px", height: "24px" }}
+            >
+              <FaFileAlt size={12} />
+            </span>
+          </Badge>
+        </div>
+        <div className="d-flex gap-2">
+          <Button
+            variant="primary"
+            onClick={onAddClick}
+            className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+          >
+            <div className="icon-container">
+              <FaPlusCircle />
+            </div>
+            <span>Ajouter</span>
+          </Button>
+          <CSVLink
+            data={csvData}
+            filename={"prefixes_export.csv"}
+            className="btn btn-success d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+            disabled={isExporting}
+          >
+            <div className="icon-container">
+              {isExporting ? <Spinner animation="border" size="sm" /> : <FaDownload />}
+            </div>
+            <span>{isExporting ? "Exportation..." : "Exporter CSV"}</span>
+          </CSVLink>
+        </div>
+      </div>
+    </Card.Header>
+  );
+}
+
+// Search Bar Component
+function SearchBar({ searchTerm, onSearchChange }) {
+  return (
+    <div className="position-relative">
+      <FormControl
+        type="search"
+        placeholder="Rechercher des préfixes..."
+        className="ps-5"
+        value={searchTerm}
+        onChange={onSearchChange}
+      />
+      <FaSearch className="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" />
+    </div>
+  );
+}
+
+// Action Buttons Component
+function ActionButtons({ onEdit, onDelete }) {
+  return (
+    <div className="d-flex gap-2">
+      <Button
+        variant="outline-primary"
+        size="sm"
+        onClick={onEdit}
+        className="action-btn"
+        title="Modifier"
+      >
+        <FaEdit />
+      </Button>
+      <Button
+        variant="outline-danger"
+        size="sm"
+        onClick={onDelete}
+        className="action-btn"
+        title="Supprimer"
+      >
+        <FaTrashAlt />
+      </Button>
+    </div>
+  );
+}
+
+// Empty State Component
+function EmptyState() {
+  return (
+    <div className="text-center py-5">
+      <FaFileAlt className="text-muted mb-3" size={48} />
+      <h5 className="text-muted">Aucun préfixe trouvé</h5>
+      <p className="text-muted small">Commencez par ajouter un nouveau préfixe</p>
+    </div>
+  );
+}
+
+// Prefixes Table Component
+function PrefixesTableComponent({ prefixes, onEdit, onDelete, isLoading }) {
+  if (isLoading) {
+    return (
+      <div className="text-center py-5">
+        <Spinner animation="border" variant="primary" />
+      </div>
+    );
+  }
+
+  if (prefixes.length === 0) {
+    return <EmptyState />;
+  }
+
+  return (
+    <Table hover className="mb-0">
+      <thead>
+        <tr>
+          <th>Préfixe</th>
+          <th>Destination</th>
+          <th className="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {prefixes.map((prefix) => (
+          <tr key={prefix.id} className="prefix-row">
+            <td>{prefix.prefix}</td>
+            <td>{prefix.destination}</td>
+            <td className="text-end">
+              <ActionButtons
+                onEdit={() => onEdit(prefix)}
+                onDelete={() => onDelete(prefix.id)}
+              />
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </Table>
+  );
+}
+
+// Pagination Component
+function PaginationSection({ pageCount, onPageChange, currentPage }) {
+  if (pageCount <= 1) return null;
+
+  return (
+    <ReactPaginate
+      previousLabel="Précédent"
+      nextLabel="Suivant"
+      breakLabel="..."
+      breakClassName="page-item"
+      breakLinkClassName="page-link"
+      pageCount={pageCount}
+      marginPagesDisplayed={2}
+      pageRangeDisplayed={5}
+      onPageChange={onPageChange}
+      containerClassName="pagination mb-0"
+      pageClassName="page-item"
+      pageLinkClassName="page-link"
+      previousClassName="page-item"
+      previousLinkClassName="page-link"
+      nextClassName="page-item"
+      nextLinkClassName="page-link"
+      activeClassName="active"
+      forcePage={currentPage}
+    />
+  );
+}
+
+// Prefix Modal Component
+function PrefixModal({
+  show,
+  onHide,
+  title,
+  onSubmit,
+  modalData,
+  onInputChange,
+  isSubmitting,
+  prefixError
+}) {
+  return (
+    <Modal show={show} onHide={onHide} centered>
+      <Modal.Header closeButton>
+        <Modal.Title>{title}</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <Form>
+          <Form.Group className="mb-3">
+            <Form.Label>Préfixe</Form.Label>
+            <Form.Control
+              type="text"
+              name="prefix"
+              value={modalData.prefix}
+              onChange={onInputChange}
+              isInvalid={!!prefixError}
+            />
+            <Form.Control.Feedback type="invalid">
+              {prefixError}
+            </Form.Control.Feedback>
+          </Form.Group>
+
+          <Form.Group>
+            <Form.Label>Destination</Form.Label>
+            <Form.Control
+              type="text"
+              name="destination"
+              value={modalData.destination}
+              onChange={onInputChange}
+            />
+          </Form.Group>
+        </Form>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="secondary" onClick={onHide}>
+          Annuler
+        </Button>
+        <Button variant="primary" onClick={onSubmit} disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Spinner animation="border" size="sm" className="me-2" />
+              En cours...
+            </>
+          ) : (
+            "Enregistrer"
+          )}
+        </Button>
+      </Modal.Footer>
+    </Modal>
+  );
+}
 
 const PrefixesTable = () => {
   const [prefixes, setPrefixes] = useState([]);
   const [filteredPrefixes, setFilteredPrefixes] = useState([]);
-  const [search, setSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ prefix: "", destination: "" });
+  const [modalData, setModalData] = useState(DEFAULT_MODAL_DATA);
   const [prefixId, setPrefixId] = useState(null);
   const [prefixError, setPrefixError] = useState("");
-
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
 
   const fetchPrefixes = async () => {
     try {
+      setIsLoading(true);
       const res = await axios.get("http://localhost:5000/api/admin/Prefixes/afficher/");
       setPrefixes(res.data.prefixes);
       setFilteredPrefixes(res.data.prefixes);
+      setError("");
     } catch (err) {
-      toast.error("Erreur lors du chargement des préfixes");
+      setError("Erreur lors du chargement des préfixes");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -30,14 +330,15 @@ const PrefixesTable = () => {
 
   useEffect(() => {
     const filtered = prefixes.filter(
-      (item) =>
-        item.prefix.toLowerCase().includes(search.toLowerCase()) ||
-        item.destination.toLowerCase().includes(search.toLowerCase())
+      (prefix) =>
+        prefix.prefix.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        prefix.destination.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredPrefixes(filtered);
-  }, [search, prefixes]);
+    setCurrentPage(0);
+  }, [searchTerm, prefixes]);
 
-  const handleChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
   
     if (name === "prefix") {
@@ -47,47 +348,47 @@ const PrefixesTable = () => {
         setPrefixError("");
       }
       const numericValue = value.replace(/\D/g, "");
-      setForm({ ...form, [name]: numericValue });
+      setModalData({ ...modalData, [name]: numericValue });
     } else {
-      setForm({ ...form, [name]: value });
+      setModalData({ ...modalData, [name]: value });
     }
   };
-  
-  
 
-  const openModalToAdd = () => {
-    setForm({ prefix: "", destination: "" });
+  const handleAdd = () => {
+    setModalData(DEFAULT_MODAL_DATA);
     setPrefixId(null);
     setShowModal(true);
   };
 
-  const openModalToEdit = (prefix) => {
-    setForm({ prefix: prefix.prefix, destination: prefix.destination });
+  const handleEdit = (prefix) => {
+    setModalData({ prefix: prefix.prefix, destination: prefix.destination });
     setPrefixId(prefix.id);
     setShowModal(true);
   };
 
-  const handleSubmit = async () => {
-    if (!form.prefix || !form.destination) {
-      toast.warning("Tous les champs sont requis !");
+  const handleModalSubmit = async () => {
+    if (!modalData.prefix || !modalData.destination) {
+      setError("Tous les champs sont requis !");
       return;
     }
 
     try {
+      setIsSubmitting(true);
       if (prefixId === null) {
-        await axios.post("http://localhost:5000/api/admin/Prefixes/ajouter", form);
-        toast.success("Préfixe ajouté !");
+        await axios.post("http://localhost:5000/api/admin/Prefixes/ajouter", modalData);
+        setSuccessMessage("Préfixe ajouté avec succès !");
       } else {
-        await axios.put(`http://localhost:5000/api/admin/Prefixes/modifier/${prefixId}`, form);
-        toast.success("Préfixe modifié !");
+        await axios.put(`http://localhost:5000/api/admin/Prefixes/modifier/${prefixId}`, modalData);
+        setSuccessMessage("Préfixe modifié avec succès !");
       }
 
       setShowModal(false);
       fetchPrefixes();
-      setForm({ prefix: "", destination: "" });
-      setPrefixId(null);
+      setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
-      toast.error("Erreur lors de l'enregistrement");
+      setError("Erreur lors de l'enregistrement");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -95,123 +396,143 @@ const PrefixesTable = () => {
     if (window.confirm("Supprimer ce préfixe ?")) {
       try {
         await axios.delete(`http://localhost:5000/api/admin/Prefixes/supprimer/${id}`);
-        toast.success("Préfixe supprimé !");
+        setSuccessMessage("Préfixe supprimé avec succès !");
         fetchPrefixes();
+        setTimeout(() => setSuccessMessage(""), 3000);
       } catch (err) {
-        toast.error("Erreur lors de la suppression");
+        setError("Erreur lors de la suppression");
       }
     }
   };
 
-  const csvHeaders = [
-    { label: "Préfixe", key: "prefix" },
-    { label: "Destination", key: "destination" }
-  ];
+  const handlePageChange = ({ selected }) => {
+    setCurrentPage(selected);
+  };
+
+  // Pagination logic
+  const pageCount = Math.ceil(filteredPrefixes.length / ITEMS_PER_PAGE);
+  const offset = currentPage * ITEMS_PER_PAGE;
+  const pagedPrefixes = filteredPrefixes.slice(offset, offset + ITEMS_PER_PAGE);
+
+  const customStyles = `
+    .pulse-effect {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+    }
+    .btn-hover-effect .icon-container {
+      transition: all 0.3s ease;
+    }
+    .btn-hover-effect:hover .icon-container {
+      transform: translateY(-2px);
+    }
+    .action-btn .btn-icon {
+      transition: transform 0.2s ease;
+    }
+    .action-btn:hover .btn-icon {
+      transform: scale(1.2);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .prefix-row {
+      transition: all 0.2s ease;
+    }
+    .prefix-row:hover {
+      background-color: rgba(13, 110, 253, 0.05);
+    }
+    .main-card {
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+  `;
 
   return (
-    <div className="container mt-4">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h4>Liste des Préfixes</h4>
-        <div className="d-flex gap-2">
-          <CSVLink
-            data={filteredPrefixes}
-            headers={csvHeaders}
-            filename="prefixes.csv"
-            className="btn btn-success"
-          >
-            Exporter CSV
-          </CSVLink>
-          <Button onClick={openModalToAdd}>+ Ajouter</Button>
-        </div>
+    <div>
+      <style>{customStyles}</style>
+
+      <div className="dashboard-main">
+        <Container fluid className="px-4 py-4">
+          <Row className="justify-content-center">
+            <Col xs={12} lg={11}>
+              <Card className="shadow border-0 overflow-hidden main-card">
+                <PrefixesHeader 
+                  onAddClick={handleAdd} 
+                  prefixes={prefixes} 
+                  isExporting={isExporting}
+                />
+                <Card.Body className="p-4" style={{ animation: "fadeIn 0.5s ease-in-out" }}>
+                  {error && (
+                    <Alert variant="danger" className="d-flex align-items-center mb-4 shadow-sm">
+                      <FaTimesCircle className="me-2" />
+                      {error}
+                    </Alert>
+                  )}
+                  {successMessage && (
+                    <Alert variant="success" className="d-flex align-items-center mb-4 shadow-sm">
+                      <FaCheckCircle className="me-2" />
+                      {successMessage}
+                    </Alert>
+                  )}
+
+                  <Row className="mb-4">
+                    <Col md={6} lg={4}>
+                      <SearchBar 
+                        searchTerm={searchTerm} 
+                        onSearchChange={(e) => setSearchTerm(e.target.value)} 
+                      />
+                    </Col>
+                  </Row>
+
+                  <PrefixesTableComponent
+                    prefixes={pagedPrefixes}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    isLoading={isLoading}
+                  />
+
+                  <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
+                    <div className="text-muted small">
+                      {!isLoading && (
+                        <>
+                          <Badge bg="light" text="dark" className="me-2 shadow-sm">
+                            <span className="fw-semibold">{pagedPrefixes.length}</span> sur {filteredPrefixes.length} préfixes
+                          </Badge>
+                          {searchTerm && (
+                            <Badge bg="light" text="dark" className="shadow-sm">
+                              Filtrés de {prefixes.length} total
+                            </Badge>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    <PaginationSection
+                      pageCount={pageCount}
+                      onPageChange={handlePageChange}
+                      currentPage={currentPage}
+                    />
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </Container>
       </div>
 
-      <InputGroup className="mb-3">
-        <FormControl
-          placeholder="Rechercher un préfixe ou une destination..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </InputGroup>
-
-      <Table striped bordered hover responsive>
-        <thead>
-          <tr>
-            <th>Préfixe</th>
-            <th>Destination</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredPrefixes.map((item) => (
-            <tr key={item.id}>
-              <td>{item.prefix}</td>
-              <td>{item.destination}</td>
-              <td>
-                <Button
-                  variant="warning"
-                  size="sm"
-                  className="me-2"
-                  onClick={() => openModalToEdit(item)}
-                >
-                  Modifier
-                </Button>
-                <Button variant="danger" size="sm" onClick={() => handleDelete(item.id)}>
-                  Supprimer
-                </Button>
-              </td>
-            </tr>
-          ))}
-          {filteredPrefixes.length === 0 && (
-            <tr>
-              <td colSpan="3" className="text-center">Aucun préfixe trouvé</td>
-            </tr>
-          )}
-        </tbody>
-      </Table>
-
-      {/* Modal d'ajout / modification */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>
-            {prefixId === null ? "Ajouter un Préfixe" : "Modifier le Préfixe"}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-          <Form.Group className="mb-3">
-  <Form.Label>Préfixe</Form.Label>
-  <Form.Control
-    type="text"
-    name="prefix"
-    value={form.prefix}
-    onChange={handleChange}
-    isInvalid={!!prefixError}
-  />
-  <Form.Control.Feedback type="invalid">
-    {prefixError}
-  </Form.Control.Feedback>
-</Form.Group>
-
-            <Form.Group>
-              <Form.Label>Destination</Form.Label>
-              <Form.Control
-                type="text"
-                name="destination"
-                value={form.destination}
-                onChange={handleChange}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Annuler
-          </Button>
-          <Button onClick={handleSubmit}>
-            {prefixId === null ? "Ajouter" : "Enregistrer"}
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      <PrefixModal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        title={prefixId === null ? "Ajouter un préfixe" : "Modifier le préfixe"}
+        onSubmit={handleModalSubmit}
+        modalData={modalData}
+        onInputChange={handleInputChange}
+        isSubmitting={isSubmitting}
+        prefixError={prefixError}
+      />
     </div>
   );
 };

@@ -1,16 +1,35 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Table, Button, Alert, Spinner, Pagination, Dropdown } from "react-bootstrap";
-import { FaEuroSign, FaPercent } from "react-icons/fa";
+import { 
+  Table, 
+  Button, 
+  Alert, 
+  Spinner, 
+  Pagination, 
+  Dropdown,
+  Card,
+  Container,
+  Row,
+  Col,
+  Badge
+} from "react-bootstrap";
+import { 
+  FaEuroSign, 
+  FaPercent,
+  FaDownload,
+  FaSearch,
+  FaChartLine
+} from "react-icons/fa";
+import { CSVLink } from "react-csv";
+
+const ITEMS_PER_PAGE = 10;
 
 const SummaryPerDay = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [deletedMessage, setDeletedMessage] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-  const [searchTerm, setSearchTerm] = useState(""); // Search term for Day
+  const [currentPage, setCurrentPage] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // State for column visibility
   const [visibleColumns, setVisibleColumns] = useState({
@@ -25,7 +44,6 @@ const SummaryPerDay = () => {
     ASR: true,
   });
 
-  // Function to fetch data
   const fetchData = async () => {
     setLoading(true);
     setError("");
@@ -41,199 +59,240 @@ const SummaryPerDay = () => {
     setLoading(false);
   };
 
-  // Load data on mount
   useEffect(() => {
     fetchData();
   }, []);
 
-  // Filtered data based on search term
   const filteredData = data.filter(item =>
     item.day.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Calculate data for current page
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+  const pageCount = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+  const offset = currentPage * ITEMS_PER_PAGE;
+  const currentItems = filteredData.slice(offset, offset + ITEMS_PER_PAGE);
 
-  // Generate pagination items
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const paginationItems = [];
-  for (let i = 1; i <= totalPages; i++) {
-    paginationItems.push(
-      <Pagination.Item
-        key={i}
-        active={i === currentPage}
-        onClick={() => setCurrentPage(i)}
-      >
-        {i}
-      </Pagination.Item>
-    );
-  }
+  const csvData = [
+    ["Day", "Session Time", "ALOC Calls", "Nb Call", "Nb Call Fail", "Buy Cost", "Session Bill", "Lucro", "ASR"],
+    ...filteredData.map(item => [
+      item.day,
+      item.sessiontime,
+      item.aloc_all_calls,
+      item.nbcall,
+      item.nbcall_fail,
+      item.buycost,
+      item.sessionbill,
+      item.lucro,
+      item.asr
+    ])
+  ];
 
-  // Function to export table data to CSV
-  const exportToCSV = () => {
-    const csvRows = [];
-
-    // Add headers
-    const headers = Object.keys(visibleColumns)
-      .filter((key) => visibleColumns[key])
-      .map((key) => key.replace("_", " "));
-    csvRows.push(headers.join(","));
-
-    // Add data rows
-    filteredData.forEach((item) => {
-      const values = Object.keys(visibleColumns)
-        .filter((key) => visibleColumns[key])
-        .map((key) => {
-          switch (key) {
-            case "Day":
-              return item.day;
-            case "SessionTime":
-              return item.sessiontime;
-            case "ALOC_Calls":
-              return item.aloc_all_calls;
-            case "Nb_Call":
-              return item.nbcall;
-            case "Nb_Call_Fail":
-              return item.nbcall_fail;
-            case "Buy_Cost":
-              return item.buycost;
-            case "Session_Bill":
-              return item.sessionbill;
-            case "Lucro":
-              return item.lucro;
-            case "ASR":
-              return item.asr;
-            default:
-              return "";
-          }
-        });
-      csvRows.push(values.join(","));
-    });
-
-    // Create CSV file
-    const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "summary_per_day.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // Toggle column visibility
   const toggleColumnVisibility = (key) => {
-    setVisibleColumns((prev) => ({
+    setVisibleColumns(prev => ({
       ...prev,
       [key]: !prev[key],
     }));
   };
 
   return (
-    <div className="container mt-4">
-      <h2 className="text-center mb-4 text-primary">Summary of Data by Day</h2>
-
-      {error && <Alert variant="danger">{error}</Alert>}
-      {deletedMessage && <Alert variant="success">{deletedMessage}</Alert>}
-
-      <div className="d-flex justify-content-between mb-3">
-        <div>
-          <Button variant="success" onClick={exportToCSV} className="me-2">
-            Export to CSV
-          </Button>
-          <Dropdown>
-            <Dropdown.Toggle variant="secondary">
-              Toggle Columns
-            </Dropdown.Toggle>
-            <Dropdown.Menu>
-              {Object.keys(visibleColumns).map((key) => (
-                <div key={key} className="form-check">
-                  <input
-                    type="checkbox"
-                    className="form-check-input"
-                    checked={visibleColumns[key]}
-                    onChange={() => toggleColumnVisibility(key)}
-                  />
-                  <label className="form-check-label">{key.replace("_", " ")}</label>
+    <div className="dashboard-main" style={{ marginLeft: "80px" }}>
+      <Container fluid className="px-4 py-4">
+        <Row className="justify-content-center">
+          <Col xs={12} lg={11}>
+            <Card className="shadow border-0 overflow-hidden main-card">
+              <Card.Header className="bg-primary p-3 w-100 position-relative">
+                <div className="position-absolute top-0 end-0 p-2 d-none d-md-block">
+                  <div className="floating-icon position-absolute">
+                    <FaChartLine className="text-white opacity-25" />
+                  </div>
                 </div>
-              ))}
-            </Dropdown.Menu>
-          </Dropdown>
-        </div>
-      </div>
+                <div className="d-flex align-items-center position-relative z-2">
+                  <div className="bg-white rounded-circle p-3 me-3 shadow pulse-effect">
+                    <FaChartLine className="text-primary fs-3" />
+                  </div>
+                  <div>
+                    <h2 className="fw-bold mb-0 text-white">Daily Summary Report</h2>
+                    <p className="text-white-50 mb-0 d-none d-md-block">Summary of call data by day</p>
+                  </div>
+                </div>
+              </Card.Header>
 
-      {/* Search Bar */}
-      <div className="mb-3">
-        <input
-          type="text"
-          placeholder="Search by Day"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="form-control"
-        />
-      </div>
+              <Card.Body className="p-4" style={{ animation: "fadeIn 0.5s ease-in-out" }}>
+                {error && (
+                  <Alert variant="danger" className="d-flex align-items-center mb-4 shadow-sm">
+                    {error}
+                  </Alert>
+                )}
 
-      <Table striped bordered hover responsive>
-        <thead>
-          <tr className="table-primary">
-            {visibleColumns.Day && <th>Day</th>}
-            {visibleColumns.SessionTime && <th>Session Time</th>}
-            {visibleColumns.ALOC_Calls && <th>ALOC Calls</th>}
-            {visibleColumns.Nb_Call && <th>Nb Call</th>}
-            {visibleColumns.Nb_Call_Fail && <th>Nb Call Fail</th>}
-            {visibleColumns.Buy_Cost && <th>Buy Cost <FaEuroSign /></th>}
-            {visibleColumns.Session_Bill && <th>Session Bill</th>}
-            {visibleColumns.Lucro && <th>Lucro</th>}
-            {visibleColumns.ASR && <th>ASR <FaPercent /></th>}
-          </tr>
-        </thead>
-        <tbody>
-          {loading ? (
-            <tr>
-              <td colSpan={Object.keys(visibleColumns).filter((key) => visibleColumns[key]).length + 1} className="text-center">
-                <Spinner animation="border" />
-              </td>
-            </tr>
-          ) : currentItems.length > 0 ? (
-            currentItems.map((item) => (
-              <tr key={item.id}>
-                {visibleColumns.Day && <td>{item.day}</td>}
-                {visibleColumns.SessionTime && <td>{item.sessiontime}</td>}
-                {visibleColumns.ALOC_Calls && <td>{item.aloc_all_calls}</td>}
-                {visibleColumns.Nb_Call && <td>{item.nbcall}</td>}
-                {visibleColumns.Nb_Call_Fail && <td>{item.nbcall_fail}</td>}
-                {visibleColumns.Buy_Cost && <td>{item.buycost} €</td>}
-                {visibleColumns.Session_Bill && <td>{item.sessionbill}</td>}
-                {visibleColumns.Lucro && <td>{item.lucro}</td>}
-                {visibleColumns.ASR && <td>{item.asr} %</td>}
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={Object.keys(visibleColumns).filter((key) => visibleColumns[key]).length + 1} className="text-center">
-                No data available
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </Table>
+                <Row className="mb-4">
+                  <Col md={6} className="d-flex gap-3">
+                    <CSVLink
+                      data={csvData}
+                      filename="daily_summary.csv"
+                      className="btn btn-success d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+                    >
+                      <div className="icon-container">
+                        <FaDownload />
+                      </div>
+                      <span>Export</span>
+                    </CSVLink>
 
-      {/* Pagination */}
-      {filteredData.length > itemsPerPage && (
-        <Pagination className="justify-content-center mt-3">
-          <Pagination.Prev
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          />
-          {paginationItems}
-          <Pagination.Next
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-          />
-        </Pagination>
-      )}
+                    <Dropdown>
+                      <Dropdown.Toggle variant="secondary" className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect">
+                        <span>Toggle Columns</span>
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu className="p-3">
+                        <div className="d-flex flex-wrap gap-3">
+                          {Object.keys(visibleColumns).map((key) => (
+                            <div key={key} className="form-check form-switch">
+                              <input
+                                className="form-check-input"
+                                type="checkbox"
+                                checked={visibleColumns[key]}
+                                onChange={() => toggleColumnVisibility(key)}
+                              />
+                              <label className="form-check-label">{key.replace("_", " ")}</label>
+                            </div>
+                          ))}
+                        </div>
+                      </Dropdown.Menu>
+                    </Dropdown>
+                  </Col>
+                  <Col md={6}>
+                    <div className="input-group">
+                      <span className="input-group-text bg-white border-end-0">
+                        <FaSearch />
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Search by Day"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="form-control border-start-0"
+                      />
+                    </div>
+                  </Col>
+                </Row>
+
+                <div className="table-responsive">
+                  <Table striped bordered hover className="elegant-table">
+                    <thead>
+                      <tr className="table-primary">
+                        {visibleColumns.Day && <th>Day</th>}
+                        {visibleColumns.SessionTime && <th>Session Time</th>}
+                        {visibleColumns.ALOC_Calls && <th>ALOC Calls</th>}
+                        {visibleColumns.Nb_Call && <th>Nb Call</th>}
+                        {visibleColumns.Nb_Call_Fail && <th>Nb Call Fail</th>}
+                        {visibleColumns.Buy_Cost && <th>Buy Cost <FaEuroSign /></th>}
+                        {visibleColumns.Session_Bill && <th>Session Bill</th>}
+                        {visibleColumns.Lucro && <th>Lucro</th>}
+                        {visibleColumns.ASR && <th>ASR <FaPercent /></th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loading ? (
+                        <tr>
+                          <td colSpan={Object.keys(visibleColumns).filter(key => visibleColumns[key]).length} className="text-center">
+                            <Spinner animation="border" />
+                          </td>
+                        </tr>
+                      ) : currentItems.length > 0 ? (
+                        currentItems.map((item) => (
+                          <tr key={item.id}>
+                            {visibleColumns.Day && <td>{item.day}</td>}
+                            {visibleColumns.SessionTime && <td>{item.sessiontime}</td>}
+                            {visibleColumns.ALOC_Calls && <td>{item.aloc_all_calls}</td>}
+                            {visibleColumns.Nb_Call && <td>{item.nbcall}</td>}
+                            {visibleColumns.Nb_Call_Fail && <td>{item.nbcall_fail}</td>}
+                            {visibleColumns.Buy_Cost && <td>{item.buycost} €</td>}
+                            {visibleColumns.Session_Bill && <td>{item.sessionbill}</td>}
+                            {visibleColumns.Lucro && <td>{item.lucro}</td>}
+                            {visibleColumns.ASR && <td>{item.asr} %</td>}
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={Object.keys(visibleColumns).filter(key => visibleColumns[key]).length} className="text-center">
+                            No data available
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </Table>
+                </div>
+
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
+                  <div className="text-muted small">
+                    {!loading && (
+                      <Badge bg="light" text="dark" className="me-2 shadow-sm">
+                        <span className="fw-semibold">{currentItems.length}</span> of {filteredData.length} Days
+                      </Badge>
+                    )}
+                  </div>
+
+                  <Pagination>
+                    <Pagination.Prev
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 0))}
+                      disabled={currentPage === 0}
+                    />
+                    {Array.from({ length: pageCount }, (_, i) => (
+                      <Pagination.Item
+                        key={i}
+                        active={i === currentPage}
+                        onClick={() => setCurrentPage(i)}
+                      >
+                        {i + 1}
+                      </Pagination.Item>
+                    ))}
+                    <Pagination.Next
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, pageCount - 1))}
+                      disabled={currentPage === pageCount - 1}
+                    />
+                  </Pagination>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
+
+      <style jsx global>{`
+        .btn-hover-effect:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .btn-hover-effect {
+          transition: all 0.2s ease;
+        }
+        .icon-container {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .floating-icon {
+          animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+          100% { transform: translateY(0px); }
+        }
+        .pulse-effect {
+          animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4); }
+          70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+        }
+        .elegant-table th, .elegant-table td {
+          border-top: none;
+          border-bottom: 1px solid #e9ecef;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 };

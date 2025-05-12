@@ -1,8 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import axios from 'axios';
-import { FaEdit, FaTrash } from 'react-icons/fa';
-import { Button, Modal, Form, Table, Alert } from 'react-bootstrap';
+"use client"
+
+import { useState, useEffect } from "react"
+import axios from "axios"
+import { Table, Button, Modal, Form, Dropdown, Alert, Card, Container, Row, Col, Badge, Spinner } from "react-bootstrap"
+import ReactPaginate from "react-paginate"
+import { CSVLink } from "react-csv"
+import {
+  FaCheckCircle,
+  FaTimesCircle,
+  FaEdit,
+  FaSearch,
+  FaDownload,
+  FaPlusCircle,
+  FaTrashAlt,
+  FaPhoneAlt,
+  FaHeadset,
+  FaCog,
+  FaUsers,
+  FaUserClock
+} from "react-icons/fa"
+
+// Constants
+const ITEMS_PER_PAGE = 10;
 
 function Queues() {
   const [queues, setQueues] = useState([]);
@@ -176,106 +195,415 @@ function Queues() {
   const handleShow = () => setShowModal(true);
   const handleClose = () => setShowModal(false);
 
-  return (
-    <div className="container mt-4">
-      <h1 className="mb-4">Manage Queues</h1>
-      
-      {/* Alert Messages */}
-      {alert.show && (
-        <Alert variant={alert.variant} onClose={() => setAlert({...alert, show: false})} dismissible>
-          {alert.message}
-        </Alert>
-      )}
+  // Header Component
+  function QueuesHeader({ onAddClick, queues, isExporting = false }) {
+    const csvData = [
+      ["Queue Name", "Username", "Language", "Strategy", "Wait Time", "Ring In Use"],
+      ...queues.map((queue) => [
+        queue.name || "",
+        queue.username || "",
+        queue.language || "",
+        queue.strategy || "",
+        queue.max_wait_time || "0",
+        queue.ringinuse === 1 ? "Yes" : "No",
+      ]),
+    ]
 
-      <div className="d-flex justify-content-between mb-3">
-        <Button variant="primary" onClick={handleShow}>
-          Add New Queue
-        </Button>
-        <select onChange={(e) => fetchQueues(e.target.value)} className="form-select w-auto">
-          <option value="name">Sort by Name</option>
-          <option value="id_user">Sort by Username</option>
-        </select>
-      </div>
-      <div className="mb-3">
-        <input 
-          type="text" 
-          className="form-control" 
-          placeholder="Search by Username..." 
-          value={searchTerm} 
-          onChange={(e) => setSearchTerm(e.target.value)} 
+    return (
+      <Card.Header className="d-flex flex-wrap align-items-center p-0 rounded-top overflow-hidden">
+        <div className="bg-primary p-3 w-100 position-relative">
+          <div className="position-absolute top-0 end-0 p-2 d-none d-md-block">
+            {Array(5)
+              .fill()
+              .map((_, i) => (
+                <div
+                  key={i}
+                  className="floating-icon position-absolute"
+                  style={{
+                    top: `${Math.random() * 100}%`,
+                    left: `${Math.random() * 100}%`,
+                    animationDelay: `${i * 0.5}s`,
+                  }}
+                >
+                  <FaHeadset
+                    className="text-white opacity-25"
+                    style={{
+                      fontSize: `${Math.random() * 1.5 + 0.5}rem`,
+                    }}
+                  />
+                </div>
+              ))}
+          </div>
+          <div className="d-flex align-items-center position-relative z-2">
+            <div className="bg-white rounded-circle p-3 me-3 shadow pulse-effect">
+              <FaUsers className="text-primary fs-3" />
+            </div>
+            <div>
+              <h2 className="fw-bold mb-0 text-white">Manage Queues</h2>
+              <p className="text-white-50 mb-0 d-none d-md-block">Configure and manage your call queues</p>
+            </div>
+          </div>
+        </div>
+        <div className="w-100 bg-white p-2 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
+          <div className="d-flex align-items-center gap-3">
+            <Badge bg="primary" className="d-flex align-items-center p-2 ps-3 rounded-pill">
+              <span className="me-2 fw-normal">
+                Total: <span className="fw-bold">{queues.length}</span>
+              </span>
+              <span
+                className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center"
+                style={{ width: "24px", height: "24px" }}
+              >
+                <FaHeadset size={12} />
+              </span>
+            </Badge>
+            <Dropdown>
+              <Dropdown.Toggle variant="light" id="dropdown-sort" className="shadow-sm border">
+                <FaCog className="me-2" size={14} /> Sort By
+              </Dropdown.Toggle>
+              <Dropdown.Menu>
+                <Dropdown.Item onClick={() => fetchQueues('name')}>Queue Name</Dropdown.Item>
+                <Dropdown.Item onClick={() => fetchQueues('id_user')}>Username</Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
+          </div>
+          <div className="d-flex gap-2">
+            <Button
+              variant="primary"
+              onClick={onAddClick}
+              className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+            >
+              <div className="icon-container">
+                <FaPlusCircle />
+              </div>
+              <span>Add Queue</span>
+            </Button>
+            <CSVLink
+              data={csvData}
+              filename={"queues.csv"}
+              className="btn btn-success d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+              disabled={isExporting}
+            >
+              <div className="icon-container">
+                {isExporting ? <Spinner animation="border" size="sm" /> : <FaDownload />}
+              </div>
+              <span>Export</span>
+            </CSVLink>
+          </div>
+        </div>
+      </Card.Header>
+    )
+  }
+
+  // Search Bar Component
+  function SearchBar({ searchTerm, onSearchChange }) {
+    return (
+      <div className="position-relative">
+        <div className="position-absolute top-50 start-0 translate-middle-y ps-3">
+          <FaSearch className="text-muted" size={14} />
+        </div>
+        <Form.Control
+          type="text"
+          placeholder="Search by username..."
+          value={searchTerm}
+          onChange={onSearchChange}
+          className="ps-5 py-2 border-0 shadow-sm rounded"
         />
       </div>
+    )
+  }
+
+  // Status Badge Component
+  function StatusBadge({ status }) {
+    return status ? (
+      <Badge bg="success" className="d-flex align-items-center gap-1 px-2 py-1">
+        <FaCheckCircle size={10} />
+        <span>Active</span>
+      </Badge>
+    ) : (
+      <Badge bg="secondary" className="d-flex align-items-center gap-1 px-2 py-1">
+        <FaTimesCircle size={10} />
+        <span>Inactive</span>
+      </Badge>
+    )
+  }
+
+  // Action Buttons Component
+  function ActionButtons({ onEdit, onDelete }) {
+    return (
+      <div className="d-flex gap-2 action-btn">
+        <Button variant="outline-primary" size="sm" onClick={onEdit} className="d-flex align-items-center gap-1 p-1 px-2">
+          <FaEdit className="btn-icon" />
+          <span className="d-none d-md-inline">Edit</span>
+        </Button>
+        <Button variant="outline-danger" size="sm" onClick={onDelete} className="d-flex align-items-center gap-1 p-1 px-2">
+          <FaTrashAlt className="btn-icon" />
+          <span className="d-none d-md-inline">Delete</span>
+        </Button>
+      </div>
+    )
+  }
+
+  // Empty State Component
+  function EmptyState() {
+    return (
+      <div className="text-center py-5">
+        <div className="mb-3">
+          <FaHeadset size={48} className="text-muted" />
+        </div>
+        <h5>No Queues Found</h5>
+        <p className="text-muted">Add a new queue to get started or try a different search term.</p>
+      </div>
+    )
+  }
+
+  // Pagination Component
+  function PaginationSection({ pageCount, onPageChange, currentPage }) {
+    return (
+      <ReactPaginate
+        previousLabel={"«"}
+        nextLabel={"»"}
+        breakLabel={"..."}
+        pageCount={pageCount}
+        marginPagesDisplayed={2}
+        pageRangeDisplayed={3}
+        onPageChange={onPageChange}
+        containerClassName={"pagination mb-0"}
+        pageClassName={"page-item"}
+        pageLinkClassName={"page-link"}
+        previousClassName={"page-item"}
+        previousLinkClassName={"page-link"}
+        nextClassName={"page-item"}
+        nextLinkClassName={"page-link"}
+        breakClassName={"page-item"}
+        breakLinkClassName={"page-link"}
+        activeClassName={"active"}
+        forcePage={currentPage}
+      />
+    )
+  }
+
+  // Queues Table Component
+  function QueuesTable({ queues, onEdit, onDelete, isLoading = false }) {
+    if (isLoading) {
+      return (
+        <div className="text-center py-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-3 text-muted">Loading queues...</p>
+        </div>
+      )
+    }
+
+    if (queues.length === 0) {
+      return <EmptyState />
+    }
+
+    return (
       <div className="table-responsive">
-        <table className="table table-striped table-hover table-bordered shadow-sm rounded">
-          <thead className="table-light">
+        <Table hover className="align-middle mb-0 elegant-table">
+          <thead className="bg-light">
             <tr>
-              <th>Username</th>
-              <th>Language</th>
-              <th>Strategy</th>
-              <th>Talk Time</th>
-              <th>Total Calls</th>
-              <th>Answered</th>
-              <th>Actions</th>
+              <th className="fw-semibold">Queue Name</th>
+              <th className="fw-semibold">Username</th>
+              <th className="fw-semibold">Language</th>
+              <th className="fw-semibold">Strategy</th>
+              <th className="fw-semibold">Talk Time</th>
+              <th className="fw-semibold">Total Calls</th>
+              <th className="fw-semibold">Answered</th>
+              <th className="fw-semibold text-end">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {currentItems.map((queue) => (
+            {queues.map((queue) => (
               <tr key={queue.id}>
+                <td className="fw-medium">{queue.name}</td>
                 <td>{queue.username}</td>
                 <td>{queue.language}</td>
                 <td>{queue.strategy}</td>
                 <td>{queue.talk_time}</td>
                 <td>{queue.total_calls}</td>
                 <td>{queue.answered}</td>
-                <td>
-                  <div className="d-flex gap-2">
-                    <button 
-                      className="btn btn-primary btn-sm" 
-                      onClick={() => handleEdit(queue)}
-                    >
-                      <FaEdit /> Edit
-                    </button>
-                    <button 
-                      className="btn btn-danger btn-sm" 
-                      onClick={() => {
-                        setQueueToDelete(queue.id);
-                        setShowDeleteModal(true);
-                      }}
-                    >
-                      <FaTrash /> Delete
-                    </button>
-                  </div>
+                <td className="text-end">
+                  <ActionButtons
+                    onEdit={() => onEdit(queue)}
+                    onDelete={() => {
+                      setQueueToDelete(queue.id_user);
+                      setShowDeleteModal(true);
+                    }}
+                  />
                 </td>
               </tr>
             ))}
           </tbody>
-        </table>
+        </Table>
       </div>
+    )
+  }
+  
+  // Queues Table Component
+  function QueuesTable({ queues, onEdit, onDelete, isLoading = false }) {
+    if (isLoading) {
+      return (
+        <div className="text-center py-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-3 text-muted">Loading queues...</p>
+        </div>
+      )
+    }
 
-      {/* Pagination Controls */}
-      <nav aria-label="Page navigation">
-        <ul className="pagination justify-content-center">
-          <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-            <button className="page-link" onClick={() => handlePageChange(currentPage - 1)}>Previous</button>
-          </li>
-          {[...Array(totalPages).keys()].map((page) => (
-            <li key={page + 1} className={`page-item ${currentPage === page + 1 ? 'active' : ''}`}>
-              <button className="page-link" onClick={() => handlePageChange(page + 1)}>{page + 1}</button>
-            </li>
-          ))}
-          <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-            <button className="page-link" onClick={() => handlePageChange(currentPage + 1)}>Next</button>
-          </li>
-        </ul>
-      </nav>
+    if (queues.length === 0) {
+      return <EmptyState />
+    }
 
-      {/* Add Modal */}
-      <Modal show={showModal} onHide={handleClose} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Add New Queue</Modal.Title>
+    return (
+      <div className="table-responsive">
+        <Table hover className="align-middle mb-0 elegant-table">
+          <thead className="bg-light">
+            <tr>
+              <th className="fw-semibold">Queue Name</th>
+              <th className="fw-semibold">Username</th>
+              <th className="fw-semibold">Language</th>
+              <th className="fw-semibold">Strategy</th>
+              <th className="fw-semibold">Talk Time</th>
+              <th className="fw-semibold">Total Calls</th>
+              <th className="fw-semibold">Answered</th>
+              <th className="fw-semibold text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {queues.map((queue) => (
+              <tr key={queue.id || queue.id_user}>
+                <td className="fw-medium">{queue.name}</td>
+                <td>{queue.username}</td>
+                <td>{queue.language}</td>
+                <td>{queue.strategy}</td>
+                <td>{queue.talk_time}</td>
+                <td>{queue.total_calls}</td>
+                <td>{queue.answered}</td>
+                <td className="text-end">
+                  <ActionButtons
+                    onEdit={() => onEdit(queue)}
+                    onDelete={() => onDelete(queue)}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </div>
+    )
+  }
+
+  // Main component return
+  return (
+    <div style={{ marginLeft: "80px" }}>
+      <style jsx="true">{`
+        .btn-hover-effect {
+          transition: transform 0.2s ease;
+        }
+        .btn-hover-effect:hover {
+          transform: translateY(-2px);
+        }
+        .icon-container {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .floating-icon {
+          animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .pulse-effect {
+          animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4); }
+          70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+        }
+        .elegant-table th, .elegant-table td {
+          border-top: none;
+          border-bottom: 1px solid #e9ecef;
+        }
+        .action-btn .btn-icon {
+          transition: transform 0.2s ease;
+        }
+        .action-btn:hover .btn-icon {
+          transform: scale(1.2);
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
+      <Container fluid className="px-4 py-4">
+        <Row className="justify-content-center">
+          <Col xs={12} lg={11}>
+            <Card className="shadow border-0 overflow-hidden main-card">
+              <QueuesHeader 
+                onAddClick={handleShow} 
+                queues={queues} 
+              />
+              <Card.Body className="p-4" style={{ animation: "fadeIn 0.5s ease-in-out" }}>
+                {alert.show && (
+                  <Alert variant={alert.variant} onClose={() => setAlert({...alert, show: false})} dismissible className="d-flex align-items-center mb-4 shadow-sm">
+                    {alert.variant === 'success' ? <FaCheckCircle className="me-2" /> : <FaTimesCircle className="me-2" />}
+                    {alert.message}
+                  </Alert>
+                )}
+
+                <Row className="mb-4">
+                  <Col md={6} lg={4}>
+                    <SearchBar searchTerm={searchTerm} onSearchChange={(e) => setSearchTerm(e.target.value)} />
+                  </Col>
+                </Row>
+
+                <QueuesTable
+                  queues={currentItems}
+                  onEdit={handleEdit}
+                  onDelete={(queue) => {
+                    setQueueToDelete(queue.id_user);
+                    setShowDeleteModal(true);
+                  }}
+                />
+
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
+                  <div className="text-muted small">
+                    <Badge bg="light" text="dark" className="me-2 shadow-sm">
+                      <span className="fw-semibold">{currentItems.length}</span> of {filteredQueues.length} Queues
+                    </Badge>
+                    {searchTerm && (
+                      <Badge bg="light" text="dark" className="shadow-sm">
+                        Filtered from {queues.length} total
+                      </Badge>
+                    )}
+                  </div>
+                  <PaginationSection
+                    pageCount={totalPages}
+                    onPageChange={({ selected }) => setCurrentPage(selected + 1)}
+                    currentPage={currentPage - 1}
+                  />
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
+
+      {/* Add Modal - Styled to match DIDs.js */}
+      <Modal show={showModal} onHide={handleClose} size="lg" centered className="queue-modal">
+        <Modal.Header closeButton className="bg-primary text-white">
+          <Modal.Title className="d-flex align-items-center">
+            <FaHeadset className="me-2" />
+            Add New Queue
+          </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleSubmit}>
+        <Modal.Body className="p-4">
+          <Form onSubmit={handleSubmit} className="queue-form">
             <Form.Group controlId="formQueueName" className="mb-3">
               <Form.Label>Username</Form.Label>
               <Form.Control
@@ -509,13 +837,16 @@ function Queues() {
         </Modal.Body>
       </Modal>
 
-      {/* Update Modal */}
-      <Modal show={showUpdateModal} onHide={() => setShowUpdateModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Update Queue</Modal.Title>
+      {/* Update Modal - Styled to match DIDs.js */}
+      <Modal show={showUpdateModal} onHide={() => setShowUpdateModal(false)} size="lg" centered className="queue-modal">
+        <Modal.Header closeButton className="bg-primary text-white">
+          <Modal.Title className="d-flex align-items-center">
+            <FaEdit className="me-2" />
+            Update Queue
+          </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleUpdateSubmit}>
+        <Modal.Body className="p-4">
+          <Form onSubmit={handleUpdateSubmit} className="queue-form">
             <Form.Group controlId="formQueueName" className="mb-3">
               <Form.Label>Username</Form.Label>
               <Form.Control
@@ -749,25 +1080,32 @@ function Queues() {
         </Modal.Body>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Deletion</Modal.Title>
+      {/* Delete Confirmation Modal - Styled to match DIDs.js */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered className="queue-modal">
+        <Modal.Header closeButton className="bg-danger text-white">
+          <Modal.Title className="d-flex align-items-center">
+            <FaTrashAlt className="me-2" />
+            Confirm Deletion
+          </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Alert variant="danger">
-            <strong>Warning!</strong> Are you sure you want to delete this queue? This action cannot be undone.
+        <Modal.Body className="p-4">
+          <Alert variant="danger" className="d-flex align-items-center shadow-sm">
+            <FaTimesCircle className="me-2" size={18} />
+            <div>
+              <strong>Warning!</strong> Are you sure you want to delete this queue? This action cannot be undone.
+            </div>
           </Alert>
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            Cancel
+        <Modal.Footer className="border-0 pt-0">
+          <Button variant="outline-secondary" onClick={() => setShowDeleteModal(false)} className="d-flex align-items-center gap-2">
+            <span>Cancel</span>
           </Button>
           <Button variant="danger" onClick={() => {
             deleteQueue(queueToDelete);
             setShowDeleteModal(false);
-          }}>
-            Delete
+          }} className="d-flex align-items-center gap-2">
+            <FaTrashAlt size={14} />
+            <span>Delete</span>
           </Button>
         </Modal.Footer>
       </Modal>

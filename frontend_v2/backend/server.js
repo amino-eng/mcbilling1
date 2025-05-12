@@ -40,6 +40,8 @@ const routePlans = require("./route/rates/plans");
 const routeTariffs = require("./route/rates/tariffs");
 const routeUserrate = require("./route/rates/userrate");
 const routeOffer = require("./route/rates/offer");
+const routeVoucher = require("./route/Billing/Voucher");
+const routeRefillProviders = require("./route/Billing/RefillProviders")
 
 // Configure CORS with specific options
 app.use(cors({
@@ -85,7 +87,8 @@ app.use("/api/admin/Plans", routePlans);
 app.use("/api/admin/Tariffs", routeTariffs);
 app.use("/api/admin/Userrate", routeUserrate);
 app.use("/api/admin/Offers", routeOffer);
-
+app.use("/api/admin/Voucher", routeVoucher);
+app.use("/api/admin/RefillProviders", routeRefillProviders);
 
 // Try to kill any process using port 5000 before starting the server
 const { exec } = require('child_process');

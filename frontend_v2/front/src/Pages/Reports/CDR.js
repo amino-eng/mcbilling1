@@ -1,6 +1,19 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import { Table, Button, Spinner, Dropdown, Form, Pagination } from "react-bootstrap";
+import { 
+  Table, Button, Spinner, Dropdown, Form, Pagination, 
+  Card, Container, Row, Col, Badge, Alert
+} from "react-bootstrap";
+import {
+  FaDownload,
+  FaSearch,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaEye,
+  FaEyeSlash,
+  FaFilter,
+  FaFileExport
+} from "react-icons/fa";
 
 const CDRTable = () => {
   const [cdrData, setCdrData] = useState([]);
@@ -9,8 +22,7 @@ const CDRTable = () => {
   const [pkgTrunks, setPkgTrunks] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState(""); // State for search term
-  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const [visibleColumns, setVisibleColumns] = useState({
     Date: true,
     SipUser: true,
@@ -127,168 +139,197 @@ const CDRTable = () => {
   // Export to CSV
   const exportToCSV = () => {
     const headers = Object.keys(visibleColumns)
-      .filter((column) => visibleColumns[column])
-      .join(",");
+      .filter(key => visibleColumns[key])
+      .join(",") + "\n";
 
-    const rows = filteredRecords
-      .map((cdr) =>
-        Object.keys(visibleColumns)
-          .filter((column) => visibleColumns[column])
-          .map((column) => {
-            switch (column) {
-              case "Date":
-                return `"${new Date(cdr.starttime).toLocaleString()}"`;
-              case "SipUser":
-                return `"${cdr.src}"`;
-              case "CallerID":
-                return `"${cdr.callerid}"`;
-              case "Number":
-                return `"${cdr.calledstation}"`;
-              case "Destination":
-                return `"${cdr.id_prefix}"`;
-              case "Duration":
-                return `"${cdr.sessiontime} seconds"`;
-              case "RealDuration":
-                return `"${cdr.real_sessiontime} seconds"`;
-              case "Username":
-                return `"${cdr.username}"`;
-              case "Trunk":
-                return `"${cdr.trunkcode}"`;
-              case "Type":
-                return `"${cdr.type}"`;
-              case "BuyPrice":
-                return `"${cdr.buycost} €"`;
-              case "SellPrice":
-                return `"${cdr.sessionbill} €"`;
-              case "UniqueID":
-                return `"${cdr.uniqueid}"`;
-              case "Plan":
-                return `"${cdr.id_plan}"`;
-              case "Campaign":
-                return `"${cdr.id_campaign || "vide"}"`;
-              case "Server":
-                return `"${cdr.server_name}"`;
-              default:
-                return "";
-            }
-          })
-          .join(",")
-      )
+    const csvContent = currentRecords
+      .map(cdr => {
+        return [
+          visibleColumns.Date ? new Date(cdr.starttime).toLocaleString() : null,
+          visibleColumns.SipUser ? cdr.src : null,
+          visibleColumns.CallerID ? cdr.callerid : null,
+          visibleColumns.Number ? cdr.calledstation : null,
+          visibleColumns.Destination ? cdr.id_prefix : null,
+          visibleColumns.Duration ? cdr.sessiontime + " seconds" : null,
+          visibleColumns.RealDuration ? cdr.real_sessiontime + " seconds" : null,
+          visibleColumns.Username ? cdr.username : null,
+          visibleColumns.Trunk ? cdr.trunkcode : null,
+          visibleColumns.Type ? cdr.type : null,
+          visibleColumns.BuyPrice ? cdr.buycost + " €" : null,
+          visibleColumns.SellPrice ? cdr.sessionbill + " €" : null,
+          visibleColumns.UniqueID ? cdr.uniqueid : null,
+          visibleColumns.Plan ? cdr.id_plan : null,
+          visibleColumns.Campaign ? cdr.id_campaign || "vide" : null,
+          visibleColumns.Server ? cdr.server_name : null
+        ].filter(Boolean).join(",");
+      })
       .join("\n");
 
-    const csvContent = `${headers}\n${rows}`;
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
+    const blob = new Blob([headers + csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", "CDR_Export.csv");
-    link.style.visibility = "hidden";
+    link.setAttribute("download", "cdr_report.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  if (loading) return <Spinner animation="border" variant="primary" />;
-  if (error) return <p className="text-danger text-center">{error}</p>;
-
   return (
-    <div className="container mt-4">
-      <h2 className="text-center">Call Detail Records (CDR)</h2>
-      <div className="d-flex mb-3">
-        <input
-          type="text"
-          placeholder="Search by Caller ID"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="form-control me-2"
-        />
-        <Dropdown ref={dropdownRef} className="me-2">
-          <Dropdown.Toggle variant="primary" id="dropdown-basic">
-            Columns
-          </Dropdown.Toggle>
-          <Dropdown.Menu>
-            {Object.keys(visibleColumns).map((column) => (
-              <Dropdown.Item key={column}>
-                <Form.Check
-                  type="checkbox"
-                  label={column}
-                  checked={visibleColumns[column]}
-                  onChange={() => toggleColumnVisibility(column)}
-                />
-              </Dropdown.Item>
-            ))}
-          </Dropdown.Menu>
-        </Dropdown>
-        <Button variant="primary" onClick={exportToCSV}>Export CSV</Button>
-      </div>
-      <Table striped bordered hover>
-        <thead>
-          <tr>
-            {visibleColumns.Date && <th>Date</th>}
-            {visibleColumns.SipUser && <th>Sip User</th>}
-            {visibleColumns.CallerID && <th>Caller ID</th>}
-            {visibleColumns.Number && <th>Number</th>}
-            {visibleColumns.Destination && <th>Destination</th>}
-            {visibleColumns.Duration && <th>Duration</th>}
-            {visibleColumns.RealDuration && <th>Real Duration</th>}
-            {visibleColumns.Username && <th>Username</th>}
-            {visibleColumns.Trunk && <th>Trunk</th>}
-            {visibleColumns.Type && <th>Type</th>}
-            {visibleColumns.BuyPrice && <th>Buy Price</th>}
-            {visibleColumns.SellPrice && <th>Sell Price</th>}
-            {visibleColumns.UniqueID && <th>Unique ID</th>}
-            {visibleColumns.Plan && <th>Plan</th>}
-            {visibleColumns.Campaign && <th>Campaign</th>}
-            {visibleColumns.Server && <th>Server</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {currentRecords.map((cdr) => (
-            <tr key={cdr.id}>
-              {visibleColumns.Date && <td>{new Date(cdr.starttime).toLocaleString()}</td>}
-              {visibleColumns.SipUser && <td>{cdr.src}</td>}
-              {visibleColumns.CallerID && <td>{cdr.callerid}</td>}
-              {visibleColumns.Number && <td>{cdr.calledstation}</td>}
-              {visibleColumns.Destination && <td>{cdr.id_prefix}</td>}
-              {visibleColumns.Duration && <td>{cdr.sessiontime} seconds</td>}
-              {visibleColumns.RealDuration && <td>{cdr.real_sessiontime} seconds</td>}
-              {visibleColumns.Username && <td>{cdr.username}</td>}
-              {visibleColumns.Trunk && <td>{cdr.trunkcode}</td>}
-              {visibleColumns.Type && <td>{cdr.type}</td>}
-              {visibleColumns.BuyPrice && <td>{cdr.buycost} €</td>}
-              {visibleColumns.SellPrice && <td>{cdr.sessionbill} €</td>}
-              {visibleColumns.UniqueID && <td>{cdr.uniqueid}</td>}
-              {visibleColumns.Plan && <td>{cdr.id_plan}</td>}
-              {visibleColumns.Campaign && <td>{cdr.id_campaign || "vide"}</td>}
-              {visibleColumns.Server && <td>{cdr.server_name}</td>}
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-      <Pagination>
-        <Pagination.Prev
-          onClick={() => setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev))}
-          disabled={currentPage === 1}
-        />
-        {Array.from({ length: Math.ceil(filteredRecords.length / recordsPerPage) }, (_, i) => (
-          <Pagination.Item
-            key={i + 1}
-            active={i + 1 === currentPage}
-            onClick={() => paginate(i + 1)}
-          >
-            {i + 1}
-          </Pagination.Item>
-        ))}
-        <Pagination.Next
-          onClick={() =>
-            setCurrentPage((prev) =>
-              prev < Math.ceil(filteredRecords.length / recordsPerPage) ? prev + 1 : prev
-            )
-          }
-          disabled={currentPage === Math.ceil(filteredRecords.length / recordsPerPage)}
-        />
-      </Pagination>
-    </div>
+    <Container fluid className="py-4">
+      <Row className="justify-content-center">
+        <Col xs={12} lg={12}>
+          <Card className="shadow border-0">
+            <Card.Header className="bg-primary text-white">
+              <div className="d-flex justify-content-between align-items-center">
+                <h4 className="mb-0">
+                  <FaFilter className="me-2" />
+                  CDR Report
+                </h4>
+                <div className="d-flex gap-2">
+                  <Button 
+                    variant="light" 
+                    className="d-flex align-items-center"
+                    onClick={exportToCSV}
+                  >
+                    <FaFileExport className="me-2" />
+                    Export CSV
+                  </Button>
+                </div>
+              </div>
+            </Card.Header>
+            
+            <Card.Body>
+              {error && (
+                <Alert variant="danger" className="d-flex align-items-center">
+                  <FaTimesCircle className="me-2" />
+                  {error}
+                </Alert>
+              )}
+
+              <div className="d-flex mb-3 gap-2">
+                <div className="position-relative flex-grow-1">
+                  <Form.Control
+                    type="text"
+                    placeholder="Search by Caller ID..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="ps-4"
+                  />
+                  <FaSearch 
+                    className="position-absolute text-muted"
+                    style={{ left: "10px", top: "50%", transform: "translateY(-50%)" }}
+                  />
+                </div>
+                
+                <Dropdown ref={dropdownRef}>
+                  <Dropdown.Toggle variant="secondary" className="d-flex align-items-center">
+                    <FaEye className="me-2" />
+                    Columns
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu className="p-2">
+                    <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+                      {Object.keys(visibleColumns).map((column) => (
+                        <Form.Check
+                          key={column}
+                          type="checkbox"
+                          label={column}
+                          checked={visibleColumns[column]}
+                          onChange={() => toggleColumnVisibility(column)}
+                          className="px-3 py-1"
+                        />
+                      ))}
+                    </div>
+                  </Dropdown.Menu>
+                </Dropdown>
+              </div>
+
+              {loading ? (
+                <div className="text-center py-5">
+                  <Spinner animation="border" variant="primary" />
+                  <p className="mt-2">Loading CDR data...</p>
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <Table striped bordered hover className="mb-0">
+                    <thead className="bg-light">
+                      <tr>
+                        {visibleColumns.Date && <th>Date</th>}
+                        {visibleColumns.SipUser && <th>Sip User</th>}
+                        {visibleColumns.CallerID && <th>Caller ID</th>}
+                        {visibleColumns.Number && <th>Number</th>}
+                        {visibleColumns.Destination && <th>Destination</th>}
+                        {visibleColumns.Duration && <th>Duration</th>}
+                        {visibleColumns.RealDuration && <th>Real Duration</th>}
+                        {visibleColumns.Username && <th>Username</th>}
+                        {visibleColumns.Trunk && <th>Trunk</th>}
+                        {visibleColumns.Type && <th>Type</th>}
+                        {visibleColumns.BuyPrice && <th>Buy Price</th>}
+                        {visibleColumns.SellPrice && <th>Sell Price</th>}
+                        {visibleColumns.UniqueID && <th>Unique ID</th>}
+                        {visibleColumns.Plan && <th>Plan</th>}
+                        {visibleColumns.Campaign && <th>Campaign</th>}
+                        {visibleColumns.Server && <th>Server</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentRecords.map((cdr) => (
+                        <tr key={cdr.id}>
+                          {visibleColumns.Date && <td>{new Date(cdr.starttime).toLocaleString()}</td>}
+                          {visibleColumns.SipUser && <td>{cdr.src}</td>}
+                          {visibleColumns.CallerID && <td>{cdr.callerid}</td>}
+                          {visibleColumns.Number && <td>{cdr.calledstation}</td>}
+                          {visibleColumns.Destination && <td>{cdr.id_prefix}</td>}
+                          {visibleColumns.Duration && <td>{cdr.sessiontime} seconds</td>}
+                          {visibleColumns.RealDuration && <td>{cdr.real_sessiontime} seconds</td>}
+                          {visibleColumns.Username && <td>{cdr.username}</td>}
+                          {visibleColumns.Trunk && <td>{cdr.trunkcode}</td>}
+                          {visibleColumns.Type && <td>{cdr.type}</td>}
+                          {visibleColumns.BuyPrice && <td>{cdr.buycost} €</td>}
+                          {visibleColumns.SellPrice && <td>{cdr.sessionbill} €</td>}
+                          {visibleColumns.UniqueID && <td>{cdr.uniqueid}</td>}
+                          {visibleColumns.Plan && <td>{cdr.id_plan}</td>}
+                          {visibleColumns.Campaign && <td>{cdr.id_campaign || "vide"}</td>}
+                          {visibleColumns.Server && <td>{cdr.server_name}</td>}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
+              )}
+
+              <div className="d-flex justify-content-between align-items-center mt-3">
+                <div className="text-muted">
+                  Showing {indexOfFirstRecord + 1} to {Math.min(indexOfLastRecord, filteredRecords.length)} of {filteredRecords.length} records
+                </div>
+                <Pagination>
+                  <Pagination.Prev
+                    onClick={() => setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev))}
+                    disabled={currentPage === 1}
+                  />
+                  {Array.from({ length: Math.ceil(filteredRecords.length / recordsPerPage) }, (_, i) => (
+                    <Pagination.Item
+                      key={i + 1}
+                      active={i + 1 === currentPage}
+                      onClick={() => paginate(i + 1)}
+                    >
+                      {i + 1}
+                    </Pagination.Item>
+                  ))}
+                  <Pagination.Next
+                    onClick={() =>
+                      setCurrentPage((prev) =>
+                        prev < Math.ceil(filteredRecords.length / recordsPerPage) ? prev + 1 : prev
+                      )}
+                    disabled={currentPage === Math.ceil(filteredRecords.length / recordsPerPage)}
+                  />
+                </Pagination>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
   );
 };
 

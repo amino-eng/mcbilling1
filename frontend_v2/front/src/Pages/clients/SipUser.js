@@ -890,9 +890,10 @@ const SIPUsers = () => {
           border: 0 !important;
         }
         .table thead th {
-          background: linear-gradient(135deg, #212529 0%, #343a40 100%);
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
-          font-weight: 800;
+          background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+          color: #212529;
+          text-shadow: none;
+          font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 1px;
           position: relative;
@@ -1060,7 +1061,7 @@ const SIPUsers = () => {
                     <Card.Body className="p-0">
                       <div className="table-responsive">
                         <Table hover className="mb-0 table-header-bold">
-                          <thead className="bg-dark text-white">
+                          <thead className="bg-light text-dark">
                             <tr>
                               <th className="py-3 px-4 fw-bold">Name</th>
                               <th className="py-3 px-4 fw-bold">Account Code</th>

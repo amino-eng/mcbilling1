@@ -212,10 +212,8 @@ const IaxTable = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
     const [hiddenColumns, setHiddenColumns] = useState([
-        'Context', 'CallerID', 'Codec', 'NAT', 'Qualify', 'Dtmfmode', 'Insecure', 'Type', 'IP',
+        'IAX Pass', 'Context', 'CallerID', 'Codec', 'NAT', 'Qualify', 'Dtmfmode', 'Insecure', 'Type', 'IP',
     ]);
-    
-    // Column definitions are below
     const [showAddModal, setShowAddModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [newEntry, setNewEntry] = useState({
@@ -246,6 +244,7 @@ const IaxTable = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [loading, setLoading] = useState(false);
     const [totalPages, setTotalPages] = useState(0);
+    const [showPassword, setShowPassword] = useState(false);
 
     const fetchIax = async () => {
         try {
@@ -360,7 +359,7 @@ const IaxTable = () => {
 
     const columns = [
         'Nom d\'utilisateur', 'IAX User', 'IAX Pass', 'Host', 'IP', 'Context',
-        'CallerID', 'Codec', 'NAT', 'Dtmfmode', 'Insecure', 'Type', 'Actions'
+        'CallerID', 'Codec', 'NAT', 'Dtmfmode', 'Insecure', 'Type'
     ];
 
     const renderPagination = () => {
@@ -548,9 +547,6 @@ const IaxTable = () => {
             border: '1px solid #e9ecef',
             transition: 'all 0.3s ease',
         },
-        actionBtn: {
-            transition: 'all 0.2s ease',
-        },
         emptyState: {
             animation: 'fadeIn 0.5s ease-in-out',
         }
@@ -686,15 +682,11 @@ const IaxTable = () => {
                                                     <tr key={index} className="align-middle">
                                                         {!hiddenColumns.includes('ID') && <td>{item.id}</td>}
                                                         {!hiddenColumns.includes('Nom d\'utilisateur') && <td>{item.name}</td>}
-                                                        {!hiddenColumns.includes('Password') && <td>••••••••</td>}
+                                                        {!hiddenColumns.includes('IAX Pass') && <td>••••••••</td>}
                                                         {!hiddenColumns.includes('Host') && <td>{item.host}</td>}
                                                         {!hiddenColumns.includes('Type') && <td>{item.type}</td>}
                                                         {!hiddenColumns.includes('Context') && <td>{item.context}</td>}
-                                                        {!hiddenColumns.includes('Status') && (
-                                                            <td>
-                                                                <StatusBadge status={item.status} />
-                                                            </td>
-                                                        )}
+                                                        
                                                         {!hiddenColumns.includes('Actions') && (
                                                             <td className="text-end">
                                                                 <Button 
@@ -779,13 +771,21 @@ const IaxTable = () => {
                                 </Form.Group>
                                 <Form.Group className="mb-3" controlId="formIAXPass">
                                     <Form.Label>IAX Password</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        name="secret"
-                                        value={newEntry.secret}
-                                        onChange={handleInputChange}
-                                        placeholder="Leave empty to generate automatically"
-                                    />
+                                    <InputGroup>
+                                        <Form.Control
+                                            type={showPassword ? "text" : "password"}
+                                            name="secret"
+                                            value={newEntry.secret}
+                                            onChange={handleInputChange}
+                                            placeholder="Leave empty to generate automatically"
+                                        />
+                                        <Button 
+                                            variant="outline-secondary" 
+                                            onClick={() => setShowPassword(!showPassword)}
+                                        >
+                                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                        </Button>
+                                    </InputGroup>
                                 </Form.Group>
                                 <Form.Group className="mb-3" controlId="formDisallow">
                                     <Form.Label>Disallow</Form.Label>

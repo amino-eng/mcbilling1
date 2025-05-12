@@ -1,18 +1,194 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import axios from "axios"
-import { Table, Spinner, Alert, Form, Button, InputGroup, Modal } from "react-bootstrap"
+import "bootstrap/dist/css/bootstrap.min.css"
+import { 
+  Table, Spinner, Alert, Form, Button, InputGroup, Modal, 
+  Card, Container, Row, Col, Badge 
+} from "react-bootstrap"
+import { 
+  FaCheckCircle, FaTimesCircle, FaEdit, FaSearch, 
+  FaPlusCircle, FaTrashAlt, FaFileAlt 
+} from "react-icons/fa"
 
-const TariffTable = () => {
+// Constants
+const ITEMS_PER_PAGE = 10
+
+// Header Component
+function TariffsHeader({ onAddClick, tariffs, isExporting = false }) {
+  return (
+    <Card.Header className="d-flex flex-wrap align-items-center p-0 rounded-top overflow-hidden">
+      <div className="bg-primary p-3 w-100 position-relative">
+        <div className="position-absolute top-0 end-0 p-2 d-none d-md-block">
+          {Array(5).fill().map((_, i) => (
+            <div
+              key={i}
+              className="floating-icon position-absolute"
+              style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${i * 0.5}s`,
+              }}
+            >
+              <FaFileAlt className="text-white opacity-25" />
+            </div>
+          ))}
+        </div>
+        <div className="d-flex align-items-center position-relative z-2">
+          <div className="bg-white rounded-circle p-3 me-3 shadow pulse-effect">
+            <FaFileAlt className="text-primary fs-3" />
+          </div>
+          <div>
+            <h2 className="fw-bold mb-0 text-white">Tarifs</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos tarifs et destinations</p>
+          </div>
+        </div>
+      </div>
+      <div className="w-100 bg-white p-2 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
+        <div className="d-flex align-items-center gap-3">
+          <Badge bg="primary" className="d-flex align-items-center p-2 ps-3 rounded-pill">
+            <span className="me-2 fw-normal">
+              Total: <span className="fw-bold">{tariffs.length}</span>
+            </span>
+            <span
+              className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center"
+              style={{ width: "24px", height: "24px" }}
+            >
+              <FaFileAlt size={12} />
+            </span>
+          </Badge>
+        </div>
+        <div className="d-flex gap-2">
+          <Button
+            variant="primary"
+            onClick={onAddClick}
+            className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+          >
+            <div className="icon-container">
+              <FaPlusCircle />
+            </div>
+            <span>Ajouter</span>
+          </Button>
+        </div>
+      </div>
+    </Card.Header>
+  )
+}
+
+// Search Bar Component
+function SearchBar({ searchTerm, onSearchChange }) {
+  return (
+    <InputGroup className="shadow-sm">
+      <InputGroup.Text className="bg-white">
+        <FaSearch className="text-muted" />
+      </InputGroup.Text>
+      <Form.Control
+        placeholder="Rechercher par préfixe, destination ou plan..."
+        value={searchTerm}
+        onChange={onSearchChange}
+        className="border-start-0"
+      />
+    </InputGroup>
+  )
+}
+
+// Action Buttons Component
+function ActionButtons({ onEdit, onDelete }) {
+  return (
+    <div className="d-flex gap-2 action-btn">
+      <Button
+        variant="outline-primary"
+        size="sm"
+        onClick={onEdit}
+        className="px-2 py-1"
+      >
+        <FaEdit className="btn-icon" />
+      </Button>
+      <Button
+        variant="outline-danger"
+        size="sm"
+        onClick={onDelete}
+        className="px-2 py-1"
+      >
+        <FaTrashAlt className="btn-icon" />
+      </Button>
+    </div>
+  )
+}
+
+// Empty State Component
+function EmptyState() {
+  return (
+    <div className="text-center py-5">
+      <FaFileAlt className="text-muted mb-3" size={48} />
+      <h5 className="text-muted">Aucun tarif trouvé</h5>
+      <p className="text-muted small">
+        Commencez par ajouter un nouveau tarif
+      </p>
+    </div>
+  )
+}
+
+// Tariffs Table Component
+function TariffsTableComponent({ tariffs, onEdit, onDelete, isLoading }) {
+  if (isLoading) {
+    return (
+      <div className="text-center py-5">
+        <Spinner animation="border" variant="primary" />
+        <p className="mt-2 text-muted">Chargement des tarifs...</p>
+      </div>
+    )
+  }
+
+  if (tariffs.length === 0) {
+    return <EmptyState />
+  }
+
+  return (
+    <div className="border rounded overflow-hidden">
+      <Table hover className="mb-0">
+        <thead className="bg-light">
+          <tr>
+            <th>Préfixe</th>
+            <th>Destination</th>
+            <th>Plan</th>
+            <th>Tarif</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tariffs.map((tariff) => (
+            <tr key={tariff.id} className="plan-row">
+              <td>{tariff.prefix}</td>
+              <td>{tariff.destination}</td>
+              <td>{tariff.plan}</td>
+              <td>{tariff.sellrate}</td>
+              <td>
+                <ActionButtons
+                  onEdit={() => onEdit(tariff)}
+                  onDelete={() => onDelete(tariff.id)}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </div>
+  )
+}
+
+// Main Tariffs Component
+const TariffsTable = () => {
   const [tariffs, setTariffs] = useState([])
-  const [filtered, setFiltered] = useState([])
+  const [filteredTariffs, setFilteredTariffs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
-  const [selected, setSelected] = useState([])
   const [searchTerm, setSearchTerm] = useState("")
   const [showModal, setShowModal] = useState(false)
   const [currentTariff, setCurrentTariff] = useState(null)
+  const [currentPage, setCurrentPage] = useState(0)
+  const [successMessage, setSuccessMessage] = useState("")
 
   // Search modals state
   const [showPlanSearch, setShowPlanSearch] = useState(false)
@@ -52,78 +228,45 @@ const TariffTable = () => {
     status: "Active",
   })
 
+  // Calculate pagination
+  const pageCount = Math.ceil(filteredTariffs.length / ITEMS_PER_PAGE)
+  const pagedTariffs = filteredTariffs.slice(
+    currentPage * ITEMS_PER_PAGE,
+    (currentPage + 1) * ITEMS_PER_PAGE
+  )
+
   useEffect(() => {
     fetchTariffs()
   }, [])
 
   useEffect(() => {
     const lowerSearch = searchTerm.toLowerCase()
-    setFiltered(
+    setFilteredTariffs(
       tariffs.filter(
         (t) =>
           (t.prefix && t.prefix.includes(searchTerm)) ||
           (t.destination && t.destination.toLowerCase().includes(lowerSearch)) ||
-          (t.plan && t.plan.toLowerCase().includes(lowerSearch)),
-      ),
+          (t.plan && t.plan.toLowerCase().includes(lowerSearch))
+      )
     )
+    setCurrentPage(0)
   }, [searchTerm, tariffs])
-
-  // Filter search results based on search terms
-  useEffect(() => {
-    if (planSearchTerm && planResults.length > 0) {
-      const lowerSearch = planSearchTerm.toLowerCase()
-      const filtered = planResults.filter((plan) => plan.name && plan.name.toLowerCase().includes(lowerSearch))
-      setPlanResults(filtered)
-    }
-  }, [planSearchTerm])
-
-  useEffect(() => {
-    if (destinationSearchTerm && destinationResults.length > 0) {
-      const lowerSearch = destinationSearchTerm.toLowerCase()
-      const filtered = destinationResults.filter(
-        (prefix) =>
-          (prefix.prefix && prefix.prefix.includes(destinationSearchTerm)) ||
-          (prefix.destination && prefix.destination.toLowerCase().includes(lowerSearch)),
-      )
-      setDestinationResults(filtered)
-    }
-  }, [destinationSearchTerm])
-
-  useEffect(() => {
-    if (trunkGroupSearchTerm && trunkGroupResults.length > 0) {
-      const lowerSearch = trunkGroupSearchTerm.toLowerCase()
-      const filtered = trunkGroupResults.filter(
-        (trunkGroup) =>
-          (trunkGroup.name && trunkGroup.name.toLowerCase().includes(lowerSearch)) ||
-          (trunkGroup.trunk_group_name && trunkGroup.trunk_group_name.toLowerCase().includes(lowerSearch)) ||
-          (trunkGroup.description && trunkGroup.description.toLowerCase().includes(lowerSearch)) ||
-          (trunkGroup.trunk_group_description &&
-            trunkGroup.trunk_group_description.toLowerCase().includes(lowerSearch)),
-      )
-      setTrunkGroupResults(filtered)
-    }
-  }, [trunkGroupSearchTerm])
 
   const fetchTariffs = async () => {
     try {
+      setLoading(true)
       const res = await axios.get("http://localhost:5000/api/admin/Tariffs/afficher")
       setTariffs(res.data.tarifs)
-      setFiltered(res.data.tarifs)
+      setFilteredTariffs(res.data.tarifs)
+      setLoading(false)
     } catch (err) {
-      console.error(err)
-      setError("Erreur lors de la récupération des tarifs.")
-    } finally {
+      setError("Erreur lors du chargement des tarifs")
       setLoading(false)
     }
   }
 
-  const toggleSelect = (id) => {
-    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-  }
-
-  const handleSearchChange = (e) => setSearchTerm(e.target.value)
-
-  const handleAddNew = () => {
+  const handleAdd = () => {
+    setCurrentTariff(null)
     setFormData({
       id_plan: "",
       id_prefix: "",
@@ -141,30 +284,33 @@ const TariffTable = () => {
       include_in_offer: "No",
       status: "Active",
     })
-    setCurrentTariff(null)
     setShowModal(true)
   }
 
-  const handleUpdate = (tariff) => {
-    setFormData({
-      id_plan: tariff.id_plan || "",
-      id_prefix: tariff.id_prefix || "",
-      id_trunk_group: tariff.id_trunk_group || "",
-      prefix: tariff.prefix || "",
-      destination: tariff.destination || "",
-      sellrate: tariff.rateinitial || "", // Changé de sellrate à rateinitial
-      initblock: tariff.initblock || "",
-      billingblock: tariff.billingblock || "",
-      trunk_group_name: tariff.trunk_group_name || "",
-      plan: tariff.plan || "",
-      minimal_time_buy: tariff.minimal_time_charge || "", // Changé de minimal_time_buy à minimal_time_charge
-      additional_time: tariff.additional_grace || "", // Changé de additional_time à additional_grace
-      connection_charge: tariff.connectcharge || "", // Changé de connection_charge à connectcharge
-      include_in_offer: tariff.package_offer ? "Yes" : "No", // Changé de include_in_offer à package_offer
-      status: tariff.status ? "Active" : "Inactive",
-    })
+  const handleEdit = (tariff) => {
     setCurrentTariff(tariff)
+    setFormData({
+      id_plan: tariff.id_plan,
+      id_prefix: tariff.id_prefix,
+      id_trunk_group: tariff.id_trunk_group,
+      prefix: tariff.prefix,
+      destination: tariff.destination,
+      sellrate: tariff.sellrate,
+      initblock: tariff.initblock,
+      billingblock: tariff.billingblock,
+      trunk_group_name: tariff.trunk_group_name,
+      plan: tariff.plan,
+      minimal_time_buy: tariff.minimal_time_buy,
+      additional_time: tariff.additional_time,
+      connection_charge: tariff.connection_charge,
+      include_in_offer: tariff.include_in_offer || "No",
+      status: tariff.status || "Active",
+    })
     setShowModal(true)
+  }
+
+  const handlePageChange = ({ selected }) => {
+    setCurrentPage(selected)
   }
 
   const handleDelete = async (id) => {
@@ -360,62 +506,108 @@ const TariffTable = () => {
     setShowTrunkGroupSearch(true)
   }
 
-  if (loading) return <Spinner animation="border" />
-  if (error) return <Alert variant="danger">{error}</Alert>
+  const customStyles = `
+    .floating-icon {
+      animation: float 6s ease-in-out infinite;
+    }
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+      100% { transform: translateY(0px); }
+    }
+    .pulse-effect {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+    }
+    .btn-hover-effect .icon-container {
+      transition: all 0.3s ease;
+    }
+    .btn-hover-effect:hover .icon-container {
+      transform: translateY(-2px);
+    }
+    .action-btn .btn-icon {
+      transition: transform 0.2s ease;
+    }
+    .action-btn:hover .btn-icon {
+      transform: scale(1.2);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .plan-row {
+      transition: all 0.2s ease;
+    }
+    .plan-row:hover {
+      background-color: rgba(13, 110, 253, 0.05);
+    }
+    .main-card {
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+  `
 
   return (
-    <div className="mt-4">
-      <div className="d-flex justify-content-between mb-3">
-        <InputGroup style={{ maxWidth: "300px" }}>
-          <Form.Control placeholder="Recherche..." value={searchTerm} onChange={handleSearchChange} />
-        </InputGroup>
-        <Button variant="primary" onClick={handleAddNew}>
-          + Ajouter
-        </Button>
-      </div>
+    <div>
+      <style>{customStyles}</style>
 
-      <div className="table-responsive">
-        <Table striped hover>
-          <thead>
-            <tr>
-              <th>
-                <Form.Check disabled />
-              </th>
-              <th>Prefix</th>
-              <th>Destination</th>
-              <th>Sell price</th>
-              <th>Initial block</th>
-              <th>Billing block</th>
-              <th>Trunk groups</th>
-              <th>Plan</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((t) => (
-              <tr key={t.id} className={selected.includes(t.id) ? "table-active" : ""}>
-                <td>
-                  <Form.Check checked={selected.includes(t.id)} onChange={() => toggleSelect(t.id)} />
-                </td>
-                <td>{t.prefix}</td>
-                <td>{t.destination}</td>
-                <td>{new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(t.rateinitial)}</td>
-                <td>{t.initblock}</td>
-                <td>{t.billingblock}</td>
-                <td>{t.trunk_group_name}</td>
-                <td>{t.plan}</td>
-                <td>
-                  <Button variant="warning" size="sm" className="me-2" onClick={() => handleUpdate(t)}>
-                    Modifier
-                  </Button>
-                  <Button variant="danger" size="sm" onClick={() => handleDelete(t.id)}>
-                    Supprimer
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
+      <div className="dashboard-main">
+        <Container fluid className="px-4 py-4">
+          <Row className="justify-content-center">
+            <Col xs={12} lg={11}>
+              <Card className="shadow border-0 overflow-hidden main-card">
+                <TariffsHeader 
+                  onAddClick={handleAdd} 
+                  tariffs={tariffs} 
+                />
+                <Card.Body className="p-4" style={{ animation: "fadeIn 0.5s ease-in-out" }}>
+                  {error && (
+                    <Alert variant="danger" className="d-flex align-items-center mb-4 shadow-sm">
+                      <FaTimesCircle className="me-2" />
+                      {error}
+                    </Alert>
+                  )}
+                  {successMessage && (
+                    <Alert variant="success" className="d-flex align-items-center mb-4 shadow-sm">
+                      <FaCheckCircle className="me-2" />
+                      {successMessage}
+                    </Alert>
+                  )}
+
+                  <Row className="mb-4">
+                    <Col md={6} lg={4}>
+                      <SearchBar 
+                        searchTerm={searchTerm} 
+                        onSearchChange={(e) => setSearchTerm(e.target.value)} 
+                      />
+                    </Col>
+                  </Row>
+
+                  <TariffsTableComponent
+                    tariffs={pagedTariffs}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    isLoading={loading}
+                  />
+
+                  <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
+                    <div className="text-muted small">
+                      {!loading && (
+                        <Badge bg="light" text="dark" className="me-2 shadow-sm">
+                          <span className="fw-semibold">{pagedTariffs.length}</span> sur {filteredTariffs.length} tarifs
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </Container>
       </div>
 
       {/* Main Modal for Add and Update Tariffs */}
@@ -713,61 +905,60 @@ const TariffTable = () => {
           <Modal.Title>Rechercher un Groupe de Trunk</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-  <InputGroup className="mb-3">
-    <Form.Control
-      placeholder="Filtrer..."
-      value={trunkGroupSearchTerm}
-      onChange={(e) => setTrunkGroupSearchTerm(e.target.value)}
-    />
-  </InputGroup>
+          <InputGroup className="mb-3">
+            <Form.Control
+              placeholder="Filtrer..."
+              value={trunkGroupSearchTerm}
+              onChange={(e) => setTrunkGroupSearchTerm(e.target.value)}
+            />
+          </InputGroup>
 
-  {loadingTrunkGroups ? (
-    <div className="text-center">
-      <Spinner animation="border" />
-    </div>
-  ) : (
-    <div className="border rounded">
-      <Table hover className="mb-0">
-        <thead>
-          <tr>
-            <th style={{ width: "40px" }}></th>
-            <th>Name</th>
-            <th>Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          {trunkGroupResults.length > 0 ? (
-            trunkGroupResults.map((trunkGroup) => (
-              <tr
-                key={trunkGroup.id}
-                onClick={() => selectTrunkGroup(trunkGroup)}
-                style={{ cursor: "pointer" }}
-              >
-                <td>
-                  <Form.Check
-                    type="checkbox"
-                    checked={formData.id_trunk_group === trunkGroup.id}
-                    onChange={() => selectTrunkGroup(trunkGroup)}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </td>
-                <td>{trunkGroup.name || trunkGroup.trunk_group_name}</td>
-                <td>{trunkGroup.description || trunkGroup.trunk_group_description}</td>
-              </tr>
-            ))
+          {loadingTrunkGroups ? (
+            <div className="text-center">
+              <Spinner animation="border" />
+            </div>
           ) : (
-            <tr>
-              <td colSpan={3} className="text-center py-3">
-                {loadingTrunkGroups ? "Chargement..." : "Aucun résultat trouvé"}
-              </td>
-            </tr>
+            <div className="border rounded">
+              <Table hover className="mb-0">
+                <thead>
+                  <tr>
+                    <th style={{ width: "40px" }}></th>
+                    <th>Name</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {trunkGroupResults.length > 0 ? (
+                    trunkGroupResults.map((trunkGroup) => (
+                      <tr
+                        key={trunkGroup.id}
+                        onClick={() => selectTrunkGroup(trunkGroup)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <td>
+                          <Form.Check
+                            type="checkbox"
+                            checked={formData.id_trunk_group === trunkGroup.id}
+                            onChange={() => selectTrunkGroup(trunkGroup)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </td>
+                        <td>{trunkGroup.name || trunkGroup.trunk_group_name}</td>
+                        <td>{trunkGroup.description || trunkGroup.trunk_group_description}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="text-center py-3">
+                        {loadingTrunkGroups ? "Chargement..." : "Aucun résultat trouvé"}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </Table>
+            </div>
           )}
-        </tbody>
-      </Table>
-    </div>
-  )}
-</Modal.Body>
-
+        </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowTrunkGroupSearch(false)}>
             Fermer
@@ -778,4 +969,4 @@ const TariffTable = () => {
   )
 }
 
-export default TariffTable
+export default TariffsTable

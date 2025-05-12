@@ -1,17 +1,232 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Table, Button, Modal, Form } from "react-bootstrap";
-import { toast } from "react-toastify";
-import Papa from "papaparse";
+import {
+  Button,
+  Table,
+  Form,
+  Modal,
+  Row,
+  Col,
+  InputGroup,
+  Alert,
+  Card,
+  Badge,
+  Spinner,
+} from "react-bootstrap";
+import { CSVLink } from "react-csv";
+import { 
+  BiSearch, 
+  BiEdit, 
+  BiTrash,
+  BiPlusCircle,
+  BiDownload,
+  BiCheckCircle,
+  BiXCircle
+} from "react-icons/bi";
+import { FaMoneyBillWave } from "react-icons/fa";
 
-const ProviderRatesTable = () => {
-  const [rates, setRates] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [showProviderModal, setShowProviderModal] = useState(false);
-  const [showPrefixModal, setShowPrefixModal] = useState(false);
-  const [providers, setProviders] = useState([]);
-  const [prefixes, setPrefixes] = useState([]);
+// Constants
+const ITEMS_PER_PAGE = 10;
+
+// ------------------ ProviderRatesHeader Component ------------------
+const ProviderRatesHeader = ({ onAddClick, rates, isExporting }) => {
+  const csvData = [
+    ["Prefix", "Destination", "Provider", "Buy Rate", "Init Block", "Increment", "Min Time"],
+    ...rates.map((rate) => [
+      rate.prefix,
+      rate.destination,
+      rate.provider,
+      rate.buyrate,
+      rate.buyrateinitblock,
+      rate.buyrateincrement,
+      rate.minimal_time_buy,
+    ]),
+  ];
+
+  return (
+    <Card.Header className="d-flex flex-wrap align-items-center p-0 rounded-top overflow-hidden">
+      <div className="bg-primary p-3 w-100 position-relative">
+        <div className="position-absolute top-0 end-0 p-2 d-none d-md-block">
+          {Array(5).fill().map((_, i) => (
+            <div
+              key={i}
+              className="floating-icon position-absolute"
+              style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${i * 0.5}s`,
+              }}
+            >
+              <FaMoneyBillWave
+                className="text-white opacity-25"
+                style={{
+                  fontSize: `${Math.random() * 1.5 + 0.5}rem`,
+                }}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="d-flex align-items-center position-relative z-2">
+          <div className="bg-white rounded-circle p-3 me-3 shadow pulse-effect">
+            <FaMoneyBillWave className="text-primary fs-3" />
+          </div>
+          <div>
+            <h2 className="fw-bold mb-0 text-white">Tarifs Fournisseurs</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos tarifs d'achat</p>
+          </div>
+        </div>
+      </div>
+      <div className="w-100 bg-white p-2 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
+        <div className="d-flex align-items-center gap-3">
+          <Badge bg="primary" className="d-flex align-items-center p-2 ps-3 rounded-pill">
+            <span className="me-2 fw-normal">
+              Total: <span className="fw-bold">{rates.length}</span>
+            </span>
+            <span
+              className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center"
+              style={{ width: "24px", height: "24px" }}
+            >
+              <FaMoneyBillWave size={12} />
+            </span>
+          </Badge>
+        </div>
+        <div className="d-flex gap-2">
+          <Button
+            variant="primary"
+            onClick={onAddClick}
+            className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+          >
+            <div className="icon-container">
+              <BiPlusCircle />
+            </div>
+            <span>Ajouter</span>
+          </Button>
+          <CSVLink
+            data={csvData}
+            filename="provider_rates.csv"
+            className="btn btn-success d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+            disabled={isExporting}
+          >
+            <div className="icon-container">
+              {isExporting ? <Spinner animation="border" size="sm" /> : <BiDownload />}
+            </div>
+            <span>{isExporting ? "Exportation..." : "Exporter"}</span>
+          </CSVLink>
+        </div>
+      </div>
+    </Card.Header>
+  );
+};
+
+// ------------------ SearchBar Component ------------------
+const SearchBar = ({ searchTerm, onSearchChange }) => {
+  return (
+    <InputGroup className="search-bar shadow-sm">
+      <InputGroup.Text className="bg-white">
+        <BiSearch />
+      </InputGroup.Text>
+      <Form.Control
+        type="text"
+        placeholder="Rechercher..."
+        value={searchTerm}
+        onChange={onSearchChange}
+        className="border-start-0"
+      />
+    </InputGroup>
+  );
+};
+
+// ------------------ ActionButtons Component ------------------
+const ActionButtons = ({ onEdit, onDelete }) => {
+  return (
+    <div className="d-flex gap-2">
+      <Button
+        variant="outline-primary"
+        size="sm"
+        onClick={onEdit}
+        className="d-flex align-items-center justify-content-center"
+        style={{ width: '32px', height: '32px' }}
+      >
+        <BiEdit />
+      </Button>
+      <Button
+        variant="outline-danger"
+        size="sm"
+        onClick={onDelete}
+        className="d-flex align-items-center justify-content-center"
+        style={{ width: '32px', height: '32px' }}
+      >
+        <BiTrash />
+      </Button>
+    </div>
+  );
+};
+
+// ------------------ ProviderRatesTable Component ------------------
+const ProviderRatesTable = ({ rates, onEdit, onDelete, isLoading }) => {
+  return (
+    <div className="table-responsive">
+      <Table striped hover className="mb-0">
+        <thead className="table-light">
+          <tr>
+            <th>Préfixe</th>
+            <th>Destination</th>
+            <th>Fournisseur</th>
+            <th>Tarif</th>
+            <th>Init Block</th>
+            <th>Increment</th>
+            <th>Min Time</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {isLoading ? (
+            <tr>
+              <td colSpan="8" className="text-center py-4">
+                <Spinner animation="border" variant="primary" />
+              </td>
+            </tr>
+          ) : rates.length === 0 ? (
+            <tr>
+              <td colSpan="8" className="text-center py-4 text-muted">
+                Aucun tarif trouvé
+              </td>
+            </tr>
+          ) : (
+            rates.map((rate) => (
+              <tr key={`${rate.id_prefix}-${rate.id_provider}`}>
+                <td>{rate.prefix}</td>
+                <td>{rate.destination}</td>
+                <td>{rate.provider}</td>
+                <td>{rate.buyrate}</td>
+                <td>{rate.buyrateinitblock}</td>
+                <td>{rate.buyrateincrement}</td>
+                <td>{rate.minimal_time_buy}</td>
+                <td>
+                  <ActionButtons
+                    onEdit={() => onEdit(rate)}
+                    onDelete={() => onDelete(rate.id)}
+                  />
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </Table>
+    </div>
+  );
+};
+
+// ------------------ AddProviderRateModal Component ------------------
+const AddProviderRateModal = ({
+  show,
+  onHide,
+  onRateAdded,
+  rateToEdit,
+  setRateToEdit,
+  providers,
+  prefixes,
+}) => {
   const [formData, setFormData] = useState({
     id_prefix: "",
     id_provider: "",
@@ -20,60 +235,26 @@ const ProviderRatesTable = () => {
     buyrateincrement: 0,
     minimal_time_buy: 0,
   });
-  const [editingId, setEditingId] = useState(null);
+
   const [selectedProviderName, setSelectedProviderName] = useState("");
   const [selectedPrefixInfo, setSelectedPrefixInfo] = useState("");
-  const [selectedProviderDescription, setSelectedProviderDescription] = useState("");
+  const [showProviderModal, setShowProviderModal] = useState(false);
+  const [showPrefixModal, setShowPrefixModal] = useState(false);
   const [validated, setValidated] = useState(false);
 
   useEffect(() => {
-    fetchRates();
-  }, []);
-
-  const fetchRates = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/admin/providerrates/afficher");
-      setRates(res.data.rates);
-    } catch {
-      toast.error("Erreur de chargement des taux");
-    }
-  };
-
-  const fetchProviders = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/admin/providers/afficher");
-      setProviders(res.data.providers);
-      setShowProviderModal(true);
-    } catch {
-      toast.error("Erreur chargement fournisseurs");
-    }
-  };
-
-  const fetchPrefixes = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/admin/prefixes/afficher");
-      setPrefixes(res.data.prefixes);
-      setShowPrefixModal(true);
-    } catch {
-      toast.error("Erreur chargement destinations");
-    }
-  };
-
-  const handleShowModal = (rate = null) => {
-    if (rate) {
-      setEditingId(rate.id);
+    if (rateToEdit) {
       setFormData({
-        id_prefix: rate.id_prefix,
-        id_provider: rate.id_provider,
-        buyrate: rate.buyrate,
-        buyrateinitblock: rate.buyrateinitblock,
-        buyrateincrement: rate.buyrateincrement,
-        minimal_time_buy: rate.minimal_time_buy,
+        id_prefix: rateToEdit.id_prefix,
+        id_provider: rateToEdit.id_provider,
+        buyrate: rateToEdit.buyrate,
+        buyrateinitblock: rateToEdit.buyrateinitblock,
+        buyrateincrement: rateToEdit.buyrateincrement,
+        minimal_time_buy: rateToEdit.minimal_time_buy,
       });
-      setSelectedProviderName(rate.provider);
-      setSelectedPrefixInfo(`${rate.prefix} - ${rate.destination}`);
+      setSelectedProviderName(rateToEdit.provider);
+      setSelectedPrefixInfo(`${rateToEdit.prefix} - ${rateToEdit.destination}`);
     } else {
-      setEditingId(null);
       setFormData({
         id_prefix: "",
         id_provider: "",
@@ -86,8 +267,7 @@ const ProviderRatesTable = () => {
       setSelectedPrefixInfo("");
     }
     setValidated(false);
-    setShowModal(true);
-  };
+  }, [rateToEdit, show]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -107,269 +287,426 @@ const ProviderRatesTable = () => {
     };
 
     try {
-      if (editingId) {
-        await axios.put(`http://localhost:5000/api/admin/providerrates/modifier/${editingId}`, payload);
-        toast.success("Modifié !");
+      if (rateToEdit) {
+        await axios.put(
+          `http://localhost:5000/api/admin/providerrates/modifier/${rateToEdit.id}`,
+          payload
+        );
       } else {
-        await axios.post("http://localhost:5000/api/admin/providerrates/ajouter", payload);
-        toast.success("Ajouté !");
+        await axios.post(
+          "http://localhost:5000/api/admin/providerrates/ajouter",
+          payload
+        );
       }
-      setShowModal(false);
-      fetchRates();
-      setValidated(false);
-    } catch {
-      toast.error("Erreur lors de l'enregistrement");
+      onHide();
+      onRateAdded();
+    } catch (error) {
+      console.error("Error saving rate:", error);
     }
   };
-
-  const handleDelete = async (id) => {
-    if (window.confirm("Supprimer ce taux ?")) {
-      try {
-        await axios.delete(`http://localhost:5000/api/admin/providerrates/supprimer/${id}`);
-        toast.success("Supprimé !");
-        fetchRates();
-      } catch {
-        toast.error("Erreur de suppression");
-      }
-    }
-  };
-
-  const handleExportCSV = () => {
-    const csv = Papa.unparse(rates);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", "provider_rates.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleImportCSV = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      Papa.parse(file, {
-        complete: async (result) => {
-          const data = result.data;
-          try {
-            await axios.post("http://localhost:5000/api/admin/providerrates/import", data);
-            toast.success("CSV importé avec succès !");
-            fetchRates();
-          } catch {
-            toast.error("Erreur lors de l'importation CSV");
-          }
-        },
-      });
-    }
-  };
-
-  const filtered = rates.filter((r) =>
-    r.prefix.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.provider.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
-    <div className="container mt-4">
-      <h4>Provider rates</h4>
-      <div className="d-flex justify-content-between my-3">
-        <input
-          type="text"
-          className="form-control w-50"
-          placeholder="Rechercher..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <div>
-          <Button variant="success" onClick={handleExportCSV} className="me-2">Export CSV</Button>
-          <Button variant="primary" onClick={() => handleShowModal()}>Ajouter</Button>
-          <div className="d-inline-block ms-2">
-            <label className="btn btn-info">
-              Import CSV
-              <input type="file" accept=".csv" style={{ display: "none" }} onChange={handleImportCSV} />
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <Table striped bordered hover>
-        <thead>
-          <tr>
-            <th>Préfixe</th>
-            <th>Provider</th>
-            <th>Destination</th>
-            <th>Buyrate</th>
-            <th>Init Block</th>
-            <th>Increment</th>
-            <th>Min Time Buy</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filtered.map((r) => (
-            <tr key={r.id}>
-              <td>{r.prefix}</td>
-              <td>{r.provider}</td>
-              <td>{r.destination}</td>
-              <td>{r.buyrate}</td>
-              <td>{r.buyrateinitblock}</td>
-              <td>{r.buyrateincrement}</td>
-              <td>{r.minimal_time_buy}</td>
-              <td>
-                <Button size="sm" variant="warning" onClick={() => handleShowModal(r)}>Modifier</Button>{" "}
-                <Button size="sm" variant="danger" onClick={() => handleDelete(r.id)}>Supprimer</Button>
-              </td>
-            </tr>
-          ))}
-          {filtered.length === 0 && (
-            <tr>
-              <td colSpan="8" className="text-center">Aucun taux trouvé</td>
-            </tr>
-          )}
-        </tbody>
-      </Table>
-
-      {/* Modal d'ajout / édition */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>{editingId ? "Modifier" : "Ajouter"} Taux</Modal.Title>
-        </Modal.Header>
+    <Modal show={show} onHide={onHide} size="lg">
+      <Modal.Header closeButton>
+        <Modal.Title>
+          {rateToEdit ? "Modifier Tarif" : "Ajouter Nouveau Tarif"}
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
         <Form noValidate validated={validated} onSubmit={handleSubmit}>
-          <Modal.Body>
-            <Form.Group className="mb-2">
-              <Form.Label>Provider name</Form.Label>
-              <div className="d-flex">
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Fournisseur</Form.Label>
+                <div className="d-flex">
+                  <Form.Control
+                    type="text"
+                    value={selectedProviderName}
+                    readOnly
+                    required
+                  />
+                  <Button
+                    variant="outline-secondary"
+                    className="ms-2"
+                    onClick={() => setShowProviderModal(true)}
+                  >
+                    🔍
+                  </Button>
+                </div>
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Préfixe/Destination</Form.Label>
+                <div className="d-flex">
+                  <Form.Control
+                    type="text"
+                    value={selectedPrefixInfo}
+                    readOnly
+                    required
+                  />
+                  <Button
+                    variant="outline-secondary"
+                    className="ms-2"
+                    onClick={() => setShowPrefixModal(true)}
+                  >
+                    🔍
+                  </Button>
+                </div>
+              </Form.Group>
+            </Col>
+          </Row>
+
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Tarif</Form.Label>
                 <Form.Control
-                  value={formData.id_provider}
-                  onChange={(e) => setFormData({ ...formData, id_provider: e.target.value })}
+                  type="number"
+                  step="0.0001"
+                  value={formData.buyrate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, buyrate: e.target.value })
+                  }
                   required
-                  isInvalid={!formData.id_provider}
                 />
-                <Button variant="outline-secondary" className="ms-2" onClick={fetchProviders}>🔍</Button>
-              </div>
-              <Form.Control.Feedback type="invalid">
-                Veuillez choisir un fournisseur.
-              </Form.Control.Feedback>
-              {selectedProviderName && <small className="text-muted d-block">{selectedProviderName}</small>}
-              {selectedProviderDescription && <small className="text-muted d-block">{selectedProviderDescription}</small>}
-            </Form.Group>
-
-            <Form.Group className="mb-2">
-              <Form.Label>ID Préfixe</Form.Label>
-              <div className="d-flex">
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Init Block</Form.Label>
                 <Form.Control
-                  value={formData.id_prefix}
-                  onChange={(e) => setFormData({ ...formData, id_prefix: e.target.value })}
+                  type="number"
+                  value={formData.buyrateinitblock}
+                  onChange={(e) =>
+                    setFormData({ ...formData, buyrateinitblock: e.target.value })
+                  }
                   required
-                  isInvalid={!formData.id_prefix}
                 />
-                <Button variant="outline-secondary" className="ms-2" onClick={fetchPrefixes}>🔍</Button>
-              </div>
-              <Form.Control.Feedback type="invalid">
-                Veuillez choisir un préfixe.
-              </Form.Control.Feedback>
-              {selectedPrefixInfo && <small className="text-muted">{selectedPrefixInfo}</small>}
-            </Form.Group>
+              </Form.Group>
+            </Col>
+          </Row>
 
-            <Form.Group className="mb-2">
-              <Form.Label>Buyrate</Form.Label>
-              <Form.Control
-                type="number"
-                value={formData.buyrate}
-                onChange={(e) => setFormData({ ...formData, buyrate: e.target.value })}
-                required
-              />
-            </Form.Group>
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Increment</Form.Label>
+                <Form.Control
+                  type="number"
+                  value={formData.buyrateincrement}
+                  onChange={(e) =>
+                    setFormData({ ...formData, buyrateincrement: e.target.value })
+                  }
+                  required
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Min Time</Form.Label>
+                <Form.Control
+                  type="number"
+                  value={formData.minimal_time_buy}
+                  onChange={(e) =>
+                    setFormData({ ...formData, minimal_time_buy: e.target.value })
+                  }
+                  required
+                />
+              </Form.Group>
+            </Col>
+          </Row>
 
-            <Form.Group className="mb-2">
-              <Form.Label>Init Block</Form.Label>
-              <Form.Control
-                type="number"
-                value={formData.buyrateinitblock}
-                onChange={(e) => setFormData({ ...formData, buyrateinitblock: e.target.value })}
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-2">
-              <Form.Label>Increment</Form.Label>
-              <Form.Control
-                type="number"
-                value={formData.buyrateincrement}
-                onChange={(e) => setFormData({ ...formData, buyrateincrement: e.target.value })}
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-2">
-              <Form.Label>Min Time Buy</Form.Label>
-              <Form.Control
-                type="number"
-                value={formData.minimal_time_buy}
-                onChange={(e) => setFormData({ ...formData, minimal_time_buy: e.target.value })}
-                required
-              />
-            </Form.Group>
-          </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowModal(false)}>Annuler</Button>
+            <Button variant="secondary" onClick={onHide}>
+              Annuler
+            </Button>
             <Button variant="primary" type="submit">
-              {editingId ? "Modifier" : "Ajouter"}
+              {rateToEdit ? "Modifier" : "Ajouter"}
             </Button>
           </Modal.Footer>
         </Form>
-      </Modal>
+      </Modal.Body>
 
-      {/* Modal fournisseurs */}
-      <Modal show={showProviderModal} onHide={() => setShowProviderModal(false)}>
+      {/* Provider Selection Modal */}
+      <Modal
+        show={showProviderModal}
+        onHide={() => setShowProviderModal(false)}
+      >
         <Modal.Header closeButton>
-          <Modal.Title>Provider name</Modal.Title>
+          <Modal.Title>Sélectionner Fournisseur</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <ul className="list-group">
-            {providers.map((p) => (
+            {providers.map((provider) => (
               <li
-                key={p.id}
+                key={provider.id}
                 className="list-group-item list-group-item-action"
                 onClick={() => {
-                  setFormData({ ...formData, id_provider: p.id });
-                  setSelectedProviderName(p.provider_name || p.name);
-                  setSelectedProviderDescription(p.description || "Aucune description");
+                  setFormData({ ...formData, id_provider: provider.id });
+                  setSelectedProviderName(provider.provider_name || provider.name);
                   setShowProviderModal(false);
                 }}
               >
-                {p.provider_name || p.name}
+                {provider.provider_name || provider.name}
               </li>
             ))}
           </ul>
         </Modal.Body>
       </Modal>
 
-      {/* Modal préfixes */}
+      {/* Prefix Selection Modal */}
       <Modal show={showPrefixModal} onHide={() => setShowPrefixModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Préfixe / Destination</Modal.Title>
+          <Modal.Title>Sélectionner Préfixe</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <ul className="list-group">
-            {prefixes.map((p) => (
+            {prefixes.map((prefix) => (
               <li
-                key={p.id}
+                key={prefix.id}
                 className="list-group-item list-group-item-action"
                 onClick={() => {
-                  setFormData({ ...formData, id_prefix: p.id });
-                  setSelectedPrefixInfo(`${p.prefix} - ${p.destination}`);
+                  setFormData({ ...formData, id_prefix: prefix.id });
+                  setSelectedPrefixInfo(`${prefix.prefix} - ${prefix.destination}`);
                   setShowPrefixModal(false);
                 }}
               >
-                {p.prefix} – {p.destination}
+                {prefix.prefix} - {prefix.destination}
               </li>
             ))}
           </ul>
         </Modal.Body>
       </Modal>
+    </Modal>
+  );
+};
+
+// ------------------ Main ProviderRates Component ------------------
+const ProviderRates = () => {
+  const [rates, setRates] = useState([]);
+  const [filteredRates, setFilteredRates] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [rateToEdit, setRateToEdit] = useState(null);
+  const [providers, setProviders] = useState([]);
+  const [prefixes, setPrefixes] = useState([]);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    fetchRates();
+    fetchProviders();
+    fetchPrefixes();
+  }, []);
+
+  useEffect(() => {
+    const filtered = rates.filter(
+      (rate) =>
+        rate.prefix.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        rate.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        rate.provider.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredRates(filtered);
+    setCurrentPage(1);
+  }, [searchTerm, rates]);
+
+  const fetchRates = async () => {
+    setIsLoading(true);
+    try {
+      const res = await axios.get(
+        "http://localhost:5000/api/admin/providerrates/afficher"
+      );
+      setRates(res.data.rates);
+      setError("");
+    } catch (err) {
+      setError("Erreur de chargement des tarifs");
+      console.error("Error fetching rates:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchProviders = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:5000/api/admin/providers/afficher"
+      );
+      setProviders(res.data.providers);
+    } catch (err) {
+      console.error("Error fetching providers:", err);
+    }
+  };
+
+  const fetchPrefixes = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:5000/api/admin/prefixes/afficher"
+      );
+      setPrefixes(res.data.prefixes);
+    } catch (err) {
+      console.error("Error fetching prefixes:", err);
+    }
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleEdit = (rate) => {
+    setRateToEdit(rate);
+    setShowAddModal(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Supprimer ce tarif ?")) {
+      try {
+        await axios.delete(
+          `http://localhost:5000/api/admin/providerrates/supprimer/${id}`
+        );
+        setSuccessMessage("Tarif supprimé avec succès");
+        setTimeout(() => setSuccessMessage(""), 3000);
+        fetchRates();
+      } catch (err) {
+        setError("Erreur lors de la suppression");
+        console.error("Error deleting rate:", err);
+      }
+    }
+  };
+
+  const pageCount = Math.ceil(filteredRates.length / ITEMS_PER_PAGE);
+  const paginatedRates = filteredRates.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  return (
+    <div className="container-fluid py-4">
+      <style>
+        {`
+          .pulse-effect {
+            animation: pulse 2s infinite;
+          }
+          @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+          }
+          .floating-icon {
+            animation: float 3s ease-in-out infinite;
+          }
+          @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+          }
+          .search-bar {
+            max-width: 300px;
+            transition: all 0.3s;
+          }
+          .search-bar:focus-within {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+          }
+        `}
+      </style>
+
+      <Row className="justify-content-center">
+        <Col xs={12} lg={11}>
+          <Card style={{ border: 'none', boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.15)' }}>
+            <ProviderRatesHeader
+              onAddClick={() => {
+                setRateToEdit(null);
+                setShowAddModal(true);
+              }}
+              rates={rates}
+              isExporting={isExporting}
+            />
+
+            <Card.Body className="p-4">
+              {error && (
+                <Alert variant="danger" className="d-flex align-items-center mb-4 shadow-sm">
+                  <BiXCircle className="me-2" />
+                  {error}
+                </Alert>
+              )}
+
+              {successMessage && (
+                <Alert variant="success" className="d-flex align-items-center mb-4 shadow-sm">
+                  <BiCheckCircle className="me-2" />
+                  {successMessage}
+                </Alert>
+              )}
+
+              <Row className="mb-4">
+                <Col md={6} lg={4}>
+                  <SearchBar
+                    searchTerm={searchTerm}
+                    onSearchChange={handleSearchChange}
+                  />
+                </Col>
+              </Row>
+
+              <ProviderRatesTable
+                rates={paginatedRates}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                isLoading={isLoading}
+              />
+
+              {pageCount > 0 && (
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
+                  <div className="text-muted small">
+                    {!isLoading && (
+                      <>
+                        <Badge bg="light" text="dark" className="me-2 shadow-sm">
+                          <span className="fw-semibold">{paginatedRates.length}</span> sur {filteredRates.length} Tarifs
+                        </Badge>
+                        {searchTerm && (
+                          <Badge bg="light" text="dark" className="shadow-sm">
+                            Filtrés de {rates.length} total
+                          </Badge>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  <div className="d-flex gap-1">
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    >
+                      Précédent
+                    </Button>
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      disabled={currentPage === pageCount}
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, pageCount))}
+                    >
+                      Suivant
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      <AddProviderRateModal
+        show={showAddModal}
+        onHide={() => setShowAddModal(false)}
+        onRateAdded={fetchRates}
+        rateToEdit={rateToEdit}
+        setRateToEdit={setRateToEdit}
+        providers={providers}
+        prefixes={prefixes}
+      />
     </div>
   );
 };
 
-export default ProviderRatesTable;
+export default ProviderRates;

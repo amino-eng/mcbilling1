@@ -312,7 +312,7 @@ function AppContent() {
         )
       } />
       
-      <Route path="/reports/summarypertrunk" element={
+      {/* <Route path="/reports/summarypertrunk" element={
         isAuthenticated ? (
           <Layout user={user}>
             <SummaryPerTrunk />
@@ -320,7 +320,7 @@ function AppContent() {
         ) : (
           <Navigate to="/login" replace />
         )
-      } />
+      } /> */}
       
       <Route path="/reports/CDR" element={
         isAuthenticated ? (
@@ -342,7 +342,7 @@ function AppContent() {
         )
       } />
       
-      <Route path="/reports/summaryMonthTrunk" element={
+      {/* <Route path="/reports/summaryMonthTrunk" element={
         isAuthenticated ? (
           <Layout user={user}>
             <SummaryMonthTrunk />
@@ -350,7 +350,7 @@ function AppContent() {
         ) : (
           <Navigate to="/login" replace />
         )
-      } />
+      } /> */}
       
       <Route path="/DIDs" element={
         isAuthenticated ? (
@@ -405,25 +405,182 @@ function AppContent() {
 <Route path="/DIDs/QueuesMembres" element={
         isAuthenticated ? (
           <Layout user={user}>
-            <DIDsUse />
+            <QueuesMembres />
           </Layout>
         ) : (
           <Navigate to="/login" replace />
         )
       } />
 
-<Route path="/DIDs/QueuesDashboard" element={
+<Route path="/Billing/Refills" element={
         isAuthenticated ? (
           <Layout user={user}>
-            <DIDsUse />
+            <Refills />
           </Layout>
         ) : (
           <Navigate to="/login" replace />
         )
       } />
+
+<Route path="/Billing/PaymentMethods" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <PaymentMethods />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+<Route path="/Billing/Voucher" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <Voucher />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+<Route path="/Billing/RefillProviders" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <RefillProviders />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+<Route path="/Rates/Plans" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <Plans />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+<Route path="/Rates/Tariffs" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <Tariffs />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+<Route path="/Rates/Prefixes" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <Prefixes />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+<Route path="/Rates/UserCustomRates" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <UserCustomRates />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+<Route path="/reports/summary-month" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <SummaryPerMonth />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+
+<Route path="/reports/SummarymonthUser" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <SummaryMonthUser />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+<Route path="/reports/SummaryDayUser" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <SummaryDayUser />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+<Route path="/Routes/Providers" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <Providers />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+<Route path="/Routes/Trunks" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <Trunks />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+<Route path="/Routes/TrunkGroups" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <TrunkGroups />
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+<Route path="/Routes/ProviderRates" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <ProviderRates/>
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+<Route path="/Routes/Servers" element={
+        isAuthenticated ? (
+          <Layout user={user}>
+            <Servers/>
+          </Layout>
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      } />
+
+      
+
+
       
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+
+    
   );
 }
 

@@ -1,180 +1,249 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+"use client"
+
+import { useEffect, useState } from "react"
+import axios from "axios"
+import { Table, Button, Card, Container, Row, Col, Badge, Spinner, Alert, Form } from "react-bootstrap"
+import ReactPaginate from "react-paginate"
+import { CSVLink } from "react-csv"
+import { FaDownload, FaSearch, FaChartLine, FaTimesCircle } from "react-icons/fa"
+
+const ITEMS_PER_PAGE = 10
 
 const SummaryMonthUserTable = () => {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10; // Pagination: max 10 items per page
-  const [searchTerm, setSearchTerm] = useState(""); // Search term for Month
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [currentPage, setCurrentPage] = useState(0)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [isExporting, setIsExporting] = useState(false)
 
-  // Fetch data from the backend
   useEffect(() => {
     axios
       .get("http://localhost:5000/api/admin/SummaryMonthUser")
       .then((response) => {
-        setData(response.data.data);
-        setLoading(false);
+        setData(response.data.data)
+        setLoading(false)
       })
       .catch((err) => {
-        setError("Error fetching data.");
-        setLoading(false);
-      });
-  }, []);
+        setError("Error fetching data.")
+        setLoading(false)
+      })
+  }, [])
 
-  // Render loading or error states
+  const roundToTwoDecimalPlaces = (value) => {
+    if (value || value === 0) {
+      return Number(value).toFixed(2)
+    }
+    return value
+  }
+
+  const formatSessionTime = (seconds) => {
+    if (seconds || seconds === 0) {
+      const minutes = Math.floor(seconds / 60)
+      const remainingSeconds = Math.floor(seconds % 60)
+      return `${minutes}m ${remainingSeconds}s`
+    }
+    return "-"
+  }
+
+  const filteredData = data.filter(item =>
+    `${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}`.includes(searchTerm)
+  )
+
+  const pageCount = Math.ceil(filteredData.length / ITEMS_PER_PAGE)
+  const offset = currentPage * ITEMS_PER_PAGE
+  const pagedData = filteredData.slice(offset, offset + ITEMS_PER_PAGE)
+
+  const csvData = [
+    ["Month", "Username", "Duration", "Allocated Calls", "Answered Calls", "Buy Price (€)", "Sell Price (€)", "Markup", "ASR (%)"],
+    ...filteredData.map(item => [
+      `${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}`,
+      item.username,
+      formatSessionTime(item.sessiontime),
+      roundToTwoDecimalPlaces(item.aloc_all_calls),
+      item.nbcall,
+      roundToTwoDecimalPlaces(item.buycost),
+      roundToTwoDecimalPlaces(item.sessionbill),
+      roundToTwoDecimalPlaces(item.lucro),
+      roundToTwoDecimalPlaces(item.asr)
+    ])
+  ]
+
   if (loading) {
-    return <div className="text-center">Loading...</div>;
+    return (
+      <Container className="d-flex justify-content-center align-items-center" style={{ height: "100vh" }}>
+        <Spinner animation="border" variant="primary" />
+      </Container>
+    )
   }
 
   if (error) {
-    return <div className="alert alert-danger">{error}</div>;
+    return (
+      <Container className="mt-5">
+        <Alert variant="danger" className="d-flex align-items-center">
+          <FaTimesCircle className="me-2" />
+          {error}
+        </Alert>
+      </Container>
+    )
   }
 
-  // Function to round values to two decimal places
-  const roundToTwoDecimalPlaces = (value) => {
-    if (value || value === 0) {
-      return Number(value).toFixed(2); // Round to 2 decimal places
-    }
-    return value; // Return original value if it’s null or undefined
-  };
-
-  // Function to format session time (assuming it is in seconds)
-  const formatSessionTime = (seconds) => {
-    if (seconds || seconds === 0) {
-      const minutes = Math.floor(seconds / 60);
-      const remainingSeconds = Math.floor(seconds % 60);
-      return `${minutes}m ${remainingSeconds}s`;
-    }
-    return "-"; // Return "-" if session time is not available
-  };
-
-  // Function to export data to CSV
-  const exportToCSV = () => {
-    const headers = [
-      "Month",
-      "Session Time",
-      "Total Calls",
-      "Failed Calls",
-      "Buy Cost (€)",
-      "Session Bill",
-      "Profit (Lucro)",
-      "ASR (%)",
-    ];
-    const rows = data.map((item) => [
-      `${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}`, // Format month
-      formatSessionTime(item.sessiontime), // Format session time here
-      item.nbcall.toFixed(2),
-      item.nbcall_fail.toFixed(2),
-      `${item.buycost.toFixed(2)} €`,
-      item.sessionbill.toFixed(2),
-      item.lucro.toFixed(2),
-      `${item.asr.toFixed(2)} %`,
-    ]);
-    const csvData =
-      [headers.join(",")].concat(rows.map((row) => row.join(","))).join("\n");
-    const blob = new Blob([csvData], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "summary_per_month.csv";
-    link.click();
-  };
-
-  // Filter data based on search term
-  const filteredData = data.filter(item =>
-    `${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}`.includes(searchTerm)
-  );
-
-  // Calculate data for current page
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
-
-  // Generate page numbers
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
-
-  // Handle page change
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
-
   return (
-    <div className="container mt-5">
-      <h2 className="mb-4 text-center text-dark">Summary of Monthly User Data</h2>
+    <div className="dashboard-main" style={{ marginLeft: "80px" }}>
+      <Container fluid className="px-4 py-4">
+        <Row className="justify-content-center">
+          <Col xs={12} lg={11}>
+            <Card className="shadow border-0 overflow-hidden">
+              <Card.Header className="bg-primary p-3 position-relative">
+                <div className="position-absolute top-0 end-0 p-2 d-none d-md-block">
+                  {Array(5).fill().map((_, i) => (
+                    <div
+                      key={i}
+                      className="floating-icon position-absolute"
+                      style={{
+                        top: `${Math.random() * 100}%`,
+                        left: `${Math.random() * 100}%`,
+                        animationDelay: `${i * 0.5}s`,
+                      }}
+                    >
+                      <FaChartLine className="text-white opacity-25" style={{ fontSize: `${Math.random() * 1.5 + 0.5}rem` }} />
+                    </div>
+                  ))}
+                </div>
+                <div className="d-flex align-items-center position-relative z-2">
+                  <div className="bg-white rounded-circle p-3 me-3 shadow pulse-effect">
+                    <FaChartLine className="text-primary fs-3" />
+                  </div>
+                  <div>
+                    <h2 className="fw-bold mb-0 text-white">Monthly User Reports</h2>
+                    <p className="text-white-50 mb-0 d-none d-md-block">Detailed monthly usage statistics by user</p>
+                  </div>
+                </div>
+              </Card.Header>
+              
+              <Card.Body className="p-4">
+                <Row className="mb-4">
+                  <Col md={6} lg={4}>
+                    <Form.Control
+                      type="text"
+                      placeholder="Search by month..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="shadow-sm"
+                    />
+                  </Col>
+                  <Col md={6} lg={8} className="d-flex justify-content-end">
+                    <CSVLink
+                      data={csvData}
+                      filename="monthly_user_reports.csv"
+                      className="btn btn-success d-flex align-items-center gap-2"
+                      disabled={isExporting}
+                    >
+                      {isExporting ? <Spinner animation="border" size="sm" /> : <FaDownload />}
+                      Export
+                    </CSVLink>
+                  </Col>
+                </Row>
 
-      {/* Search Bar */}
-      <div className="mb-3">
-        <input
-          type="text"
-          placeholder="Search by Month "
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="form-control"
-        />
-      </div>
+                <div className="table-responsive">
+                  <Table striped bordered hover className="elegant-table">
+                    <thead>
+                      <tr>
+                        <th>Month</th>
+                        <th>Username</th>
+                        <th>Duration</th>
+                        <th>Allocated Calls</th>
+                        <th>Answered Calls</th>
+                        <th>Buy Price (€)</th>
+                        <th>Sell Price (€)</th>
+                        <th>Markup</th>
+                        <th>ASR (%)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagedData.map((item) => (
+                        <tr key={item.id}>
+                          <td>{`${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}`}</td>
+                          <td>{item.username}</td>
+                          <td>{formatSessionTime(item.sessiontime)}</td>
+                          <td>{roundToTwoDecimalPlaces(item.aloc_all_calls)}</td>
+                          <td>{item.nbcall}</td>
+                          <td>{roundToTwoDecimalPlaces(item.buycost)}€</td>
+                          <td>{roundToTwoDecimalPlaces(item.sessionbill)}€</td>
+                          <td>
+                            <Badge bg={item.lucro >= 0 ? "success" : "danger"}>
+                              {roundToTwoDecimalPlaces(item.lucro)}
+                            </Badge>
+                          </td>
+                          <td>{roundToTwoDecimalPlaces(item.asr)}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
 
-      {/* Export CSV Button */}
-      <div className="d-flex justify-content-end mb-3">
-        <button
-          className="btn btn-primary px-4 py-2"
-          onClick={exportToCSV}  // Trigger the CSV export function on click
-        >
-          <i className="bi bi-file-earmark-spreadsheet me-2"></i> Export CSV
-        </button>
-      </div>
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
+                  <div className="text-muted small">
+                    <Badge bg="light" text="dark" className="me-2 shadow-sm">
+                      <span className="fw-semibold">{pagedData.length}</span> of {filteredData.length} records
+                    </Badge>
+                    {searchTerm && (
+                      <Badge bg="light" text="dark" className="shadow-sm">
+                        Filtered from {data.length} total
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <ReactPaginate
+                    previousLabel="Previous"
+                    nextLabel="Next"
+                    breakLabel="..."
+                    pageCount={pageCount}
+                    marginPagesDisplayed={2}
+                    pageRangeDisplayed={5}
+                    onPageChange={({ selected }) => setCurrentPage(selected)}
+                    containerClassName="pagination"
+                    activeClassName="active"
+                    pageClassName="page-item"
+                    pageLinkClassName="page-link"
+                    previousClassName="page-item"
+                    previousLinkClassName="page-link"
+                    nextClassName="page-item"
+                    nextLinkClassName="page-link"
+                    breakClassName="page-item"
+                    breakLinkClassName="page-link"
+                  />
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
 
-      <div className="table-responsive">
-        <table className="table table-bordered table-striped table-hover table-light">
-          <thead className="table-light">
-            <tr>
-              <th scope="col">Month</th>
-              <th scope="col">Username</th>
-              <th scope="col">Duration (Session Time)</th>
-              <th scope="col">Allocated All Calls</th>
-              <th scope="col">Answered Calls</th>
-              <th scope="col">Buy Price (€)</th>
-              <th scope="col">Sell Price (€)</th>
-              <th scope="col">Markup</th>
-              <th scope="col">ASR (%)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentItems.map((item) => (
-              <tr key={item.id}>
-                <td>{`${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}`}</td> {/* Format month as YYYY-MM */}
-                <td>{item.username}</td>
-                <td>{formatSessionTime(item.sessiontime)}</td> {/* Format session time */}
-                <td>{roundToTwoDecimalPlaces(item.aloc_all_calls)}</td> {/* Round allocated calls */}
-                <td>{item.nbcall}</td> {/* Answered Calls */}
-                <td>{roundToTwoDecimalPlaces(item.buycost)}€</td> {/* Round buy price */}
-                <td>{roundToTwoDecimalPlaces(item.sessionbill)}€</td> {/* Round sell price */}
-                <td>{roundToTwoDecimalPlaces(item.lucro)}</td> {/* Round markup */}
-                <td>{roundToTwoDecimalPlaces(item.asr)}%</td> {/* Round ASR */}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Pagination Controls */}
-      <div className="d-flex justify-content-center mt-3">
-        <nav>
-          <ul className="pagination">
-            {pageNumbers.map((number) => (
-              <li className={`page-item ${number === currentPage ? 'active' : ''}`} key={number}>
-                <button className="page-link" onClick={() => handlePageChange(number)}>
-                  {number}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </div>
+      <style jsx global>{`
+        .floating-icon {
+          animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+          100% { transform: translateY(0px); }
+        }
+        .pulse-effect {
+          animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4); }
+          70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+        }
+        .elegant-table th, .elegant-table td {
+          border-top: none;
+          border-bottom: 1px solid #e9ecef;
+        }
+      `}</style>
     </div>
-  );
-};
+  )
+}
 
-export default SummaryMonthUserTable;
+export default SummaryMonthUserTable

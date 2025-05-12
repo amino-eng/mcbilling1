@@ -12,8 +12,8 @@ const menuItems = {
     { path: "/DIDs/IVRs", icon: "bi-sliders", label: "IVRs" },
     { path: "/DIDs/Queues", icon: "bi-speedometer2", label: "Queues" },
     { path: "/DIDs/QueuesMembres", icon: "bi-people", label: "Queues Membres" },
-    { path: "/DIDs/QueuesDashboard", icon: "bi-speedometer2", label: "Queues Dashboard" },
-    { path: "/DIDs/DIDHistory", icon: "bi-clock-history", label: "DID History" }
+    // { path: "/DIDs/QueuesDashboard", icon: "bi-speedometer2", label: "Queues Dashboard" },
+    // { path: "/DIDs/DIDHistory", icon: "bi-clock-history", label: "DID History" }
   ],
   clients: [
     { path: "/clients/caller-id", icon: "bi-phone", label: "Caller ID" },
@@ -33,23 +33,20 @@ const menuItems = {
     { path: "/Rates/Tariffs", icon: "bi-currency-exchange", label: "Tariffs" },
     { path: "/Rates/Prefixes", icon: "bi-123", label: "Prefixes" },
     { path: "/Rates/UserCustomRates", icon: "bi-person-gear", label: "User Custom Rates" },
-    { path: "/Rates/Offers", icon: "bi-gift", label: "Offers" },
-    { path: "/Rates/OfferCDR", icon: "bi-file-earmark-bar-graph", label: "Offer CDR" },
-    { path: "/Rates/OfferUse", icon: "bi-graph-up-arrow", label: "Offer Use" }
   ],
   reports: [
     { path: "/reports/CDR", icon: "bi-file-earmark-text", label: "CDR" },
     { path: "/reports/CDRFailed", icon: "bi-x-circle", label: "CDR Failed" },
     { path: "/reports/summary-day", icon: "bi-calendar-day", label: "Summary Per Day" },
     { path: "/reports/summary-month", icon: "bi-calendar-month", label: "Summary Per Month" },
-    { path: "/reports/destination", icon: "bi-geo-alt", label: "Reports / Destination" },
-    { path: "/reports/inbound", icon: "bi-arrow-down-circle", label: "Inbound Reports" },
+    // { path: "/reports/destination", icon: "bi-geo-alt", label: "Reports / Destination" },
+    // { path: "/reports/inbound", icon: "bi-arrow-down-circle", label: "Inbound Reports" },
     { path: "/reports/SummarymonthUser", icon: "bi-calendar-month", label: "Summary Month User" },
     { path: "/reports/summaryperuser", icon: "bi-person-lines-fill", label: "Summary Per User" },
-    { path: "/reports/summarypertrunk", icon: "bi-diagram-3", label: "Summary Per Trunk" },
-    { path: "/reports/SummaryMonthTrunk", icon: "bi-calendar3", label: "Summary Month Trunk" },
-    { path: "/reports/SummaryDayTrunk", icon: "bi-calendar3-week", label: "Summary Day Trunk" },
-    { path: "/reports/CallArchive", icon: "bi-archive", label: "Call Archive" },
+    // { path: "/reports/summarypertrunk", icon: "bi-diagram-3", label: "Summary Per Trunk" },
+    // { path: "/reports/SummaryMonthTrunk", icon: "bi-calendar3", label: "Summary Month Trunk" },
+    // { path: "/reports/SummaryDayTrunk", icon: "bi-calendar3-week", label: "Summary Day Trunk" },
+    // { path: "/reports/CallArchive", icon: "bi-archive", label: "Call Archive" },
     { path: "/reports/SummaryDayUser", icon: "bi-calendar3-week", label: "Summary Day User" }
   ],
   Routes: [
@@ -58,7 +55,7 @@ const menuItems = {
     { path: "/Routes/TrunkGroups", icon: "bi-diagram-3-fill", label: "Trunk Groups" },
     { path: "/Routes/ProviderRates", icon: "bi-cash-stack", label: "Provider Rates" },
     { path: "/Routes/Servers", icon: "bi-hdd-network", label: "Servers" },
-    { path: "/Routes/TrunkErrors", icon: "bi-exclamation-triangle", label: "Trunk Errors" }
+    // { path: "/Routes/TrunkErrors", icon: "bi-exclamation-triangle", label: "Trunk Errors" }
   ]
 };
 

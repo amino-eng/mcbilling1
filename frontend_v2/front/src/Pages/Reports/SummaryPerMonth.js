@@ -9,8 +9,20 @@ import {
   Table,
   Spinner,
   Pagination,
+  Badge,
+  Alert,
+  Form,
+  Dropdown
 } from "react-bootstrap";
-import { FaEuroSign, FaPercent } from "react-icons/fa";
+import {
+  FaEuroSign, 
+  FaPercent, 
+  FaDownload, 
+  FaSearch,
+  FaCheckCircle,
+  FaTimesCircle
+} from "react-icons/fa";
+import ReactPaginate from "react-paginate";
 
 // Composant pour gérer la visibilité des colonnes
 const ColumnVisibilityDropdown = ({ visibleColumns, setVisibleColumns }) => {
@@ -24,33 +36,24 @@ const ColumnVisibilityDropdown = ({ visibleColumns, setVisibleColumns }) => {
   };
 
   return (
-    <div className="dropdown" style={{ display: "inline-block", marginLeft: "10px" }}>
-      <button
-        className="btn btn-secondary dropdown-toggle"
-        type="button"
-        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-      >
-        Columns
-      </button>
-      {isDropdownOpen && (
-        <div
-          className="dropdown-menu show"
-          style={{ display: "block", padding: "10px" }}
-        >
-          {Object.keys(visibleColumns).map((key) => (
-            <div key={key} className="form-check">
-              <input
-                type="checkbox"
-                className="form-check-input"
-                checked={visibleColumns[key]}
-                onChange={() => toggleColumnVisibility(key)}
-              />
-              <label className="form-check-label">{key}</label>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    <Dropdown show={isDropdownOpen} onToggle={setIsDropdownOpen} className="d-inline-block ms-2">
+      <Dropdown.Toggle variant="secondary" className="d-flex align-items-center gap-2 btn-hover-effect">
+        <span>Columns</span>
+      </Dropdown.Toggle>
+      <Dropdown.Menu className="p-3">
+        {Object.keys(visibleColumns).map((key) => (
+          <Form.Check 
+            key={key}
+            type="checkbox"
+            id={`column-${key}`}
+            label={key}
+            checked={visibleColumns[key]}
+            onChange={() => toggleColumnVisibility(key)}
+            className="mb-2"
+          />
+        ))}
+      </Dropdown.Menu>
+    </Dropdown>
   );
 };
 
@@ -58,9 +61,10 @@ const SummaryPerMonth = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 10;
-  const [searchTerm, setSearchTerm] = useState(""); // Search term for Month
+  const [searchTerm, setSearchTerm] = useState("");
+  const [successMessage, setSuccessMessage] = useState(null);
 
   // State for column visibility
   const [visibleColumns, setVisibleColumns] = useState({
@@ -81,6 +85,8 @@ const SummaryPerMonth = () => {
       .then((response) => {
         setData(response.data.data);
         setLoading(false);
+        setSuccessMessage("Data loaded successfully");
+        setTimeout(() => setSuccessMessage(null), 3000);
       })
       .catch((err) => {
         setError("Failed to fetch data");
@@ -94,18 +100,9 @@ const SummaryPerMonth = () => {
   );
 
   // Calculate data for current page
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
-
-  // Generate page numbers
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
-
-  // Handle page change
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
+  const pageCount = Math.ceil(filteredData.length / itemsPerPage);
+  const offset = currentPage * itemsPerPage;
+  const currentItems = filteredData.slice(offset, offset + itemsPerPage);
 
   // Function to export table data to CSV
   const exportToCSV = () => {
@@ -143,96 +140,205 @@ const SummaryPerMonth = () => {
     return (
       <div className="text-center mt-5">
         <Spinner animation="border" variant="primary" />
+        <p className="mt-2 text-muted">Loading monthly summary...</p>
       </div>
     );
   }
 
   if (error) {
-    return <div className="alert alert-danger text-center">{error}</div>;
+    return (
+      <Alert variant="danger" className="text-center mt-5">
+        {error}
+      </Alert>
+    );
   }
 
   return (
-    <div className="container mt-4">
-      <h1 className="text-center mb-4 text-primary">Résumé Par Mois</h1>
-      <div className="text-end mt-3">
-        <Button variant="success" onClick={exportToCSV} className="me-2">
-          Export to CSV
-        </Button>
-        <ColumnVisibilityDropdown
-          visibleColumns={visibleColumns}
-          setVisibleColumns={setVisibleColumns}
-        />
+    <div className="dashboard-main" style={{ marginLeft: "80px" }}>
+      <div fluid className="px-4 py-4">
+        <Row className="justify-content-center">
+          <Col xs={12} lg={11}>
+            <Card className="shadow border-0 overflow-hidden main-card">
+              <Card.Header className="d-flex flex-wrap align-items-center p-0 rounded-top overflow-hidden">
+                <div className="bg-primary p-3 w-100 position-relative">
+                  <div className="position-absolute top-0 end-0 p-2 d-none d-md-block">
+                    {Array(5).fill().map((_, i) => (
+                      <div
+                        key={i}
+                        className="floating-icon position-absolute"
+                        style={{
+                          top: `${Math.random() * 100}%`,
+                          left: `${Math.random() * 100}%`,
+                          animationDelay: `${i * 0.5}s`,
+                        }}
+                      >
+                        <FaEuroSign className="text-white opacity-25" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="d-flex align-items-center position-relative z-2">
+                    <div className="bg-white rounded-circle p-3 me-3 shadow pulse-effect">
+                      <FaPercent className="text-primary fs-3" />
+                    </div>
+                    <div>
+                      <h2 className="fw-bold mb-0 text-white">Monthly Summary</h2>
+                      <p className="text-white-50 mb-0 d-none d-md-block">Overview of monthly call statistics and revenue</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="w-100 bg-white p-2 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
+                  <Badge bg="primary" className="d-flex align-items-center p-2 ps-3 rounded-pill">
+                    <span className="me-2 fw-normal">
+                      Records: <span className="fw-bold">{filteredData.length}</span>
+                    </span>
+                  </Badge>
+                  <div className="d-flex gap-2">
+                    <Button
+                      variant="success"
+                      onClick={exportToCSV}
+                      className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+                    >
+                      <FaDownload />
+                      <span>Export</span>
+                    </Button>
+                    <ColumnVisibilityDropdown
+                      visibleColumns={visibleColumns}
+                      setVisibleColumns={setVisibleColumns}
+                    />
+                  </div>
+                </div>
+              </Card.Header>
+
+              <Card.Body className="p-4" style={{ animation: "fadeIn 0.5s ease-in-out" }}>
+                {successMessage && (
+                  <Alert variant="success" className="d-flex align-items-center mb-4 shadow-sm">
+                    <FaCheckCircle className="me-2" />
+                    {successMessage}
+                  </Alert>
+                )}
+
+                <Row className="mb-4">
+                  <Col md={6} lg={4}>
+                    <div className="position-relative">
+                      <Form.Control
+                        type="text"
+                        placeholder="Search by Month"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="ps-5"
+                      />
+                      <FaSearch className="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" />
+                    </div>
+                  </Col>
+                </Row>
+
+                <div className="table-responsive">
+                  <Table striped bordered hover className="elegant-table">
+                    <thead className="bg-primary text-white">
+                      <tr>
+                        {visibleColumns.Month && <th>Month</th>}
+                        {visibleColumns.SessionTime && <th>Session Time</th>}
+                        {visibleColumns.TotalCalls && <th>Total Calls</th>}
+                        {visibleColumns.FailedCalls && <th>Failed Calls</th>}
+                        {visibleColumns.BuyCost && <th>Buy Cost (€)</th>}
+                        {visibleColumns.SessionBill && <th>Session Bill</th>}
+                        {visibleColumns.Profit && <th>Profit</th>}
+                        {visibleColumns.ASR && <th>ASR (%)</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentItems.map((item) => (
+                        <tr key={item.id}>
+                          {visibleColumns.Month && (
+                            <td>
+                              {`${item.month.toString().slice(0, 4)}-${item.month
+                                .toString()
+                                .slice(4)}`}
+                            </td>
+                          )}
+                          {visibleColumns.SessionTime && <td>{item.sessiontime.toFixed(2)}</td>}
+                          {visibleColumns.TotalCalls && <td>{item.nbcall.toFixed(2)}</td>}
+                          {visibleColumns.FailedCalls && <td>{item.nbcall_fail.toFixed(2)}</td>}
+                          {visibleColumns.BuyCost && <td>{item.buycost.toFixed(2)} €</td>}
+                          {visibleColumns.SessionBill && <td>{item.sessionbill.toFixed(2)}</td>}
+                          {visibleColumns.Profit && <td>{item.lucro.toFixed(2)}</td>}
+                          {visibleColumns.ASR && <td>{item.asr.toFixed(2)} %</td>}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
+
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
+                  <div className="text-muted small">
+                    <Badge bg="light" text="dark" className="me-2 shadow-sm">
+                      <span className="fw-semibold">{currentItems.length}</span> of {filteredData.length} records
+                    </Badge>
+                    {searchTerm && (
+                      <Badge bg="light" text="dark" className="shadow-sm">
+                        Filtered from {data.length} total
+                      </Badge>
+                    )}
+                  </div>
+                  <ReactPaginate
+                    previousLabel={'Previous'}
+                    nextLabel={'Next'}
+                    breakLabel={'...'}
+                    breakClassName={'break-me'}
+                    pageCount={pageCount}
+                    marginPagesDisplayed={2}
+                    pageRangeDisplayed={5}
+                    onPageChange={({ selected }) => setCurrentPage(selected)}
+                    containerClassName={'pagination'}
+                    activeClassName={'active'}
+                    pageClassName={'page-item'}
+                    pageLinkClassName={'page-link'}
+                    previousClassName={'page-item'}
+                    previousLinkClassName={'page-link'}
+                    nextClassName={'page-item'}
+                    nextLinkClassName={'page-link'}
+                    breakLinkClassName={'page-link'}
+                  />
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
       </div>
 
-      {/* Search Bar */}
-      <div className="mb-3">
-        <input
-          type="text"
-          placeholder="Search by Month"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="form-control"
-        />
-      </div>
-
-      {/* Card for main content with shadow */}
-      <Card className="shadow-lg border-0">
-        <Card.Body>
-          <Row className="mb-3">
-            <Col md={12}>
-              <Table striped bordered hover responsive className="text-center">
-                <thead className="bg-primary text-white">
-                  <tr>
-                    {visibleColumns.Month && <th>Month</th>}
-                    {visibleColumns.SessionTime && <th>Session Time</th>}
-                    {visibleColumns.TotalCalls && <th>Total Calls</th>}
-                    {visibleColumns.FailedCalls && <th>Failed Calls</th>}
-                    {visibleColumns.BuyCost && <th>Buy Cost (€)</th>}
-                    {visibleColumns.SessionBill && <th>Session Bill</th>}
-                    {visibleColumns.Profit && <th>Profit (Lucro)</th>}
-                    {visibleColumns.ASR && <th>ASR (%)</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentItems.map((item) => (
-                    <tr key={item.id}>
-                      {visibleColumns.Month && (
-                        <td>
-                          {`${item.month.toString().slice(0, 4)}-${item.month
-                            .toString()
-                            .slice(4)}`}
-                        </td>
-                      )}
-                      {visibleColumns.SessionTime && <td>{item.sessiontime.toFixed(2)}</td>}
-                      {visibleColumns.TotalCalls && <td>{item.nbcall.toFixed(2)}</td>}
-                      {visibleColumns.FailedCalls && <td>{item.nbcall_fail.toFixed(2)}</td>}
-                      {visibleColumns.BuyCost && <td>{item.buycost.toFixed(2)} €</td>}
-                      {visibleColumns.SessionBill && <td>{item.sessionbill.toFixed(2)}</td>}
-                      {visibleColumns.Profit && <td>{item.lucro.toFixed(2)}</td>}
-                      {visibleColumns.ASR && <td>{item.asr.toFixed(2)} %</td>}
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </Col>
-          </Row>
-        </Card.Body>
-      </Card>
-
-      {/* Pagination */}
-      <div className="d-flex justify-content-center mt-3">
-        <Pagination>
-          {pageNumbers.map((number) => (
-            <Pagination.Item
-              key={number}
-              active={number === currentPage}
-              onClick={() => handlePageChange(number)}
-            >
-              {number}
-            </Pagination.Item>
-          ))}
-        </Pagination>
-      </div>
+      <style jsx global>{`
+        .btn-hover-effect:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .btn-hover-effect {
+          transition: all 0.2s ease;
+        }
+        .floating-icon {
+          animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+          100% { transform: translateY(0px); }
+        }
+        .pulse-effect {
+          animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4); }
+          70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+        }
+        .elegant-table th, .elegant-table td {
+          border-top: none;
+          border-bottom: 1px solid #e9ecef;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 };

@@ -1,8 +1,237 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Table, Button, Form, Modal, Tabs, Tab, Row, Col, InputGroup } from "react-bootstrap";
+import {
+  Button,
+  Table,
+  Form,
+  Modal,
+  Tabs,
+  Tab,
+  Row,
+  Col,
+  InputGroup,
+  Alert,
+  Card,
+  Badge,
+  Spinner,
+} from "react-bootstrap";
 import { CSVLink } from "react-csv";
-import { BiSearch, BiEdit, BiTrash } from "react-icons/bi";
+import { 
+  BiSearch, 
+  BiEdit, 
+  BiTrash,
+  BiPlusCircle,
+  BiDownload,
+  BiCheckCircle,
+  BiXCircle
+} from "react-icons/bi";
+import { FaNetworkWired } from "react-icons/fa";
+
+// Constants
+const ITEMS_PER_PAGE = 10;
+
+// ------------------ TrunkHeader Component ------------------
+const TrunkHeader = ({ onAddClick, trunks, isExporting }) => {
+  const csvData = [
+    ["Name", "Add Prefix", "Remove Prefix", "Host", "Provider", "Status", "Creation Date"],
+    ...trunks.map((trunk) => [
+      trunk.trunkcode,
+      trunk.trunkprefix,
+      trunk.removeprefix,
+      trunk.host,
+      trunk.provider_name,
+      trunk.status,
+      new Date(trunk.creationdate).toLocaleDateString(),
+    ]),
+  ];
+
+  return (
+    <Card.Header className="d-flex flex-wrap align-items-center p-0 rounded-top overflow-hidden">
+      <div className="bg-primary p-3 w-100 position-relative">
+        <div className="position-absolute top-0 end-0 p-2 d-none d-md-block">
+          {Array(5).fill().map((_, i) => (
+            <div
+              key={i}
+              className="floating-icon position-absolute"
+              style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${i * 0.5}s`,
+              }}
+            >
+              <FaNetworkWired
+                className="text-white opacity-25"
+                style={{
+                  fontSize: `${Math.random() * 1.5 + 0.5}rem`,
+                }}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="d-flex align-items-center position-relative z-2">
+          <div className="bg-white rounded-circle p-3 me-3 shadow pulse-effect">
+            <FaNetworkWired className="text-primary fs-3" />
+          </div>
+          <div>
+            <h2 className="fw-bold mb-0 text-white">Gestion des Trunks</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos connexions SIP</p>
+          </div>
+        </div>
+      </div>
+      <div className="w-100 bg-white p-2 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
+        <div className="d-flex align-items-center gap-3">
+          <Badge bg="primary" className="d-flex align-items-center p-2 ps-3 rounded-pill">
+            <span className="me-2 fw-normal">
+              Total: <span className="fw-bold">{trunks.length}</span>
+            </span>
+            <span
+              className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center"
+              style={{ width: "24px", height: "24px" }}
+            >
+              <FaNetworkWired size={12} />
+            </span>
+          </Badge>
+        </div>
+        <div className="d-flex gap-2">
+          <Button
+            variant="primary"
+            onClick={onAddClick}
+            className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+          >
+            <div className="icon-container">
+              <BiPlusCircle />
+            </div>
+            <span>Ajouter</span>
+          </Button>
+          <CSVLink
+            data={csvData}
+            filename="trunks.csv"
+            className="btn btn-success d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+            disabled={isExporting}
+          >
+            <div className="icon-container">
+              {isExporting ? <Spinner animation="border" size="sm" /> : <BiDownload />}
+            </div>
+            <span>{isExporting ? "Exportation..." : "Exporter"}</span>
+          </CSVLink>
+        </div>
+      </div>
+    </Card.Header>
+  );
+};
+
+// ------------------ StatusBadge Component ------------------
+const StatusBadge = ({ status }) => {
+  const statusLabels = {
+    0: { label: "Inactif", variant: "secondary" },
+    1: { label: "Actif", variant: "success" },
+    2: { label: "En attente", variant: "warning" },
+    3: { label: "Envoyé", variant: "info" },
+    4: { label: "Bloqué", variant: "danger" },
+    5: { label: "AMD", variant: "primary" },
+  };
+
+  const statusInfo = statusLabels[status] || { label: "Inconnu", variant: "dark" };
+
+  return (
+    <Badge bg={statusInfo.variant} className="text-capitalize">
+      {statusInfo.label}
+    </Badge>
+  );
+};
+
+// ------------------ SearchBar Component ------------------
+const SearchBar = ({ searchTerm, onSearchChange }) => (
+  <InputGroup className="search-bar">
+    <Form.Control
+      placeholder="Rechercher des trunks..."
+      value={searchTerm}
+      onChange={onSearchChange}
+    />
+    <InputGroup.Text>
+      <BiSearch />
+    </InputGroup.Text>
+  </InputGroup>
+);
+
+// ------------------ ActionButtons Component ------------------
+const ActionButtons = ({ onEdit, onDelete }) => (
+  <div className="d-flex gap-2">
+    <Button 
+      variant="primary" 
+      size="sm"
+      onClick={onEdit}
+      className="btn-hover-effect"
+      title="Modifier"
+    >
+      <BiEdit />
+    </Button>
+    <Button 
+      variant="danger" 
+      size="sm"
+      onClick={onDelete}
+      className="btn-hover-effect"
+      title="Supprimer"
+    >
+      <BiTrash />
+    </Button>
+  </div>
+);
+
+// ------------------ TrunkTable Component ------------------
+const TrunkTable = ({ trunks, onEdit, onDelete, isLoading }) => {
+  if (isLoading) {
+    return (
+      <div className="text-center py-5">
+        <Spinner animation="border" variant="primary" />
+      </div>
+    );
+  }
+
+  if (trunks.length === 0) {
+    return (
+      <div className="text-center py-5">
+        <h5 className="text-muted">Aucun trunk trouvé</h5>
+      </div>
+    );
+  }
+
+  return (
+    <Table striped bordered hover responsive className="mt-3">
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Préfixe Ajouté</th>
+          <th>Préfixe Retiré</th>
+          <th>Hôte</th>
+          <th>Fournisseur</th>
+          <th>Statut</th>
+          <th>Date de création</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {trunks.map((trunk) => (
+          <tr key={trunk.id}>
+            <td>{trunk.trunkcode}</td>
+            <td>{trunk.trunkprefix || '-'}</td>
+            <td>{trunk.removeprefix || '-'}</td>
+            <td>{trunk.host}</td>
+            <td>{trunk.provider_name || '-'}</td>
+            <td><StatusBadge status={trunk.status} /></td>
+            <td>{new Date(trunk.creationdate).toLocaleDateString()}</td>
+            <td>
+              <ActionButtons 
+                onEdit={() => onEdit(trunk)}
+                onDelete={() => onDelete(trunk.id)}
+              />
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </Table>
+  );
+};
 
 // ------------------ AddTrunkModal Component ------------------
 const AddTrunkModal = ({ show, onHide, onTrunkAdded, trunkToEdit, setTrunkToEdit }) => {
@@ -330,19 +559,26 @@ const AddTrunkModal = ({ show, onHide, onTrunkAdded, trunkToEdit, setTrunkToEdit
 const Trunks = () => {
   const [trunks, setTrunks] = useState([]);
   const [filteredTrunks, setFilteredTrunks] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [trunkToDelete, setTrunkToDelete] = useState(null);
   const [trunkToEdit, setTrunkToEdit] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isExporting, setIsExporting] = useState(false);
 
-  const fetchTrunks = () => {
-    axios.get("http://localhost:5000/api/admin/Trunks/afficher")
-      .then((response) => {
-        setTrunks(response.data.trunks);
-        setFilteredTrunks(response.data.trunks);
-      })
-      .catch(err => console.error("Error fetching trunks:", err));
+  const fetchTrunks = async () => {
+    try {
+      setIsLoading(true);
+      const res = await axios.get("http://localhost:5000/api/admin/Trunks/afficher");
+      setTrunks(res.data.trunks);
+      setFilteredTrunks(res.data.trunks);
+    } catch (err) {
+      setError("Erreur lors du chargement des trunks");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -350,19 +586,20 @@ const Trunks = () => {
   }, []);
 
   useEffect(() => {
-    const filtered = trunks.filter(trunk =>
-      Object.values(trunk).some(
-        value =>
-          value &&
-          value.toString().toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    );
-    setFilteredTrunks(filtered);
-  }, [searchQuery, trunks]);
+    if (searchTerm) {
+      const filtered = trunks.filter(trunk => 
+        trunk.trunkcode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        trunk.provider_name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredTrunks(filtered);
+    } else {
+      setFilteredTrunks(trunks);
+    }
+  }, [searchTerm, trunks]);
 
-  const handleDelete = (id) => {
-    setTrunkToDelete(id);
-    setShowDeleteModal(true);
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
   };
 
   const handleEdit = (trunk) => {
@@ -370,107 +607,145 @@ const Trunks = () => {
     setShowAddModal(true);
   };
 
-  const confirmDelete = () => {
-    axios.delete(`http://localhost:5000/api/admin/Trunks/supprimer/${trunkToDelete}`)
-      .then(() => {
+  const handleDelete = async (id) => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce trunk?")) {
+      try {
+        await axios.delete(`http://localhost:5000/api/admin/Trunks/supprimer/${id}`);
+        setSuccessMessage("Trunk supprimé avec succès");
         fetchTrunks();
-        setShowDeleteModal(false);
-      })
-      .catch(err => {
-        console.error("Error deleting trunk:", err);
-        alert("Failed to delete trunk");
-      });
+        setTimeout(() => setSuccessMessage(null), 3000);
+      } catch (err) {
+        setError("Erreur lors de la suppression du trunk");
+      }
+    }
   };
 
-  const formatDate = (dateString) => {
-    const options = {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', second: '2-digit'
-    };
-    return new Date(dateString).toLocaleDateString('fr-FR', options);
-  };
-
-  const statusLabels = {
-    0: "inactive",
-    1: "active",
-    2: "pending",
-    3: "sent",
-    4: "blocked",
-    5: "AMD"
-  };
+  const pageCount = Math.ceil(filteredTrunks.length / ITEMS_PER_PAGE);
+  const paginatedTrunks = filteredTrunks.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   return (
-    <div className="container mt-4">
-      <h2 className="mb-4">Trunks</h2>
-      
-      <div className="mb-3 d-flex justify-content-between align-items-center">
-        <div className="d-flex gap-2">
-          <CSVLink data={filteredTrunks} filename="trunks.csv" className="btn btn-primary">
-            Export CSV
-          </CSVLink>
-          <Button variant="success" onClick={() => setShowAddModal(true)}>
-            Add New Trunk
-          </Button>
-        </div>
-        
-        <InputGroup style={{ width: '300px' }}>
-          <Form.Control
-            placeholder="Search trunks..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <InputGroup.Text>
-            <BiSearch />
-          </InputGroup.Text>
-        </InputGroup>
-      </div>
+    <div className="container py-4">
+      <style>
+        {`
+          .btn-hover-effect:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          }
+          .btn-hover-effect {
+            transition: all 0.2s ease;
+          }
+          .pulse-effect {
+            animation: pulse 2s infinite;
+          }
+          @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+          }
+          .floating-icon {
+            animation: float 3s ease-in-out infinite;
+          }
+          @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+          }
+          .search-bar {
+            max-width: 300px;
+            transition: all 0.3s;
+          }
+          .search-bar:focus-within {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+          }
+        `}
+      </style>
 
-      <Table striped bordered hover responsive>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Add Prefix</th>
-            <th>Remove Prefix</th>
-            <th>Host</th>
-            <th>Provider</th>
-            <th>Time Used</th>
-            <th>Status</th>
-            <th>Creation Date</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredTrunks.map((trunk) => (
-            <tr key={trunk.id}>
-              <td>{trunk.trunkcode}</td>
-              <td>{trunk.trunkprefix}</td>
-              <td>{trunk.removeprefix}</td>
-              <td>{trunk.host}</td>
-              <td>{trunk.provider_name}</td>
-              <td>{trunk.secondusedreal}</td>
-              <td>{statusLabels[trunk.status] || "pending"}</td>
-              <td>{formatDate(trunk.creationdate)}</td>
-              <td>
-                <Button 
-                  variant="primary" 
-                  size="sm" 
-                  className="me-2"
-                  onClick={() => handleEdit(trunk)}
-                >
-                  <BiEdit /> Edit
-                </Button>
-                <Button 
-                  variant="danger" 
-                  size="sm"
-                  onClick={() => handleDelete(trunk.id)}
-                >
-                  <BiTrash /> Delete
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+      <Row className="justify-content-center">
+        <Col xs={12} lg={11}>
+          <Card style={{ border: 'none', boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.15)' }}>
+            <TrunkHeader
+              onAddClick={() => {
+                setTrunkToEdit(null);
+                setShowAddModal(true);
+              }}
+              trunks={trunks}
+              isExporting={isExporting}
+            />
+
+            <Card.Body className="p-4">
+              {error && (
+                <Alert variant="danger" className="d-flex align-items-center mb-4 shadow-sm">
+                  <BiXCircle className="me-2" />
+                  {error}
+                </Alert>
+              )}
+
+              {successMessage && (
+                <Alert variant="success" className="d-flex align-items-center mb-4 shadow-sm">
+                  <BiCheckCircle className="me-2" />
+                  {successMessage}
+                </Alert>
+              )}
+
+              <Row className="mb-4">
+                <Col md={6} lg={4}>
+                  <SearchBar
+                    searchTerm={searchTerm}
+                    onSearchChange={handleSearchChange}
+                  />
+                </Col>
+              </Row>
+
+              <TrunkTable
+                trunks={paginatedTrunks}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                isLoading={isLoading}
+              />
+
+              {pageCount > 0 && (
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
+                  <div className="text-muted small">
+                    {!isLoading && (
+                      <>
+                        <Badge bg="light" text="dark" className="me-2 shadow-sm">
+                          <span className="fw-semibold">{paginatedTrunks.length}</span> sur {filteredTrunks.length} Trunks
+                        </Badge>
+                        {searchTerm && (
+                          <Badge bg="light" text="dark" className="shadow-sm">
+                            Filtrés de {trunks.length} total
+                          </Badge>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  <div className="d-flex gap-1">
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    >
+                      Précédent
+                    </Button>
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      disabled={currentPage === pageCount}
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, pageCount))}
+                    >
+                      Suivant
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
       <AddTrunkModal
         show={showAddModal}
@@ -479,24 +754,6 @@ const Trunks = () => {
         trunkToEdit={trunkToEdit}
         setTrunkToEdit={setTrunkToEdit}
       />
-
-      {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete this trunk? This action cannot be undone.
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={confirmDelete}>
-            Delete
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 };

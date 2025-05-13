@@ -598,7 +598,7 @@ const QueueMembersTable = () => {
       {/* Add New Member Modal */}
       <Modal show={showModal} onHide={handleCloseModal} centered backdrop="static">
         <Modal.Header closeButton className="bg-primary text-white">
-          <Modal.Title>Add New Queue Member</Modal.Title>
+          <Modal.Title>Add New QueueMember</Modal.Title>
         </Modal.Header>
         <Modal.Body className="p-4">
           <Form>

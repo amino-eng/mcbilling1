@@ -28,7 +28,7 @@ const App = () => {
   const [user, setUser] = useState([]);
   const [sip, setSip] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const apiUrl = 'http://localhost:5000/api/admin/DIDDestination/affiche';
+  const apiUrl = 'http://localhost:5001/api/admin/DIDDestination/affiche';
 
   const [newDidData, setNewDidData] = useState({
     did: '',
@@ -42,7 +42,7 @@ const App = () => {
   const [isAdding, setIsAdding] = useState(false);
 
   const fetchSipUser = () => {
-    axios.get("http://localhost:5000/api/admin/SIPUsers/nom")
+    axios.get("http://localhost:5001/api/admin/SIPUsers/nom")
       .then((response) => {
         setSip(response.data.users);
       })
@@ -52,7 +52,7 @@ const App = () => {
   };
 
   const fetchUser = () => {
-    axios.get("http://localhost:5000/api/admin/users/users")
+    axios.get("http://localhost:5001/api/admin/users/users")
       .then((response) => {
         setUser(response.data.users);
       })
@@ -191,7 +191,7 @@ const App = () => {
     setIsAdding(true);
     axios
       .post(
-        'http://localhost:5000/api/admin/DIDDestination/add',
+        'http://localhost:5001/api/admin/DIDDestination/add',
         formattedData
       )
       .then((response) => {

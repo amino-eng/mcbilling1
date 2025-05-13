@@ -469,7 +469,7 @@ function DIDsPage() {
   // Fetch data
   const fetchDIDs = () => {
     setIsLoading(true);
-    axios.get('http://localhost:5000/api/admin/DIDs/afficher')
+    axios.get('http://localhost:5001/api/admin/DIDs/afficher')
       .then((response) => {
         setDids(response.data.dids);
         setFilteredDids(response.data.dids);
@@ -507,7 +507,23 @@ function DIDsPage() {
   // Handlers
   const handleAddDid = () => {
     setIsSubmitting(true);
-    axios.post('http://localhost:5000/api/admin/DIDs/ajouter', newDid)
+    
+    // Create a copy of the data to ensure numeric fields are sent as numbers
+    const didData = {
+      ...newDid,
+      connection_charge: parseFloat(newDid.connection_charge) || 0,
+      fixrate: parseFloat(newDid.fixrate) || 0,
+      min_time_buy: parseFloat(newDid.min_time_buy) || 0,
+      buy_price_inblock: parseFloat(newDid.buy_price_inblock) || 0,
+      buy_price_increment: parseFloat(newDid.buy_price_increment) || 0,
+      min_time_sell: parseFloat(newDid.min_time_sell) || 0,
+      initial_block: parseFloat(newDid.initial_block) || 0,
+      billing_block: parseFloat(newDid.billing_block) || 0
+    };
+    
+    console.log('Sending DID data:', didData);
+    
+    axios.post('http://localhost:5001/api/admin/DIDs/ajouter', didData)
       .then((response) => {
         fetchDIDs();
         setNewDid(DEFAULT_NEW_DID);
@@ -528,7 +544,23 @@ function DIDsPage() {
 
   const handleEditDid = () => {
     setIsSubmitting(true);
-    axios.put(`http://localhost:5000/api/admin/DIDs/modifier/${editDid.id}`, editDid)
+    
+    // Create a copy of the data to ensure numeric fields are sent as numbers
+    const didData = {
+      ...editDid,
+      connection_charge: parseFloat(editDid.connection_charge) || 0,
+      fixrate: parseFloat(editDid.fixrate) || 0,
+      min_time_buy: parseFloat(editDid.min_time_buy) || 0,
+      buy_price_inblock: parseFloat(editDid.buy_price_inblock) || 0,
+      buy_price_increment: parseFloat(editDid.buy_price_increment) || 0,
+      min_time_sell: parseFloat(editDid.min_time_sell) || 0,
+      initial_block: parseFloat(editDid.initial_block) || 0,
+      billing_block: parseFloat(editDid.billing_block) || 0
+    };
+    
+    console.log('Updating DID data:', didData);
+    
+    axios.put(`http://localhost:5001/api/admin/DIDs/modifier/${editDid.id}`, didData)
       .then(() => {
         fetchDIDs();
         setShowEditModal(false);
@@ -548,7 +580,7 @@ function DIDsPage() {
 
   const handleDeleteDid = (didId) => {
     if (window.confirm('Are you sure you want to delete this DID?')) {
-      axios.delete(`http://localhost:5000/api/admin/DIDs/supprimer/${didId}`)
+      axios.delete(`http://localhost:5001/api/admin/DIDs/supprimer/${didId}`)
         .then(() => {
           fetchDIDs();
           setSuccessMessage('DID deleted successfully!');
@@ -589,7 +621,21 @@ function DIDsPage() {
 
   // Handle input changes for modals
   const handleInputChange = (e, field) => {
-    const { value } = e.target;
+    let { value } = e.target;
+    
+    // Convert numeric fields to numbers
+    if (['connection_charge', 'fixrate', 'min_time_buy', 'buy_price_inblock', 'buy_price_increment', 'min_time_sell', 'initial_block', 'billing_block'].includes(field)) {
+      // Ensure empty string becomes null or 0, and valid numbers are properly parsed
+      value = value === '' ? 0 : parseFloat(value);
+      
+      // Ensure it's a valid number
+      if (isNaN(value)) {
+        value = 0;
+      }
+      
+      console.log(`Field ${field} set to: ${value} (type: ${typeof value})`);
+    }
+    
     if (showAddModal) {
       setNewDid((prev) => ({ ...prev, [field]: value }));
     } else if (showEditModal) {

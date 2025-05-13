@@ -69,7 +69,7 @@ function Queues() {
   };
 
   const fetchQueues = (sortBy = 'name') => {
-    axios.get(`http://localhost:5000/api/admin/Queues/afficher?sortBy=${sortBy}`)
+    axios.get(`http://localhost:5001/api/admin/Queues/afficher?sortBy=${sortBy}`)
       .then((response) => {
         setQueues(response.data.queues);
         setFilteredQueues(response.data.queues);
@@ -78,7 +78,7 @@ function Queues() {
   };
 
   const fetchUsernames = () => {
-    axios.get('http://localhost:5000/api/admin/users/users') 
+    axios.get('http://localhost:5001/api/admin/users/users') 
       .then((response) => {
         setUsernames(response.data.users);
       })
@@ -111,7 +111,7 @@ function Queues() {
 
   const addQueue = (queue) => {
     console.log('Sending queue data:', queue);
-    axios.post('http://localhost:5000/api/admin/Queues/ajouter', queue)
+    axios.post('http://localhost:5001/api/admin/Queues/ajouter', queue)
       .then((response) => {
         setQueues([...queues, response.data]);
         fetchQueues(); // Refresh the queue list
@@ -126,33 +126,64 @@ function Queues() {
   };
 
   const updateQueue = (queueId, updatedQueue) => {
-    axios.put(`http://localhost:5000/api/admin/Queues/modifier/${queueId}`, updatedQueue)
-      .then(() => {
+    console.log('Updating queue with ID:', queueId);
+    
+    // Prepare data for the backend, ensuring required fields are included
+    const updateData = {
+      id_user: updatedQueue.id_user,
+      language: updatedQueue.language,
+      strategy: updatedQueue.strategy,
+      // Ensure these required fields are never null
+      talk_time: updatedQueue.talk_time || 0,
+      total_calls: updatedQueue.total_calls || 0,
+      answered: updatedQueue.answered || 0,
+      // Include other fields as needed
+      name: updatedQueue.name
+    };
+    
+    console.log('Update data being sent:', updateData);
+    
+    axios.put(`http://localhost:5001/api/admin/Queues/modifier/${queueId}`, updateData)
+      .then((response) => {
+        console.log('Update response:', response.data);
         fetchQueues();
         setShowUpdateModal(false);
         showAlert('Queue updated successfully!');
       })
       .catch((error) => {
         console.error('Error updating queue:', error);
-        showAlert('Failed to update queue', 'danger');
+        console.error('Error details:', error.response?.data);
+        showAlert(`Failed to update queue: ${error.response?.data?.error || error.message}`, 'danger');
       });
   };
 
   const deleteQueue = (queueId) => {
-    axios.delete(`http://localhost:5000/api/admin/Queues/supprimer/${queueId}`)
-      .then(() => {
+    console.log('Attempting to delete queue with ID:', queueId);
+    
+    if (!queueId) {
+      console.error('Cannot delete queue: No queue ID provided');
+      showAlert('Cannot delete queue: Missing queue ID', 'danger');
+      return;
+    }
+    
+    axios.delete(`http://localhost:5001/api/admin/Queues/supprimer/${queueId}`)
+      .then((response) => {
+        console.log('Delete response:', response.data);
         setQueues(queues.filter((queue) => queue.id !== queueId));
         setShowDeleteModal(false);
         showAlert('Queue deleted successfully!');
       })
       .catch((error) => {
         console.error('Error deleting queue:', error);
-        showAlert('Failed to delete queue', 'danger');
+        console.error('Error details:', error.response?.data);
+        showAlert(`Failed to delete queue: ${error.response?.data?.message || error.message}`, 'danger');
       });
   };
 
   const handleEdit = (queue) => {
     setNewQueue({
+      // Store the queue ID for the update operation
+      id: queue.id,
       id_user: queue.id_user,
       name: queue.name,
       language: queue.language,
@@ -169,8 +200,13 @@ function Queues() {
       leavewhenempty: queue.leavewhenempty,
       max_wait_time: queue.max_wait_time,
       maxwait: queue.maxwait,
-      ring_or_moh: queue.ring_or_moh
+      ring_or_moh: queue.ring_or_moh,
+      // Add the required fields for the update operation with default values if not present
+      talk_time: queue.talk_time || 0,
+      total_calls: queue.total_calls || 0,
+      answered: queue.answered || 0
     });
+    console.log('Queue to edit:', queue);
     setShowUpdateModal(true);
   };
 
@@ -191,7 +227,9 @@ function Queues() {
 
   const handleUpdateSubmit = (e) => {
     e.preventDefault();
-    updateQueue(newQueue.id_user, newQueue);
+    // Make sure we're sending the queue ID for the update
+    // newQueue should already have the id property from handleEdit
+    updateQueue(newQueue.id, newQueue);
   };
 
   const handleShow = () => setShowModal(true);
@@ -511,7 +549,8 @@ function Queues() {
                   queues={currentItems}
                   onEdit={handleEdit}
                   onDelete={(queue) => {
-                    setQueueToDelete(queue.id_user);
+                    // Use the queue's id instead of id_user for deletion
+                    setQueueToDelete(queue.id);
                     setShowDeleteModal(true);
                   }}
                 />
@@ -803,7 +842,7 @@ function Queues() {
                 <option value="">Select Username</option>
                 {usernames.map((user) => (
                   <option key={user.id} value={user.id}>
-                    {user.name}
+                    {user.username}
                   </option>
                 ))}
               </Form.Control>

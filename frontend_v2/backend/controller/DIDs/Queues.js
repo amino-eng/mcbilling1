@@ -81,15 +81,44 @@ exports.ajouter = (req, res) => {
 // Update a Queue
 exports.modifier = (req, res) => {
   const queueId = req.params.id;
-  const { username, language, strategy, talk_time, total_calls, answered } = req.body;
+  console.log('Updating queue with ID:', queueId);
+  console.log('Request body:', req.body);
+  
+  // Extract fields with default values to prevent NULL values
+  const { 
+    id_user, 
+    language = 'En', 
+    strategy = 'Ringall', 
+    talk_time = 0, 
+    total_calls = 0, 
+    answered = 0 
+  } = req.body;
+
+  // Validate that required fields are present
+  if (!id_user) {
+    return res.status(400).json({ error: "User ID is required" });
+  }
+
+  console.log('Processed update data:', { id_user, language, strategy, talk_time, total_calls, answered });
 
   const query = `
     UPDATE pkg_queue 
-    SET username = ?, language = ?, strategy = ?, talk_time = ?, total_calls = ?, answered = ? 
+    SET id_user = ?, language = ?, strategy = ?, var_talktime = ?, var_totalcalls = ?, var_answeredCalls = ? 
     WHERE id = ?
   `;
 
-  connection.query(query, [username, language, strategy, talk_time, total_calls, answered, queueId], (error, results) => {
+  // Ensure all values are properly converted to their expected types
+  const params = [
+    id_user,
+    language,
+    strategy,
+    talk_time || 0,  // Ensure these are never NULL
+    total_calls || 0,
+    answered || 0,
+    queueId
+  ];
+
+  connection.query(query, params, (error, results) => {
     if (error) {
       console.error("Erreur lors de la mise à jour de la queue:", error);
       return res.status(500).json({ error: "Erreur de base de données", details: error.message });

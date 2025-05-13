@@ -477,14 +477,14 @@ function IvrTable() {
   };
 
   // API endpoints
-  const apiUrl = 'http://localhost:5000/api/admin/IVRs/affiche';
-  const addIvrUrl = 'http://localhost:5000/api/admin/IVRs/add';
-  const editIvrUrl = 'http://localhost:5000/api/admin/IVRs/update';
-  const deleteIvrUrl = 'http://localhost:5000/api/admin/IVRs/delete';
+  const apiUrl = 'http://localhost:5001/api/admin/IVRs/affiche';
+  const addIvrUrl = 'http://localhost:5001/api/admin/IVRs/add';
+  const editIvrUrl = 'http://localhost:5001/api/admin/IVRs/update';
+  const deleteIvrUrl = 'http://localhost:5001/api/admin/IVRs/delete';
 
   const fetchUsers = () => {
     axios
-      .get('http://localhost:5000/api/admin/users/users')
+      .get('http://localhost:5001/api/admin/users/users')
       .then((response) => {
         setUsers(response.data.users);
       })
@@ -562,7 +562,7 @@ function IvrTable() {
 
   const openEditModal = async (ivr) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/admin/IVRs/get/${ivr.id}`);
+      const response = await axios.get(`http://localhost:5001/api/admin/IVRs/get/${ivr.id}`);
       const ivrData = response.data.ivr || ivr;
 
       setEditIvr({
@@ -629,7 +629,7 @@ function IvrTable() {
   const handleDeleteIvr = async (ivrId) => {
     if (window.confirm('Are you sure you want to delete this IVR?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/admin/IVRs/delete/${ivrId}`);
+        await axios.delete(`http://localhost:5001/api/admin/IVRs/delete/${ivrId}`);
         const response = await axios.get(apiUrl);
         setIvrs(response.data.ivrs);
         setSuccessMessage('IVR deleted successfully');

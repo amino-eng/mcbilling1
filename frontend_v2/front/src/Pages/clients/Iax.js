@@ -248,19 +248,38 @@ const IaxTable = () => {
 
     const fetchIax = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/admin/Iax/nom');
-            setUsers(res.data.users);
+            const res = await axios.get('http://localhost:5001/api/admin/Iax/nom');
+            if (res.data && res.data.users && Array.isArray(res.data.users)) {
+                setUsers(res.data.users);
+                console.log('Users fetched successfully:', res.data.users);
+                // Log each user for debugging
+                res.data.users.forEach(user => {
+                    console.log(`User ID: ${user.id}, Username: ${user.username}`);
+                });
+                return res.data.users; // Return the users for immediate use if needed
+            } else {
+                console.error('Invalid user data format:', res.data);
+                setError('Invalid user data format');
+                return [];
+            }
         } catch (err) {
             console.error('Error fetching users:', err);
             setError('Failed to fetch users');
+            return [];
         }
     };
 
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            const response = await axios.get('http://localhost:5000/api/admin/Iax/affiche');
+            // Make sure we have users data first
+            if (users.length === 0) {
+                await fetchIax();
+            }
             
+            const response = await axios.get('http://localhost:5001/api/admin/Iax/affiche');
+            console.log('IAX data:', response.data.iax);
+            console.log('Users data:', users);
             if (response.data.iax && response.data.iax.length > 0) {
                 const firstItem = response.data.iax[0];
                 const keys = Object.keys(firstItem);
@@ -299,7 +318,25 @@ const IaxTable = () => {
                 }
             }
             
-            setData(response.data.iax);
+            // Process the IAX data for display
+            const processedData = response.data.iax.map(item => {
+                // Log the current item for debugging
+                console.log('Processing IAX item:', item);
+                
+                // Based on the console logs, we can see that IAX entries don't have id_user
+                // Instead, we'll use the name field as the username for display
+                return {
+                    ...item,
+                    // Use name as the display username
+                    display_username: item.name || 'Unknown',
+                    // Use user_name as the IAX username
+                    iax_username: item.user_name || ''
+                };
+            });
+            
+            console.log('Processed IAX data:', processedData);
+            console.log('Processed data with usernames:', processedData);
+            setData(processedData);
             setError(null);
         } catch (error) {
             console.error('Error fetching IAX data:', error);
@@ -357,10 +394,20 @@ const IaxTable = () => {
         );
     };
 
+    // Define column names and their corresponding data fields
     const columns = [
         'Nom d\'utilisateur', 'IAX User', 'IAX Pass', 'Host', 'IP', 'Context',
         'CallerID', 'Codec', 'NAT', 'Dtmfmode', 'Insecure', 'Type'
     ];
+    
+    // Map column names to data fields
+    const columnToField = {
+        'Nom d\'utilisateur': 'display_username', // Use the display_username field we created
+        'IAX User': 'user_name',  // IAX User is the user_name field in the data
+        'Host': 'host',
+        'Type': 'type',
+        'Context': 'context'
+    };
 
     const renderPagination = () => {
         const pageNumbers = [];
@@ -440,7 +487,7 @@ const IaxTable = () => {
             console.log('Data to be sent:', entryToAdd);
     
             // Attempt to add the new entry
-            const response = await axios.post('http://localhost:5000/api/admin/Iax/ajouter', entryToAdd);
+            const response = await axios.post('http://localhost:5001/api/admin/Iax/ajouter', entryToAdd);
             
             // Handle successful response
             setSuccessMessage("IAX entry added successfully.");
@@ -501,9 +548,28 @@ const IaxTable = () => {
         }));
     };
 
+    // Function to get username by user ID
+    const getUsernameById = (userId) => {
+        if (!userId) return 'N/A';
+        
+        // Convert userId to string for comparison
+        const userIdStr = String(userId);
+        
+        // Find the user with the matching ID
+        const user = users.find(user => String(user.id) === userIdStr);
+        
+        // Debug info
+        console.log(`Looking for user with ID: ${userIdStr}`);
+        console.log(`Found user:`, user);
+        
+        // Return username if found, otherwise return the ID
+        return user ? user.username : userIdStr;
+    };
+    
     const handleUserSelect = (e) => {
         const selectedUserId = e.target.value;
-        const selectedUser = users.find(user => user.id === selectedUserId);
+        // Convert user IDs to strings for comparison to handle potential type mismatches
+        const selectedUser = users.find(user => String(user.id) === selectedUserId);
         
         setNewEntry(prev => ({
             ...prev,
@@ -513,9 +579,14 @@ const IaxTable = () => {
     };
 
     const handleEdit = (item) => {
+        // Find the user by username, not by id_user
+        const username = item.user_name;
+        const matchingUser = users.find(user => user.username === username);
+        const id_user = matchingUser ? String(matchingUser.id) : "";
+        
         setNewEntry({
             user_name: item.user_name,
-            id_user: item.id_user,
+            id_user: id_user, // Use the ID from the matching user
             secret: item.secret,
             host: item.host,
             port: item.port,
@@ -680,8 +751,9 @@ const IaxTable = () => {
                                             <tbody>
                                                 {currentItems.map((item, index) => (
                                                     <tr key={index} className="align-middle">
-                                                        {!hiddenColumns.includes('ID') && <td>{item.id}</td>}
-                                                        {!hiddenColumns.includes('Nom d\'utilisateur') && <td>{item.name}</td>}
+
+                                                        {!hiddenColumns.includes('Nom d\'utilisateur') && <td>{item.display_username}</td>}
+                                                        {!hiddenColumns.includes('IAX User') && <td>{item.user_name}</td>}
                                                         {!hiddenColumns.includes('IAX Pass') && <td>••••••••</td>}
                                                         {!hiddenColumns.includes('Host') && <td>{item.host}</td>}
                                                         {!hiddenColumns.includes('Type') && <td>{item.type}</td>}
@@ -753,7 +825,7 @@ const IaxTable = () => {
                                     >
                                         <option value="">Select a user</option>
                                         {users.map((user) => (
-                                            <option key={user.id} value={user.id}>
+                                            <option key={user.id} value={String(user.id)}>
                                                 {user.username}
                                             </option>
                                         ))}

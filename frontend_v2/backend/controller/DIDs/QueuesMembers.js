@@ -6,17 +6,19 @@ const handleDatabaseError = (res, error) => {
 };
 
 exports.getQueues = (req, res) => {
-  const query = 'SELECT id, name FROM pkg_queue ORDER BY name ASC';
+  const query = 'SELECT id, name, id_user FROM pkg_queue ORDER BY name ASC';
   connection.query(query, (err, results) => {
     if (err) return handleDatabaseError(res, err);
+    console.log('Available queues:', results);
     res.json({ queues: results });
   });
 };
 
 exports.getSIPUsers = (req, res) => {
-  const query = 'SELECT id, name, accountcode FROM pkg_sip ORDER BY name ASC';
+  const query = 'SELECT id, name, accountcode, id_user FROM pkg_sip ORDER BY name ASC';
   connection.query(query, (err, results) => {
     if (err) return handleDatabaseError(res, err);
+    console.log('Available SIP users:', results);
     res.json({ users: results });
   });
 };
@@ -38,30 +40,65 @@ exports.afficher = (req, res) => {
 
 exports.ajouter = (req, res) => {
   const { queue, paused, sipUser } = req.body;
+  
+  console.log('Adding queue member with data:', { queue, paused, sipUser });
 
   if (!queue || paused === undefined || !sipUser) {
+    console.log('Validation failed: Missing required fields');
     return res.status(400).json({ error: "All fields are required" });
   }
 
   const queryQueue = 'SELECT id_user, name FROM pkg_queue WHERE id = ?';
+  console.log('Executing query:', queryQueue, 'with params:', [queue]);
+  
   connection.query(queryQueue, [queue], (error, results) => {
-    if (error) return handleDatabaseError(res, error);
-    if (results.length === 0) return res.status(404).json({ error: "Queue not found" });
+    if (error) {
+      console.error('Database error when finding queue:', error);
+      return handleDatabaseError(res, error);
+    }
+    
+    console.log('Queue query results:', results);
+    
+    if (results.length === 0) {
+      console.log('Queue not found with ID:', queue);
+      return res.status(404).json({ error: "Queue not found" });
+    }
 
     const id_user = results[0].id_user;
     const queueName = results[0].name;
+    
+    console.log('Queue found:', { id_user, queueName });
 
-    const querySIPUser = 'SELECT * FROM pkg_sip WHERE id_user = ? AND id = ?';
-    connection.query(querySIPUser, [id_user, sipUser], (error, sipResults) => {
-      if (error) return handleDatabaseError(res, error);
-      if (sipResults.length === 0) return res.status(404).json({ error: "SIP User not found" });
+    const querySIPUser = 'SELECT * FROM pkg_sip WHERE id = ?';
+    console.log('Executing SIP user query:', querySIPUser, 'with params:', [sipUser]);
+    
+    connection.query(querySIPUser, [sipUser], (error, sipResults) => {
+      if (error) {
+        console.error('Database error when finding SIP user:', error);
+        return handleDatabaseError(res, error);
+      }
+      
+      console.log('SIP user query results:', sipResults);
+      
+      if (sipResults.length === 0) {
+        console.log('SIP user not found with id:', sipUser);
+        return res.status(404).json({ error: `SIP User with ID ${sipUser} not found` });
+      }
 
       const queryInsert = `
         INSERT INTO pkg_queue_member (queue_name, interface, paused, id_user) 
         VALUES (?, ?, ?, ?)
       `;
-      connection.query(queryInsert, [queueName, `SIP/${sipResults[0].name}`, paused, id_user], (error, results) => {
-        if (error) return handleDatabaseError(res, error);
+      const insertParams = [queueName, `SIP/${sipResults[0].name}`, paused, id_user];
+      console.log('Executing insert query:', queryInsert, 'with params:', insertParams);
+      
+      connection.query(queryInsert, insertParams, (error, results) => {
+        if (error) {
+          console.error('Database error when inserting queue member:', error);
+          return handleDatabaseError(res, error);
+        }
+        
+        console.log('Queue member inserted successfully:', results);
         res.status(201).json({ message: "Queue Member added successfully", id: results.insertId });
       });
     });
@@ -86,6 +123,54 @@ exports.modifier = async (req, res) => {
   } catch (error) {
     handleDatabaseError(res, error);
   }
+};
+
+exports.bulkUpdate = (req, res) => {
+  const { updates } = req.body;
+  
+  if (!updates || !Array.isArray(updates) || updates.length === 0) {
+    return res.status(400).json({ error: "Valid updates array is required" });
+  }
+
+  // Use a transaction to ensure all updates are applied or none
+  connection.beginTransaction(err => {
+    if (err) return handleDatabaseError(res, err);
+
+    const updatePromises = updates.map(update => {
+      return new Promise((resolve, reject) => {
+        const { id, field, value } = update;
+        
+        if (!id || !field) {
+          reject(new Error("Each update must include id and field"));
+          return;
+        }
+
+        const query = `UPDATE pkg_queue_member SET ${field} = ? WHERE id = ?`;
+        connection.query(query, [value, id], (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        });
+      });
+    });
+
+    Promise.all(updatePromises)
+      .then(results => {
+        connection.commit(err => {
+          if (err) {
+            connection.rollback(() => {
+              handleDatabaseError(res, err);
+            });
+            return;
+          }
+          res.json({ message: "Bulk update successful", updatedCount: results.length });
+        });
+      })
+      .catch(error => {
+        connection.rollback(() => {
+          handleDatabaseError(res, error);
+        });
+      });
+  });
 };
 
 exports.del = (req, res) => {

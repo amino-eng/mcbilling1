@@ -4,7 +4,7 @@ import axios from 'axios';
 // Default API configuration
 let apiConfig = {
   apiPort: 5002,
-  apiUrl: 'http://localhost:5000/api'
+  apiUrl: 'http://localhost:5001/api'
 };
 
 // Function to load API configuration

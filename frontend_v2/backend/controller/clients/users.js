@@ -646,36 +646,53 @@ exports.getUtilisateur = (req, res) => {
       return res.status(400).json({ error: "ID utilisateur invalide" })
     }
 
-    const query = `
-      SELECT 
-        u.*, 
-        g.name AS group_name, 
-        p.name AS plan_name, 
-        cu.username AS agent,
-        (SELECT COUNT(*) FROM pkg_sip s WHERE s.id_user = u.id) AS sip_count,
-        (SELECT COUNT(*) FROM pkg_iax i WHERE i.id_user = u.id) AS iax_count
-      FROM pkg_user u
-      LEFT JOIN pkg_group_user g ON u.id_group = g.id
-      LEFT JOIN pkg_plan p ON u.id_plan = p.id
-      LEFT JOIN pkg_user cu ON u.id_user = cu.id
-      WHERE u.id = ?
-    `
-
-    connection.query(query, [userId], (err, results) => {
-      if (err) {
-        console.error("Error fetching user:", err)
-        return res.status(500).json({ error: "Database error" })
+    // First, get the user's password from the database
+    const passwordQuery = `SELECT password FROM pkg_user WHERE id = ?`;
+    
+    connection.query(passwordQuery, [userId], (passwordErr, passwordResults) => {
+      if (passwordErr) {
+        console.error("Error fetching user password:", passwordErr);
+        return res.status(500).json({ error: "Database error" });
       }
+      
+      const userPassword = passwordResults.length > 0 ? passwordResults[0].password : null;
+      
+      // Then get all other user data
+      const query = `
+        SELECT 
+          u.*, 
+          g.name AS group_name, 
+          p.name AS plan_name, 
+          cu.username AS agent,
+          (SELECT COUNT(*) FROM pkg_sip s WHERE s.id_user = u.id) AS sip_count,
+          (SELECT COUNT(*) FROM pkg_iax i WHERE i.id_user = u.id) AS iax_count
+        FROM pkg_user u
+        LEFT JOIN pkg_group_user g ON u.id_group = g.id
+        LEFT JOIN pkg_plan p ON u.id_plan = p.id
+        LEFT JOIN pkg_user cu ON u.id_user = cu.id
+        WHERE u.id = ?
+      `;
 
-      if (results.length === 0) {
-        return res.status(404).json({ message: "User not found" })
-      }
+      connection.query(query, [userId], (err, results) => {
+        if (err) {
+          console.error("Error fetching user:", err);
+          return res.status(500).json({ error: "Database error" });
+        }
 
-      res.json({ user: results[0] })
-    })
+        if (results.length === 0) {
+          return res.status(404).json({ message: "User not found" });
+        }
+        
+        // Add the password to the user object
+        const user = results[0];
+        user.password = userPassword;
+        
+        res.json({ user });
+      });
+    });
   } catch (error) {
-    console.error("Unexpected error in getUtilisateur:", error)
-    return res.status(500).json({ error: "An unexpected error occurred" })
+    console.error("Unexpected error in getUtilisateur:", error);
+    return res.status(500).json({ error: "An unexpected error occurred" });
   }
 }
 

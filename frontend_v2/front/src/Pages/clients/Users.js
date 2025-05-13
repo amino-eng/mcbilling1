@@ -435,7 +435,7 @@ function Users() {
   // Fonctions pour récupérer les données
   const fetchGroup = () => {
     axios
-      .get("http://localhost:5000/api/admin/users/groups")
+      .get("http://localhost:5001/api/admin/users/groups")
       .then((response) => {
         setGroups(response.data.groups)
       })
@@ -487,7 +487,7 @@ function Users() {
 
   const fetchPlan = () => {
     axios
-      .get("http://localhost:5000/api/admin/users/plans")
+      .get("http://localhost:5001/api/admin/users/plans")
       .then((response) => {
         setPlans(response.data.plans)
       })
@@ -499,7 +499,7 @@ function Users() {
 
   const fetchUsers = () => {
     axios
-      .get("http://localhost:5000/api/admin/users/affiche")
+      .get("http://localhost:5001/api/admin/users/affiche")
       .then((response) => {
         setUsers(response.data.users)
         setFilteredUsers(response.data.users)
@@ -588,7 +588,7 @@ function Users() {
 
   const confirmDelete = () => {
     axios
-      .delete(`http://localhost:5000/api/admin/users/supprimer/${userIdToDelete}`)
+      .delete(`http://localhost:5001/api/admin/users/supprimer/${userIdToDelete}`)
       .then(() => {
         fetchUsers();
         setShowConfirmModal(false);
@@ -623,7 +623,7 @@ function Users() {
   // Vérifier si le nom d'utilisateur existe déjà
   const checkUsernameExists = async (username) => {
     try {
-      const response = await axios.get("http://localhost:5000/api/admin/users/users")
+      const response = await axios.get("http://localhost:5001/api/admin/users/users")
       const existingUsers = response.data.users
       return existingUsers.some((user) => user.username === username)
     } catch (error) {
@@ -691,7 +691,7 @@ function Users() {
     console.log("User Data to send:", userData) // Debugging log
 
     try {
-      const response = await fetch("http://localhost:5000/api/admin/users/ajouter", {
+      const response = await fetch("http://localhost:5001/api/admin/users/ajouter", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -759,7 +759,7 @@ function Users() {
     console.log("Sending update data:", userData)
 
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/users/modifier/${editUser.id}`, {
+      const response = await fetch(`http://localhost:5001/api/admin/users/modifier/${editUser.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -805,7 +805,7 @@ function Users() {
   const handleEdit = (id) => {
     // First, fetch the complete user data from the backend
     axios
-      .get(`http://localhost:5000/api/admin/users/user/${id}`)
+      .get(`http://localhost:5001/api/admin/users/user/${id}`)
       .then((response) => {
         const userToEdit = response.data.user
 
@@ -842,7 +842,7 @@ function Users() {
     setEditUser({
       id: userToEdit.id,
       username: userToEdit.username || "",
-      password: "", // Always blank for security
+      password: userToEdit.password || "", // Use existing password if available
       group: userToEdit.id_group || "",
       plan: userToEdit.id_plan || "",
       language: userToEdit.language || "fr",
@@ -1019,24 +1019,54 @@ function Users() {
         }}
       />
 
-      {/* Toast Notifications */}
+      {/* Enhanced Toast Notifications */}
       <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1060 }}>
-        <Toast onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide bg={toastType}>
-          <Toast.Header>
-            <strong className="me-auto">
+        <Toast 
+          onClose={() => setShowToast(false)} 
+          show={showToast} 
+          delay={3000} 
+          autohide 
+          className="notification-toast border-0 shadow-lg" 
+          style={{ 
+            minWidth: "300px", 
+            borderRadius: "8px",
+            borderLeft: toastType === "success" ? "4px solid #198754" : 
+                      toastType === "danger" ? "4px solid #dc3545" : 
+                      "4px solid #ffc107",
+            transition: "transform 0.3s ease",
+            boxShadow: "0 0.5rem 1rem rgba(0, 0, 0, 0.15)"
+          }}
+        >
+          <Toast.Header className="bg-white border-0 d-flex align-items-center">
+            <div className="me-2">
+              {toastType === "success" && <FaCheckCircle className="text-success" size={18} />}
+              {toastType === "danger" && <FaTimesCircle className="text-danger" size={18} />}
+              {toastType === "warning" && <FaExclamationCircle className="text-warning" size={18} />}
+            </div>
+            <strong className="me-auto fw-semibold">
               {toastType === "success" && "Succès"}
               {toastType === "danger" && "Erreur"}
               {toastType === "warning" && "Attention"}
             </strong>
+            <small className="text-muted">à l'instant</small>
           </Toast.Header>
-          <Toast.Body className={toastType === "danger" ? "text-white" : ""}>{toastMessage}</Toast.Body>
+          <Toast.Body className="bg-white text-dark py-3">{toastMessage}</Toast.Body>
         </Toast>
       </ToastContainer>
-
-      <Container fluid className="px-4 py-4">
+      
+      {/* Add CSS for toast animations */}
+      <style>
+        {`
+          .notification-toast:hover {
+            transform: translateY(-3px);
+          }
+        `}
+      </style>
+      
+      <Container fluid className="px-4 py-4">  
         <Row className="justify-content-center">
-          <Col xs={12} lg={11}>
-            <Card className="shadow border-0 overflow-hidden main-card">
+          <Col lg={12}>
+            <Card className="shadow-lg border-0 mb-4" style={{ borderRadius: "12px", overflow: "hidden" }}>
               <Card.Header className="d-flex flex-wrap align-items-center p-0 rounded-top overflow-hidden">
                 <div className="bg-primary p-3 w-100 position-relative">
                   <div className="position-absolute top-0 end-0 p-2 d-none d-md-block">
@@ -1053,7 +1083,7 @@ function Users() {
                     ))}
                   </div>
                   <div className="d-flex align-items-center position-relative z-2">
-                    <div className="bg-white rounded-circle p-3 me-3 shadow pulse-effect">
+                    <div className="bg-white rounded-circle p-3 me-3 shadow" style={{ animation: "pulse 2s infinite" }}>
                       <FaUsers className="text-primary fs-3" />
                     </div>
                     <div>
@@ -1148,14 +1178,21 @@ function Users() {
                 </Row>
 
       {/* Modal New User */}
-      <Modal show={showNewUserForm} onHide={() => setShowNewUserForm(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>New User</Modal.Title>
+      <Modal show={showAddModal} onHide={() => setShowAddModal(false)} size="lg" centered dialogClassName="modal-90w">
+        <Modal.Header closeButton className="bg-primary text-white">
+          <Modal.Title className="d-flex align-items-center">
+            <FaUserPlus className="me-2" /> Ajouter un nouvel utilisateur
+          </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleNewUserSubmit}>
-            <Tabs defaultActiveKey="General" className="mb-3">
-              <Tab eventKey="General" title="General">
+        <Modal.Body className="p-4">
+          <Tabs 
+            defaultActiveKey="basicInfo" 
+            id="add-user-tabs" 
+            className="mb-4 nav-tabs-custom"
+            variant="pills"
+            fill
+          >
+            <Tab eventKey="basicInfo" title={<span><FaUser className="me-2" /> Informations de base</span>}>
                 <Form.Group controlId="formUsername" className="mb-3">
                   {errors && <div className="alert alert-danger">{errors}</div>}
                   <Form.Label>Username</Form.Label>
@@ -1566,13 +1603,13 @@ function Users() {
 
                 <Form.Group controlId="formEditPassword" className="mb-3">
                   <Form.Label>Password</Form.Label>
-                  <InputGroup className="mb-2">
+                  <InputGroup>
                     <Form.Control
                       type={showPassword ? "text" : "password"}
                       name="password"
                       value={editUser.password}
                       onChange={handleEditUserChange}
-                      placeholder="Leave blank to keep current password"
+                      placeholder="Enter new password if you want to change it"
                     />
                     <Button variant="outline-secondary" onClick={() => setShowPassword(!showPassword)}>
                       {showPassword ? <FaEyeSlash /> : <FaEye />}
@@ -1584,6 +1621,9 @@ function Users() {
                       Generate
                     </Button>
                   </InputGroup>
+                  <small className="text-muted">
+                    Current password is shown. You can keep it or enter a new one.
+                  </small>
                   {editUser.password && (
                     <div className="password-strength mb-2">
                       <div className="progress">

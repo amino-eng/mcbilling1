@@ -33,27 +33,20 @@ exports.afficher = (req, res) => {
 // Add a new Queue
 exports.ajouter = (req, res) => {
     const { 
-        name, id_user, language, musiconhold, announce, context, timeout, announceFrequency, announceRoundSeconds, announceHoldtime,
-        announcePosition = 'def', retry, wrapuptime, maxlen, servicelevel, strategy = '', joinempty, leavewhenempty, eventmemberstatus, eventwhencalled,
-        reportholdtime, memberdelay, weight, timeoutrestart, periodicAnnounce, periodicAnnounceFrequency, ringinuse, setinterfacevar, setqueuevar='', 
-        setqueueentryvar='', varHoldtime=0, varTalktime=0 , varTotalCalls=0 , varAnsweredCalls=0 , ringOrMoh='', maxWaitTime, maxWaitTimeAction 
+        name, id_user, language, strategy, ringinuse
     } = req.body;
 
     // Ensure required fields are provided
     if (!name || !id_user || !language) {
-        console.log("Missing fields:", { name, id_user, language });
         return res.status(400).json({ error: "Name, User ID, and Language are required" });
     }
 
-    // Default values for optional fields if not provided
+    // Default values for optional fields
     const query = `
         INSERT INTO pkg_queue 
-          (name, id_user, language, musiconhold, announce, context, timeout, \announce-frequency\, \announce-round-seconds\, \announce-holdtime\,
-          \announce-position\, retry, wrapuptime, maxlen, servicelevel, strategy, \joinempty\, leavewhenempty, eventmemberstatus, eventwhencalled,
-          reportholdtime, memberdelay, weight, timeoutrestart, \periodic-announce\, \periodic-announce-frequency\, ringinuse, setinterfacevar, setqueuevar,
-          setqueueentryvar, var_holdtime, var_talktime, var_totalCalls, var_answeredCalls, \ring_or_moh\, max_wait_time, max_wait_time_action)
+          (name, id_user, language, strategy, ringinuse)
         VALUES 
-          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          (?, ?, ?, ?, ?)
     `;
 
     // Parameters for the query
@@ -61,50 +54,27 @@ exports.ajouter = (req, res) => {
         name, 
         id_user, 
         language, 
-        musiconhold, 
-        announce, 
-        context, 
-        timeout, 
-        announceFrequency, 
-        announceRoundSeconds, 
-        announceHoldtime, 
-        announcePosition, 
-        retry, 
-        wrapuptime, 
-        maxlen, 
-        servicelevel, 
-        strategy, 
-        joinempty, 
-        leavewhenempty,
-        eventmemberstatus, 
-        eventwhencalled, 
-        reportholdtime, 
-        memberdelay, 
-        weight, 
-        timeoutrestart, 
-        periodicAnnounce, 
-        periodicAnnounceFrequency, 
-        ringinuse, 
-        setinterfacevar, 
-        setqueuevar, 
-        setqueueentryvar, 
-        varHoldtime, 
-        varTalktime, 
-        varTotalCalls, 
-        varAnsweredCalls, 
-        ringOrMoh, 
-        maxWaitTime, 
-        maxWaitTimeAction
+        strategy || 'Ringall', 
+        ringinuse || 0
     ];
 
     // Execute the query
     connection.query(query, params, (error, results) => {
         if (error) {
             console.log("Error inserting queue:", error);
-            return handleDatabaseError(res, error);
+            return res.status(500).json({ error: "Database error", details: error.message });
         }
 
-        res.status(201).json({ message: "Queue added successfully", id: results.insertId });
+        res.status(201).json({ 
+            message: "Queue added successfully", 
+            queue: { 
+                id: results.insertId, 
+                name, 
+                id_user,
+                language,
+                strategy: strategy || 'Ringall'
+            } 
+        });
     });
 };
 

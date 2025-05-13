@@ -78,7 +78,7 @@ function Queues() {
   };
 
   const fetchUsernames = () => {
-    axios.get('http://localhost:5000/api/admin/Users') 
+    axios.get('http://localhost:5000/api/admin/users/users') 
       .then((response) => {
         setUsernames(response.data.users);
       })
@@ -110,6 +110,7 @@ function Queues() {
   };
 
   const addQueue = (queue) => {
+    console.log('Sending queue data:', queue);
     axios.post('http://localhost:5000/api/admin/Queues/ajouter', queue)
       .then((response) => {
         setQueues([...queues, response.data]);
@@ -118,7 +119,8 @@ function Queues() {
         setShowModal(false);
       })
       .catch((error) => {
-        console.error('Error adding queue:', error);
+        console.error('Full error adding queue:', error);
+        console.error('Error response data:', error.response?.data);
         showAlert('Failed to add queue', 'danger');
       });
   };
@@ -415,63 +417,6 @@ function Queues() {
           </thead>
           <tbody>
             {queues.map((queue) => (
-              <tr key={queue.id}>
-                <td className="fw-medium">{queue.name}</td>
-                <td>{queue.username}</td>
-                <td>{queue.language}</td>
-                <td>{queue.strategy}</td>
-                <td>{queue.talk_time}</td>
-                <td>{queue.total_calls}</td>
-                <td>{queue.answered}</td>
-                <td className="text-end">
-                  <ActionButtons
-                    onEdit={() => onEdit(queue)}
-                    onDelete={() => {
-                      setQueueToDelete(queue.id_user);
-                      setShowDeleteModal(true);
-                    }}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </div>
-    )
-  }
-  
-  // Queues Table Component
-  function QueuesTable({ queues, onEdit, onDelete, isLoading = false }) {
-    if (isLoading) {
-      return (
-        <div className="text-center py-5">
-          <Spinner animation="border" variant="primary" />
-          <p className="mt-3 text-muted">Loading queues...</p>
-        </div>
-      )
-    }
-
-    if (queues.length === 0) {
-      return <EmptyState />
-    }
-
-    return (
-      <div className="table-responsive">
-        <Table hover className="align-middle mb-0 elegant-table">
-          <thead className="bg-light">
-            <tr>
-              <th className="fw-semibold">Queue Name</th>
-              <th className="fw-semibold">Username</th>
-              <th className="fw-semibold">Language</th>
-              <th className="fw-semibold">Strategy</th>
-              <th className="fw-semibold">Talk Time</th>
-              <th className="fw-semibold">Total Calls</th>
-              <th className="fw-semibold">Answered</th>
-              <th className="fw-semibold text-end">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {queues.map((queue) => (
               <tr key={queue.id || queue.id_user}>
                 <td className="fw-medium">{queue.name}</td>
                 <td>{queue.username}</td>
@@ -594,7 +539,6 @@ function Queues() {
         </Row>
       </Container>
 
-      {/* Add Modal - Styled to match DIDs.js */}
       <Modal show={showModal} onHide={handleClose} size="lg" centered className="queue-modal">
         <Modal.Header closeButton className="bg-primary text-white">
           <Modal.Title className="d-flex align-items-center">
@@ -616,7 +560,7 @@ function Queues() {
                 <option value="">Select Username</option>
                 {usernames.map((user) => (
                   <option key={user.id} value={user.id}>
-                    {user.name}
+                    {user.username}
                   </option>
                 ))}
               </Form.Control>

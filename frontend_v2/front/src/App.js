@@ -395,7 +395,7 @@ function AppContent() {
 <Route path="/DIDs/Queues" element={
         isAuthenticated ? (
           <Layout user={user}>
-            <DIDsUse />
+            <Queues/>
           </Layout>
         ) : (
           <Navigate to="/login" replace />

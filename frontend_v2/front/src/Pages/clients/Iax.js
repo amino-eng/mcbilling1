@@ -248,7 +248,7 @@ const IaxTable = () => {
 
     const fetchIax = async () => {
         try {
-            const res = await axios.get('http://localhost:5001/api/admin/Iax/nom');
+            const res = await axios.get('http://localhost:5000/api/admin/Iax/nom');
             if (res.data && res.data.users && Array.isArray(res.data.users)) {
                 setUsers(res.data.users);
                 console.log('Users fetched successfully:', res.data.users);
@@ -277,7 +277,7 @@ const IaxTable = () => {
                 await fetchIax();
             }
             
-            const response = await axios.get('http://localhost:5001/api/admin/Iax/affiche');
+            const response = await axios.get('http://localhost:5000/api/admin/Iax/affiche');
             console.log('IAX data:', response.data.iax);
             console.log('Users data:', users);
             if (response.data.iax && response.data.iax.length > 0) {
@@ -487,7 +487,7 @@ const IaxTable = () => {
             console.log('Data to be sent:', entryToAdd);
     
             // Attempt to add the new entry
-            const response = await axios.post('http://localhost:5001/api/admin/Iax/ajouter', entryToAdd);
+            const response = await axios.post('http://localhost:5000/api/admin/Iax/ajouter', entryToAdd);
             
             // Handle successful response
             setSuccessMessage("IAX entry added successfully.");

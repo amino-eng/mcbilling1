@@ -69,7 +69,7 @@ function Queues() {
   };
 
   const fetchQueues = (sortBy = 'name') => {
-    axios.get(`http://localhost:5001/api/admin/Queues/afficher?sortBy=${sortBy}`)
+    axios.get(`http://localhost:5000/api/admin/Queues/afficher?sortBy=${sortBy}`)
       .then((response) => {
         setQueues(response.data.queues);
         setFilteredQueues(response.data.queues);
@@ -78,7 +78,7 @@ function Queues() {
   };
 
   const fetchUsernames = () => {
-    axios.get('http://localhost:5001/api/admin/users/users') 
+    axios.get('http://localhost:5000/api/admin/users/users') 
       .then((response) => {
         setUsernames(response.data.users);
       })
@@ -111,7 +111,7 @@ function Queues() {
 
   const addQueue = (queue) => {
     console.log('Sending queue data:', queue);
-    axios.post('http://localhost:5001/api/admin/Queues/ajouter', queue)
+    axios.post('http://localhost:5000/api/admin/Queues/ajouter', queue)
       .then((response) => {
         setQueues([...queues, response.data]);
         fetchQueues(); // Refresh the queue list
@@ -143,7 +143,7 @@ function Queues() {
     
     console.log('Update data being sent:', updateData);
     
-    axios.put(`http://localhost:5001/api/admin/Queues/modifier/${queueId}`, updateData)
+    axios.put(`http://localhost:5000/api/admin/Queues/modifier/${queueId}`, updateData)
       .then((response) => {
         console.log('Update response:', response.data);
         fetchQueues();
@@ -166,7 +166,7 @@ function Queues() {
       return;
     }
     
-    axios.delete(`http://localhost:5001/api/admin/Queues/supprimer/${queueId}`)
+    axios.delete(`http://localhost:5000/api/admin/Queues/supprimer/${queueId}`)
       .then((response) => {
         console.log('Delete response:', response.data);
         setQueues(queues.filter((queue) => queue.id !== queueId));

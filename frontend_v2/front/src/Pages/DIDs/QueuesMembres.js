@@ -264,7 +264,7 @@ const QueueMembersTable = () => {
   useEffect(() => {
     const fetchQueues = async () => {
       try {
-        const response = await axios.get('http://localhost:5001/api/admin/QueuesMembers/queues');
+        const response = await axios.get('http://localhost:5000/api/admin/QueuesMembers/queues');
         setQueue(response.data.queues);
       } catch (error) {
         console.error('Error fetching queues:', error);
@@ -278,7 +278,7 @@ const QueueMembersTable = () => {
   useEffect(() => {
     const fetchQueueMembers = async () => {
       try {
-        const response = await axios.get("http://localhost:5001/api/admin/QueuesMembers/");
+        const response = await axios.get("http://localhost:5000/api/admin/QueuesMembers/");
         setQueueMembers(response.data.queueMembers);
         setFilteredMembers(response.data.queueMembers);
       } catch (error) {
@@ -290,7 +290,7 @@ const QueueMembersTable = () => {
 
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("http://localhost:5001/api/admin/QueuesMembers/sip-users");
+        const response = await axios.get("http://localhost:5000/api/admin/QueuesMembers/sip-users");
         setUsers(response.data.users);
       } catch (error) {
         console.error("Failed to fetch users:", error);
@@ -362,7 +362,7 @@ const QueueMembersTable = () => {
       
       setLoading(true);
       
-      const response = await axios.post('http://localhost:5001/api/admin/QueuesMembers/ajouter', {
+      const response = await axios.post('http://localhost:5000/api/admin/QueuesMembers/ajouter', {
         queue: selectedQueue,
         paused: pausedValue,
         sipUser: selectedUser
@@ -372,7 +372,7 @@ const QueueMembersTable = () => {
         setSuccessMessage(response.data.message);
         const fetchQueueMembers = async () => {
           try {
-            const response = await axios.get("http://localhost:5001/api/admin/QueuesMembers/");
+            const response = await axios.get("http://localhost:5000/api/admin/QueuesMembers/");
             setQueueMembers(response.data.queueMembers);
           } catch (error) {
             setError("Failed to fetch queue members");
@@ -407,10 +407,10 @@ const QueueMembersTable = () => {
       return;
     }
 
-    axios.put('http://localhost:5001/api/admin/QueuesMembers/bulk', { updates })
+    axios.put('http://localhost:5000/api/admin/QueuesMembers/bulk', { updates })
       .then(() => {
         alert("Bulk update successful!");
-        return axios.get('http://localhost:5001/api/admin/QueuesMembers/');
+        return axios.get('http://localhost:5000/api/admin/QueuesMembers/');
       })
       .then(response => {
         setQueueMembers(response.data.queueMembers);

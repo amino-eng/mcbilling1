@@ -39,7 +39,8 @@ import {
   FaUserPlus,
   FaUsers,
   FaFilter,
-  FaSyncAlt
+  FaSyncAlt,
+  FaUser
 } from "react-icons/fa"
 
 // Component definitions to fix ESLint errors
@@ -301,7 +302,7 @@ function Users() {
   const [itemsPerPage, setItemsPerPage] = useState(10)
 
   // États pour les formulaires
-  const [showNewUserForm, setShowNewUserForm] = useState(false)
+  const [showAddUserForm, setShowAddUserForm] = useState(false)
   const [showEditUserForm, setShowEditUserForm] = useState(false)
 
   // États pour les toasts
@@ -435,7 +436,7 @@ function Users() {
   // Fonctions pour récupérer les données
   const fetchGroup = () => {
     axios
-      .get("http://localhost:5001/api/admin/users/groups")
+      .get("http://localhost:5000/api/admin/users/groups")
       .then((response) => {
         setGroups(response.data.groups)
       })
@@ -487,7 +488,7 @@ function Users() {
 
   const fetchPlan = () => {
     axios
-      .get("http://localhost:5001/api/admin/users/plans")
+      .get("http://localhost:5000/api/admin/users/plans")
       .then((response) => {
         setPlans(response.data.plans)
       })
@@ -499,7 +500,7 @@ function Users() {
 
   const fetchUsers = () => {
     axios
-      .get("http://localhost:5001/api/admin/users/affiche")
+      .get("http://localhost:5000/api/admin/users/affiche")
       .then((response) => {
         setUsers(response.data.users)
         setFilteredUsers(response.data.users)
@@ -588,7 +589,7 @@ function Users() {
 
   const confirmDelete = () => {
     axios
-      .delete(`http://localhost:5001/api/admin/users/supprimer/${userIdToDelete}`)
+      .delete(`http://localhost:5000/api/admin/users/supprimer/${userIdToDelete}`)
       .then(() => {
         fetchUsers();
         setShowConfirmModal(false);
@@ -623,7 +624,7 @@ function Users() {
   // Vérifier si le nom d'utilisateur existe déjà
   const checkUsernameExists = async (username) => {
     try {
-      const response = await axios.get("http://localhost:5001/api/admin/users/users")
+      const response = await axios.get("http://localhost:5000/api/admin/users/users")
       const existingUsers = response.data.users
       return existingUsers.some((user) => user.username === username)
     } catch (error) {
@@ -691,7 +692,7 @@ function Users() {
     console.log("User Data to send:", userData) // Debugging log
 
     try {
-      const response = await fetch("http://localhost:5001/api/admin/users/ajouter", {
+      const response = await fetch("http://localhost:5000/api/admin/users/ajouter", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -706,7 +707,7 @@ function Users() {
       const result = await response.json()
       console.log("User added:", result)
       fetchUsers()
-      setShowNewUserForm(false)
+      setShowAddUserForm(false)
       setNewUser({
         username: "",
         password: "",
@@ -759,7 +760,7 @@ function Users() {
     console.log("Sending update data:", userData)
 
     try {
-      const response = await fetch(`http://localhost:5001/api/admin/users/modifier/${editUser.id}`, {
+      const response = await fetch(`http://localhost:5000/api/admin/users/modifier/${editUser.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -805,7 +806,7 @@ function Users() {
   const handleEdit = (id) => {
     // First, fetch the complete user data from the backend
     axios
-      .get(`http://localhost:5001/api/admin/users/user/${id}`)
+      .get(`http://localhost:5000/api/admin/users/user/${id}`)
       .then((response) => {
         const userToEdit = response.data.user
 
@@ -1104,7 +1105,7 @@ function Users() {
                   <div className="d-flex gap-2">
                     <Button 
                       variant="primary" 
-                      onClick={() => setShowNewUserForm(true)} 
+                      onClick={() => setShowAddUserForm(true)} 
                       className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
                     >
                       <div className="icon-container">
@@ -1178,407 +1179,406 @@ function Users() {
                 </Row>
 
       {/* Modal New User */}
-      <Modal show={showAddModal} onHide={() => setShowAddModal(false)} size="lg" centered dialogClassName="modal-90w">
-        <Modal.Header closeButton className="bg-primary text-white">
-          <Modal.Title className="d-flex align-items-center">
-            <FaUserPlus className="me-2" /> Ajouter un nouvel utilisateur
-          </Modal.Title>
+      <Modal show={showAddUserForm} onHide={() => setShowAddUserForm(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Add User</Modal.Title>
         </Modal.Header>
-        <Modal.Body className="p-4">
-          <Tabs 
-            defaultActiveKey="basicInfo" 
-            id="add-user-tabs" 
-            className="mb-4 nav-tabs-custom"
-            variant="pills"
-            fill
-          >
-            <Tab eventKey="basicInfo" title={<span><FaUser className="me-2" /> Informations de base</span>}>
-                <Form.Group controlId="formUsername" className="mb-3">
-                  {errors && <div className="alert alert-danger">{errors}</div>}
-                  <Form.Label>Username</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="username"
-                    value={newUser.username}
-                    onChange={handleNewUserChange}
-                    required
-                  />
-                  {newUser.username.trim().length < 6 && (
-                    <Form.Text className="text-danger">Username must be at least 6 characters long.</Form.Text>
-                  )}
-                </Form.Group>
-
-                <Form.Group controlId="formPassword" className="mb-3">
-                  <Form.Label>Password</Form.Label>
-                  <InputGroup className="mb-2">
+        <Modal.Body>
+          <Form onSubmit={handleNewUserSubmit}>
+            <Tabs 
+              defaultActiveKey="basicInfo" 
+              id="add-user-tabs" 
+              className="mb-4 nav-tabs-custom"
+              variant="pills"
+              fill
+            >
+              <Tab eventKey="basicInfo" title={<span><FaUser className="me-2" /> Informations de base</span>}>
+                  <Form.Group controlId="formUsername" className="mb-3">
+                    {errors && <div className="alert alert-danger">{errors}</div>}
+                    <Form.Label>Username</Form.Label>
                     <Form.Control
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      value={newUser.password}
+                      type="text"
+                      name="username"
+                      value={newUser.username}
                       onChange={handleNewUserChange}
                       required
                     />
-                    <Button variant="outline-secondary" onClick={() => setShowPassword(!showPassword)}>
-                      {showPassword ? <FaEyeSlash /> : <FaEye />}
-                    </Button>
-                    <Button
-                      variant="outline-secondary"
-                      onClick={() => setNewUser({ ...newUser, password: generateSecurePassword() })}
-                    >
-                      Generate
-                    </Button>
-                  </InputGroup>
-                  <div className="password-strength mb-2">
-                    <div className="progress">
-                      <div
-                        className={`progress-bar bg-${getPasswordStrengthColor(checkPasswordStrength(newUser.password))}`}
-                        role="progressbar"
-                        style={{ width: `${(checkPasswordStrength(newUser.password) / 6) * 100}%` }}
+                    {newUser.username.trim().length < 6 && (
+                      <Form.Text className="text-danger">Username must be at least 6 characters long.</Form.Text>
+                    )}
+                  </Form.Group>
+
+                  <Form.Group controlId="formPassword" className="mb-3">
+                    <Form.Label>Password</Form.Label>
+                    <InputGroup className="mb-2">
+                      <Form.Control
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        value={newUser.password}
+                        onChange={handleNewUserChange}
+                        required
+                      />
+                      <Button variant="outline-secondary" onClick={() => setShowPassword(!showPassword)}>
+                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                      </Button>
+                      <Button
+                        variant="outline-secondary"
+                        onClick={() => setNewUser({ ...newUser, password: generateSecurePassword() })}
                       >
-                        {getPasswordStrengthText(checkPasswordStrength(newUser.password))}
+                        Generate
+                      </Button>
+                    </InputGroup>
+                    <div className="password-strength mb-2">
+                      <div className="progress">
+                        <div
+                          className={`progress-bar bg-${getPasswordStrengthColor(checkPasswordStrength(newUser.password))}`}
+                          role="progressbar"
+                          style={{ width: `${(checkPasswordStrength(newUser.password) / 6) * 100}%` }}
+                        >
+                          {getPasswordStrengthText(checkPasswordStrength(newUser.password))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Form.Group>
+                  </Form.Group>
 
-                <Form.Group controlId="formGroup" className="mb-3">
-                  <Form.Label>Group</Form.Label>
-                  <Form.Select name="group" value={newUser.group} onChange={handleNewUserChange} required>
-                    <option value="">Select a group</option>
-                    {groups.map((group) => (
-                      <option key={group.id} value={group.id}>
-                        {group.name}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
+                  <Form.Group controlId="formGroup" className="mb-3">
+                    <Form.Label>Group</Form.Label>
+                    <Form.Select name="group" value={newUser.group} onChange={handleNewUserChange} required>
+                      <option value="">Select a group</option>
+                      {groups.map((group) => (
+                        <option key={group.id} value={group.id}>
+                          {group.name}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
 
-                <Form.Group controlId="formPlan" className="mb-3">
-                  <Form.Label>Plan</Form.Label>
-                  <Form.Select name="plan" value={newUser.plan} onChange={handleNewUserChange} required>
-                    <option value="">Select a plan</option>
-                    {plans.map((plan) => (
-                      <option key={plan.id} value={plan.name}>
-                        {plan.name}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
+                  <Form.Group controlId="formPlan" className="mb-3">
+                    <Form.Label>Plan</Form.Label>
+                    <Form.Select name="plan" value={newUser.plan} onChange={handleNewUserChange} required>
+                      <option value="">Select a plan</option>
+                      {plans.map((plan) => (
+                        <option key={plan.id} value={plan.name}>
+                          {plan.name}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
 
-                <Form.Group controlId="formLanguage" className="mb-3">
-                  <Form.Label>Language</Form.Label>
-                  <Form.Control
-                    as="select"
-                    name="language"
-                    value={newUser.language}
-                    onChange={handleNewUserChange}
-                    required
-                  >
-                    <option value="fr">Français</option>
-                    <option value="en">English</option>
-                    <option value="sp">Spanish</option>
-                    <option value="it">Portuguese</option>
-                    <option value="rs">Russian</option>
-                  </Form.Control>
-                </Form.Group>
+                  <Form.Group controlId="formLanguage" className="mb-3">
+                    <Form.Label>Language</Form.Label>
+                    <Form.Control
+                      as="select"
+                      name="language"
+                      value={newUser.language}
+                      onChange={handleNewUserChange}
+                      required
+                    >
+                      <option value="fr">Français</option>
+                      <option value="en">English</option>
+                      <option value="sp">Spanish</option>
+                      <option value="it">Portuguese</option>
+                      <option value="rs">Russian</option>
+                    </Form.Control>
+                  </Form.Group>
 
-                <Form.Group controlId="formStatus" className="mb-3">
-                  <Form.Label>Status</Form.Label>
-                  <Form.Control
-                    as="select"
-                    name="status"
-                    value={newUser.status}
-                    onChange={handleNewUserChange}
-                    required
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Blocked">Blocked</option>
-                    <option value="Blocked In Out">Blocked In Out</option>
-                  </Form.Control>
-                </Form.Group>
+                  <Form.Group controlId="formStatus" className="mb-3">
+                    <Form.Label>Status</Form.Label>
+                    <Form.Control
+                      as="select"
+                      name="status"
+                      value={newUser.status}
+                      onChange={handleNewUserChange}
+                      required
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Blocked">Blocked</option>
+                      <option value="Blocked In Out">Blocked In Out</option>
+                    </Form.Control>
+                  </Form.Group>
 
-                <Form.Group controlId="formCountry" className="mb-3">
-                  <Form.Label>Country</Form.Label>
-                  <Form.Control as="select" name="country" value={newUser.country} onChange={handleNewUserChange}>
-                    <option value="United States/Canada">United States/Canada</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="Australia">Australia</option>
-                    <option value="France">France</option>
-                    <option value="Germany">Germany</option>
-                    <option value="Japan">Japan</option>
-                    <option value="Netherlands">Netherlands</option>
-                    <option value="Spain">Spain</option>
-                    <option value="Sweden">Sweden</option>
-                    <option value="Switzerland">Switzerland</option>
-                    <option value="Ukraine">Ukraine</option>
-                    <option value="United Arab Emirates">United Arab Emirates</option>
-                    <option value="Venezuela">Venezuela</option>
-                    <option value="Vietnam">Vietnam</option>
-                  </Form.Control>
-                </Form.Group>
+                  <Form.Group controlId="formCountry" className="mb-3">
+                    <Form.Label>Country</Form.Label>
+                    <Form.Control as="select" name="country" value={newUser.country} onChange={handleNewUserChange}>
+                      <option value="United States/Canada">United States/Canada</option>
+                      <option value="United Kingdom">United Kingdom</option>
+                      <option value="Australia">Australia</option>
+                      <option value="France">France</option>
+                      <option value="Germany">Germany</option>
+                      <option value="Japan">Japan</option>
+                      <option value="Netherlands">Netherlands</option>
+                      <option value="Spain">Spain</option>
+                      <option value="Sweden">Sweden</option>
+                      <option value="Switzerland">Switzerland</option>
+                      <option value="Ukraine">Ukraine</option>
+                      <option value="United Arab Emirates">United Arab Emirates</option>
+                      <option value="Venezuela">Venezuela</option>
+                      <option value="Vietnam">Vietnam</option>
+                    </Form.Control>
+                  </Form.Group>
 
-                <Form.Group controlId="formDescription" className="mb-3">
-                  <Form.Label>Description</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="description"
-                    value={newUser.description}
-                    onChange={handleNewUserChange}
-                  />
-                </Form.Group>
+                  <Form.Group controlId="formDescription" className="mb-3">
+                    <Form.Label>Description</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="description"
+                      value={newUser.description}
+                      onChange={handleNewUserChange}
+                    />
+                  </Form.Group>
 
-                <Form.Group controlId="formNumberOfSipUsers" className="mb-3">
-                  <Form.Label>Number of SIP Users</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="numberOfSipUsers"
-                    value={newUser.numberOfSipUsers}
-                    onChange={(e) => setNewUser({ ...newUser, numberOfSipUsers: Number.parseInt(e.target.value, 10) })}
-                    min="0"
-                    required
-                  />
-                </Form.Group>
+                  <Form.Group controlId="formNumberOfSipUsers" className="mb-3">
+                    <Form.Label>Number of SIP Users</Form.Label>
+                    <Form.Control
+                      type="number"
+                      name="numberOfSipUsers"
+                      value={newUser.numberOfSipUsers}
+                      onChange={(e) => setNewUser({ ...newUser, numberOfSipUsers: Number.parseInt(e.target.value, 10) })}
+                      min="0"
+                      required
+                    />
+                  </Form.Group>
 
-                <Form.Group controlId="formNumberOfIax" className="mb-3">
-                  <Form.Label>Number of IAX</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="numberOfIax"
-                    value={newUser.numberOfIax}
-                    onChange={handleNewUserChange}
-                    min="0"
-                    required
-                  />
-                </Form.Group>
-              </Tab>
+                  <Form.Group controlId="formNumberOfIax" className="mb-3">
+                    <Form.Label>Number of IAX</Form.Label>
+                    <Form.Control
+                      type="number"
+                      name="numberOfIax"
+                      value={newUser.numberOfIax}
+                      onChange={handleNewUserChange}
+                      min="0"
+                      required
+                    />
+                  </Form.Group>
+                </Tab>
 
-              <Tab eventKey="personalData" title="Personal Data">
-                <Form.Group controlId="formCompany" className="mb-3">
-                  <Form.Label>Company website</Form.Label>
-                  <Form.Control type="text" name="company" value={newUser.company} onChange={handleNewUserChange} />
-                </Form.Group>
+                <Tab eventKey="personalData" title="Personal Data">
+                  <Form.Group controlId="formCompany" className="mb-3">
+                    <Form.Label>Company website</Form.Label>
+                    <Form.Control type="text" name="company" value={newUser.company} onChange={handleNewUserChange} />
+                  </Form.Group>
 
-                <Form.Group controlId="formCompanyName" className="mb-3">
-                  <Form.Label>Company name</Form.Label>
-                  <Form.Control type="text" name="companyn" value={newUser.companyn} onChange={handleNewUserChange} />
-                </Form.Group>
+                  <Form.Group controlId="formCompanyName" className="mb-3">
+                    <Form.Label>Company name</Form.Label>
+                    <Form.Control type="text" name="companyn" value={newUser.companyn} onChange={handleNewUserChange} />
+                  </Form.Group>
 
-                <Form.Group controlId="formCommercialName" className="mb-3">
-                  <Form.Label>Commercial name</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="commercialco"
-                    value={newUser.commercialco}
-                    onChange={handleNewUserChange}
-                  />
-                </Form.Group>
+                  <Form.Group controlId="formCommercialName" className="mb-3">
+                    <Form.Label>Commercial name</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="commercialco"
+                      value={newUser.commercialco}
+                      onChange={handleNewUserChange}
+                    />
+                  </Form.Group>
 
-                <Form.Group controlId="formStateNumber" className="mb-3">
-                  <Form.Label>State number</Form.Label>
-                  <Form.Control type="text" name="state" value={newUser.state} onChange={handleNewUserChange} />
-                </Form.Group>
+                  <Form.Group controlId="formStateNumber" className="mb-3">
+                    <Form.Label>State number</Form.Label>
+                    <Form.Control type="text" name="state" value={newUser.state} onChange={handleNewUserChange} />
+                  </Form.Group>
 
-                <Form.Group controlId="formFirstName" className="mb-3">
-                  <Form.Label>First name</Form.Label>
-                  <Form.Control type="text" name="firstname" value={newUser.firstname} onChange={handleNewUserChange} />
-                </Form.Group>
+                  <Form.Group controlId="formFirstName" className="mb-3">
+                    <Form.Label>First name</Form.Label>
+                    <Form.Control type="text" name="firstname" value={newUser.firstname} onChange={handleNewUserChange} />
+                  </Form.Group>
 
-                <Form.Group controlId="formCity" className="mb-3">
-                  <Form.Label>City</Form.Label>
-                  <Form.Control type="text" name="city" value={newUser.city} onChange={handleNewUserChange} />
-                </Form.Group>
+                  <Form.Group controlId="formCity" className="mb-3">
+                    <Form.Label>City</Form.Label>
+                    <Form.Control type="text" name="city" value={newUser.city} onChange={handleNewUserChange} />
+                  </Form.Group>
 
-                <Form.Group controlId="formAddress" className="mb-3">
-                  <Form.Label>Address</Form.Label>
-                  <Form.Control type="text" name="adresse" value={newUser.adresse} onChange={handleNewUserChange} />
-                </Form.Group>
+                  <Form.Group controlId="formAddress" className="mb-3">
+                    <Form.Label>Address</Form.Label>
+                    <Form.Control type="text" name="adresse" value={newUser.adresse} onChange={handleNewUserChange} />
+                  </Form.Group>
 
-                <Form.Group controlId="formNeighborhood" className="mb-3">
-                  <Form.Label>Neighborhood</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="Neighborhood"
-                    value={newUser.Neighborhood}
-                    onChange={handleNewUserChange}
-                  />
-                </Form.Group>
+                  <Form.Group controlId="formNeighborhood" className="mb-3">
+                    <Form.Label>Neighborhood</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="Neighborhood"
+                      value={newUser.Neighborhood}
+                      onChange={handleNewUserChange}
+                    />
+                  </Form.Group>
 
-                <Form.Group controlId="formZipcode" className="mb-3">
-                  <Form.Label>Zip code</Form.Label>
-                  <Form.Control type="text" name="Zipcode" value={newUser.Zipcode} onChange={handleNewUserChange} />
-                </Form.Group>
+                  <Form.Group controlId="formZipcode" className="mb-3">
+                    <Form.Label>Zip code</Form.Label>
+                    <Form.Control type="text" name="Zipcode" value={newUser.Zipcode} onChange={handleNewUserChange} />
+                  </Form.Group>
 
-                <Form.Group controlId="formPhone" className="mb-3">
-                  <Form.Label>Phone</Form.Label>
-                  <Form.Control type="text" name="Phone" value={newUser.Phone} onChange={handleNewUserChange} />
-                </Form.Group>
+                  <Form.Group controlId="formPhone" className="mb-3">
+                    <Form.Label>Phone</Form.Label>
+                    <Form.Control type="text" name="Phone" value={newUser.Phone} onChange={handleNewUserChange} />
+                  </Form.Group>
 
-                <Form.Group controlId="formMobile" className="mb-3">
-                  <Form.Label>Mobile</Form.Label>
-                  <Form.Control type="text" name="Mobile" value={newUser.Mobile} onChange={handleNewUserChange} />
-                </Form.Group>
+                  <Form.Group controlId="formMobile" className="mb-3">
+                    <Form.Label>Mobile</Form.Label>
+                    <Form.Control type="text" name="Mobile" value={newUser.Mobile} onChange={handleNewUserChange} />
+                  </Form.Group>
 
-                <Form.Group controlId="formEmail" className="mb-3">
-                  <Form.Label>Email</Form.Label>
-                  <Form.Control type="email" name="Email" value={newUser.Email} onChange={handleNewUserChange} />
-                </Form.Group>
+                  <Form.Group controlId="formEmail" className="mb-3">
+                    <Form.Label>Email</Form.Label>
+                    <Form.Control type="email" name="Email" value={newUser.Email} onChange={handleNewUserChange} />
+                  </Form.Group>
 
-                <Form.Group controlId="formEmail2" className="mb-3">
-                  <Form.Label>Email 2</Form.Label>
-                  <Form.Control type="email" name="Email2" value={newUser.Email2} onChange={handleNewUserChange} />
-                </Form.Group>
+                  <Form.Group controlId="formEmail2" className="mb-3">
+                    <Form.Label>Email 2</Form.Label>
+                    <Form.Control type="email" name="Email2" value={newUser.Email2} onChange={handleNewUserChange} />
+                  </Form.Group>
 
-                <Form.Group controlId="formDOC" className="mb-3">
-                  <Form.Label>DOC</Form.Label>
-                  <Form.Control type="text" name="DOC" value={newUser.DOC} onChange={handleNewUserChange} />
-                </Form.Group>
+                  <Form.Group controlId="formDOC" className="mb-3">
+                    <Form.Label>DOC</Form.Label>
+                    <Form.Control type="text" name="DOC" value={newUser.DOC} onChange={handleNewUserChange} />
+                  </Form.Group>
 
-                <Form.Group controlId="formVAT" className="mb-3">
-                  <Form.Label>VAT</Form.Label>
-                  <Form.Control type="text" name="VAT" value={newUser.VAT} onChange={handleNewUserChange} />
-                </Form.Group>
+                  <Form.Group controlId="formVAT" className="mb-3">
+                    <Form.Label>VAT</Form.Label>
+                    <Form.Control type="text" name="VAT" value={newUser.VAT} onChange={handleNewUserChange} />
+                  </Form.Group>
 
-                <Form.Group controlId="formContractValue" className="mb-3">
-                  <Form.Label>Contract value</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="Contractvalue"
-                    value={newUser.Contractvalue}
-                    onChange={handleNewUserChange}
-                  />
-                </Form.Group>
+                  <Form.Group controlId="formContractValue" className="mb-3">
+                    <Form.Label>Contract value</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="Contractvalue"
+                      value={newUser.Contractvalue}
+                      onChange={handleNewUserChange}
+                    />
+                  </Form.Group>
 
-                <Form.Group controlId="formDIST" className="mb-3">
-                  <Form.Label>DIST</Form.Label>
-                  <Form.Control type="text" name="DIST" value={newUser.DIST} onChange={handleNewUserChange} />
-                </Form.Group>
-              </Tab>
+                  <Form.Group controlId="formDIST" className="mb-3">
+                    <Form.Label>DIST</Form.Label>
+                    <Form.Control type="text" name="DIST" value={newUser.DIST} onChange={handleNewUserChange} />
+                  </Form.Group>
+                </Tab>
 
-              <Tab eventKey="supplementaryInfo" title="Supplementary Info">
-                <Form.Group controlId="formTypePaid" className="mb-3">
-                  <Form.Label>Type paid</Form.Label>
-                  <Form.Control as="select" name="typePaid" onChange={handleNewUserChange}>
-                    <option value="Prepaid">Prepaid</option>
-                    <option value="Postpaid">Postpaid</option>
-                  </Form.Control>
-                </Form.Group>
+                <Tab eventKey="supplementaryInfo" title="Supplementary Info">
+                  <Form.Group controlId="formTypePaid" className="mb-3">
+                    <Form.Label>Type paid</Form.Label>
+                    <Form.Control as="select" name="typePaid" onChange={handleNewUserChange}>
+                      <option value="Prepaid">Prepaid</option>
+                      <option value="Postpaid">Postpaid</option>
+                    </Form.Control>
+                  </Form.Group>
 
-                <Form.Group controlId="formCreditNotificationDaily" className="mb-3">
-                  <Form.Label>Credit notification daily</Form.Label>
-                  <Form.Control as="select" name="creditNotificationDaily" onChange={handleNewUserChange}>
-                    <option value="No">No</option>
-                    <option value="Yes">Yes</option>
-                  </Form.Control>
-                </Form.Group>
+                  <Form.Group controlId="formCreditNotificationDaily" className="mb-3">
+                    <Form.Label>Credit notification daily</Form.Label>
+                    <Form.Control as="select" name="creditNotificationDaily" onChange={handleNewUserChange}>
+                      <option value="No">No</option>
+                      <option value="Yes">Yes</option>
+                    </Form.Control>
+                  </Form.Group>
 
-                <Form.Group controlId="formCreditLimit" className="mb-3">
-                  <Form.Label>Credit limit</Form.Label>
-                  <Form.Control type="text" name="creditLimit" onChange={handleNewUserChange} />
-                </Form.Group>
+                  <Form.Group controlId="formCreditLimit" className="mb-3">
+                    <Form.Label>Credit limit</Form.Label>
+                    <Form.Control type="text" name="creditLimit" onChange={handleNewUserChange} />
+                  </Form.Group>
 
-                <Form.Group controlId="formCreditNotification" className="mb-3">
-                  <Form.Label>Credit notification</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="creditNotification"
-                    value={newUser.creditNotification}
-                    onChange={handleNewUserChange}
-                  />
-                </Form.Group>
+                  <Form.Group controlId="formCreditNotification" className="mb-3">
+                    <Form.Label>Credit notification</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="creditNotification"
+                      value={newUser.creditNotification}
+                      onChange={handleNewUserChange}
+                    />
+                  </Form.Group>
 
-                <Form.Group controlId="formServicesEmailNotification" className="mb-3">
-                  <Form.Label>Services email notification</Form.Label>
-                  <Form.Control as="select" name="servicesEmailNotification" onChange={handleNewUserChange}>
-                    <option value="No">No</option>
-                    <option value="Yes">Yes</option>
-                  </Form.Control>
-                </Form.Group>
+                  <Form.Group controlId="formServicesEmailNotification" className="mb-3">
+                    <Form.Label>Services email notification</Form.Label>
+                    <Form.Control as="select" name="servicesEmailNotification" onChange={handleNewUserChange}>
+                      <option value="No">No</option>
+                      <option value="Yes">Yes</option>
+                    </Form.Control>
+                  </Form.Group>
 
-                <Form.Group controlId="formDIDEmailNotification" className="mb-3">
-                  <Form.Label>DID email notification</Form.Label>
-                  <Form.Control as="select" name="DIDEmailNotification" onChange={handleNewUserChange}>
-                    <option value="No">No</option>
-                    <option value="Yes">Yes</option>
-                  </Form.Control>
-                </Form.Group>
+                  <Form.Group controlId="formDIDEmailNotification" className="mb-3">
+                    <Form.Label>DID email notification</Form.Label>
+                    <Form.Control as="select" name="DIDEmailNotification" onChange={handleNewUserChange}>
+                      <option value="No">No</option>
+                      <option value="Yes">Yes</option>
+                    </Form.Control>
+                  </Form.Group>
 
-                <Form.Group controlId="formEnableExpire" className="mb-3">
-                  <Form.Label>Enable expire</Form.Label>
-                  <Form.Control as="select" name="enableExpire" onChange={handleNewUserChange}>
-                    <option value="No">No</option>
-                    <option value="Yes">Yes</option>
-                  </Form.Control>
-                </Form.Group>
+                  <Form.Group controlId="formEnableExpire" className="mb-3">
+                    <Form.Label>Enable expire</Form.Label>
+                    <Form.Control as="select" name="enableExpire" onChange={handleNewUserChange}>
+                      <option value="No">No</option>
+                      <option value="Yes">Yes</option>
+                    </Form.Control>
+                  </Form.Group>
 
-                <Form.Group controlId="formExpirationDate" className="mb-3">
-                  <Form.Label>Expiration Date</Form.Label>
-                  <Form.Control
-                    type="date"
-                    name="expirationDate"
-                    value={newUser.expirationDate}
-                    onChange={handleNewUserChange}
-                  />
-                </Form.Group>
+                  <Form.Group controlId="formExpirationDate" className="mb-3">
+                    <Form.Label>Expiration Date</Form.Label>
+                    <Form.Control
+                      type="date"
+                      name="expirationDate"
+                      value={newUser.expirationDate}
+                      onChange={handleNewUserChange}
+                    />
+                  </Form.Group>
 
-                <Form.Group controlId="formCallLimit" className="mb-3">
-                  <Form.Label>Call limit</Form.Label>
-                  <Form.Control type="text" name="call" value={newUser.call} onChange={handleNewUserChange} />
-                </Form.Group>
+                  <Form.Group controlId="formCallLimit" className="mb-3">
+                    <Form.Label>Call limit</Form.Label>
+                    <Form.Control type="text" name="call" value={newUser.call} onChange={handleNewUserChange} />
+                  </Form.Group>
 
-                <Form.Group controlId="formRecordCallFormat" className="mb-3">
-                  <Form.Label>Record call format</Form.Label>
-                  <Form.Control as="select" name="recordCallFormat" onChange={handleNewUserChange}>
-                    <option value="gsm">gsm</option>
-                    <option value="wav">wav</option>
-                    <option value="wav49">wav49</option>
-                  </Form.Control>
-                </Form.Group>
+                  <Form.Group controlId="formRecordCallFormat" className="mb-3">
+                    <Form.Label>Record call format</Form.Label>
+                    <Form.Control as="select" name="recordCallFormat" onChange={handleNewUserChange}>
+                      <option value="gsm">gsm</option>
+                      <option value="wav">wav</option>
+                      <option value="wav49">wav49</option>
+                    </Form.Control>
+                  </Form.Group>
 
-                <Form.Group controlId="formCallRecording" className="mb-3">
-                  <Form.Label>Call recording</Form.Label>
-                  <Form.Control as="select" name="callRecording" onChange={handleNewUserChange}>
-                    <option value="No">No</option>
-                    <option value="Yes">Yes</option>
-                  </Form.Control>
-                </Form.Group>
+                  <Form.Group controlId="formCallRecording" className="mb-3">
+                    <Form.Label>Call recording</Form.Label>
+                    <Form.Control as="select" name="callRecording" onChange={handleNewUserChange}>
+                      <option value="No">No</option>
+                      <option value="Yes">Yes</option>
+                    </Form.Control>
+                  </Form.Group>
 
-                <Form.Group controlId="formDiskSpace" className="mb-3">
-                  <Form.Label>Disk space</Form.Label>
-                  <Form.Control type="text" name="DIsk" value={newUser.DIsk} onChange={handleNewUserChange} />
-                </Form.Group>
+                  <Form.Group controlId="formDiskSpace" className="mb-3">
+                    <Form.Label>Disk space</Form.Label>
+                    <Form.Control type="text" name="DIsk" value={newUser.DIsk} onChange={handleNewUserChange} />
+                  </Form.Group>
 
-                <Form.Group controlId="formSIPAccountLimit" className="mb-3">
-                  <Form.Label>SIP account limit</Form.Label>
-                  <Form.Control type="text" name="sip" value={newUser.sip} onChange={handleNewUserChange} />
-                </Form.Group>
+                  <Form.Group controlId="formSIPAccountLimit" className="mb-3">
+                    <Form.Label>SIP account limit</Form.Label>
+                    <Form.Control type="text" name="sip" value={newUser.sip} onChange={handleNewUserChange} />
+                  </Form.Group>
 
-                <Form.Group controlId="formCallingCardPIN" className="mb-3">
-                  <Form.Label>CallingCard PIN</Form.Label>
-                  <Form.Control type="text" name="pin" value={newUser.pin} onChange={handleNewUserChange} />
-                </Form.Group>
+                  <Form.Group controlId="formCallingCardPIN" className="mb-3">
+                    <Form.Label>CallingCard PIN</Form.Label>
+                    <Form.Control type="text" name="pin" value={newUser.pin} onChange={handleNewUserChange} />
+                  </Form.Group>
 
-                <Form.Group controlId="formRestriction" className="mb-3">
-                  <Form.Label>Restriction</Form.Label>
-                  <Form.Control
-                    as="select"
-                    name="restriction"
-                    value={newUser.restriction}
-                    onChange={handleNewUserChange}
-                  >
-                    <option value="No">Inactive</option>
-                    <option value="Yes">Cannot call to restricted numbers</option>
-                  </Form.Control>
-                </Form.Group>
-              </Tab>
-            </Tabs>
-            <Button variant="primary" type="submit">
-              Add User
-            </Button>
-          </Form>
-        </Modal.Body>
-      </Modal>
+                  <Form.Group controlId="formRestriction" className="mb-3">
+                    <Form.Label>Restriction</Form.Label>
+                    <Form.Control
+                      as="select"
+                      name="restriction"
+                      value={newUser.restriction}
+                      onChange={handleNewUserChange}
+                    >
+                      <option value="No">Inactive</option>
+                      <option value="Yes">Cannot call to restricted numbers</option>
+                    </Form.Control>
+                  </Form.Group>
+                </Tab>
+              </Tabs>
+              <Button variant="primary" type="submit">
+                Add User
+              </Button>
+            </Form>
+          </Modal.Body>
+        </Modal>
 
       {/* Modal Edit User */}
       <Modal show={showEditUserForm} onHide={() => setShowEditUserForm(false)} size="lg">

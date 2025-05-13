@@ -592,8 +592,8 @@ export default function CallerIDPage() {
       setIsLoading(true)
       try {
         const [callerRes, userRes] = await Promise.all([
-          axios.get("http://localhost:5001/api/admin/CallerId/affiche"),
-          axios.get("http://localhost:5001/api/admin/users/users"),
+          axios.get("http://localhost:5000/api/admin/CallerId/affiche"),
+          axios.get("http://localhost:5000/api/admin/users/users"),
         ])
         setCallerIds(callerRes.data.callerid)
         setUsernames(userRes.data.users)
@@ -639,14 +639,14 @@ export default function CallerIDPage() {
 
     setIsSubmitting(true)
     try {
-      await axios.post("http://localhost:5001/api/admin/CallerId/ajouter", newCallerId)
+      await axios.post("http://localhost:5000/api/admin/CallerId/ajouter", newCallerId)
       setShowAddModal(false)
       setNewCallerId(DEFAULT_NEW_CALLER_ID)
       setSuccessMessage("Caller ID ajouté avec succès.")
       clearMessages()
 
       // Refresh list
-      const res = await axios.get("http://localhost:5001/api/admin/CallerId/affiche")
+      const res = await axios.get("http://localhost:5000/api/admin/CallerId/affiche")
       setCallerIds(res.data.callerid)
     } catch (err) {
       console.error("Error adding caller ID:", err)
@@ -665,7 +665,7 @@ export default function CallerIDPage() {
 
     setIsSubmitting(true)
     try {
-      await axios.put(`http://localhost:5001/api/admin/CallerId/modifier/${editCallerId.id}`, {
+      await axios.put(`http://localhost:5000/api/admin/CallerId/modifier/${editCallerId.id}`, {
         cid: editCallerId.callerid,
         id_user: editCallerId.username,
         name: editCallerId.name,
@@ -678,7 +678,7 @@ export default function CallerIDPage() {
       setSuccessMessage("Caller ID modifié avec succès.")
       clearMessages()
 
-      const res = await axios.get("http://localhost:5001/api/admin/CallerId/affiche")
+      const res = await axios.get("http://localhost:5000/api/admin/CallerId/affiche")
       setCallerIds(res.data.callerid)
     } catch (err) {
       console.error("Error editing caller ID:", err)
@@ -693,11 +693,11 @@ export default function CallerIDPage() {
     if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce Caller ID ?")) return
 
     try {
-      await axios.delete(`http://localhost:5001/api/admin/CallerId/delete/${id}`)
+      await axios.delete(`http://localhost:5000/api/admin/CallerId/delete/${id}`)
       setSuccessMessage("Caller ID supprimé avec succès.")
       clearMessages()
 
-      const res = await axios.get("http://localhost:5001/api/admin/CallerId/affiche")
+      const res = await axios.get("http://localhost:5000/api/admin/CallerId/affiche")
       setCallerIds(res.data.callerid)
     } catch (err) {
       console.error("Error deleting caller ID:", err)

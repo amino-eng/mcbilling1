@@ -39,7 +39,8 @@ import {
   FaUserPlus,
   FaUsers,
   FaFilter,
-  FaSyncAlt
+  FaSyncAlt,
+  FaUser
 } from "react-icons/fa"
 
 // Component definitions to fix ESLint errors
@@ -303,6 +304,7 @@ function Users() {
   // États pour les formulaires
   const [showNewUserForm, setShowNewUserForm] = useState(false)
   const [showEditUserForm, setShowEditUserForm] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
 
   // États pour les toasts
   const [showToast, setShowToast] = useState(false)
@@ -544,6 +546,8 @@ function Users() {
       setCurrentPage(currentPage + 1)
     }
   }
+  
+  // This will be defined after handleNewUserSubmit is initialized
   const prevPage = () => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1)
@@ -671,13 +675,13 @@ function Users() {
       city: newUser.city,
       address: newUser.adresse,
       neighborhood: newUser.Neighborhood,
-      zip_code: newUser.Zipcode,
+      zipcode: newUser.Zipcode,
       phone: newUser.Phone,
       mobile: newUser.Mobile,
       email2: newUser.Email2,
       doc: newUser.DOC,
       vat: newUser.VAT,
-      contract_value: newUser.Contractvalue,
+      contract_value: newUser.Contractvalue || 0,
       dist: newUser.DIST,
       expiration_date: newUser.expirationDate,
       call_limit: newUser.call,
@@ -707,6 +711,7 @@ function Users() {
       console.log("User added:", result)
       fetchUsers()
       setShowNewUserForm(false)
+      setShowAddModal(false)
       setNewUser({
         username: "",
         password: "",
@@ -725,6 +730,10 @@ function Users() {
       showNotification("Erreur lors de l'ajout de l'utilisateur", "danger")
     }
   }
+
+  // Alias for handleNewUserSubmit to use with the add modal
+  const handleAddUserSubmit = handleNewUserSubmit;
+  
   // Soumission du formulaire Edit User
   const handleEditUserSubmit = async (e) => {
     e.preventDefault()
@@ -1104,7 +1113,7 @@ function Users() {
                   <div className="d-flex gap-2">
                     <Button 
                       variant="primary" 
-                      onClick={() => setShowNewUserForm(true)} 
+                      onClick={() => setShowAddModal(true)} 
                       className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
                     >
                       <div className="icon-container">
@@ -1185,6 +1194,7 @@ function Users() {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body className="p-4">
+          <Form onSubmit={handleAddUserSubmit}>
           <Tabs 
             defaultActiveKey="basicInfo" 
             id="add-user-tabs" 

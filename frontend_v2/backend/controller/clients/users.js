@@ -252,7 +252,8 @@ exports.ajouterUtilisateur = (req, res) => {
                   context || "default_context", // context
                   null, // DEFAULTip
                   "RFC2833", // dtmfmode
-                  fromuser || "default_fromuser", // fromdomain || "default_fromdomain", // fromdomain
+                  fromuser || "default_fromuser", // fromuser
+                  fromdomain || "default_fromdomain", // fromdomain
                   insecure || "default_insecure", // insecure
                   language || "en", // language
                   mailbox || "default_mailbox", // mailbox

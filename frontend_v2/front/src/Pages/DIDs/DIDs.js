@@ -469,7 +469,7 @@ function DIDsPage() {
   // Fetch data
   const fetchDIDs = () => {
     setIsLoading(true);
-    axios.get('http://localhost:5001/api/admin/DIDs/afficher')
+    axios.get('http://localhost:5000/api/admin/DIDs/afficher')
       .then((response) => {
         setDids(response.data.dids);
         setFilteredDids(response.data.dids);
@@ -523,7 +523,7 @@ function DIDsPage() {
     
     console.log('Sending DID data:', didData);
     
-    axios.post('http://localhost:5001/api/admin/DIDs/ajouter', didData)
+    axios.post('http://localhost:5000/api/admin/DIDs/ajouter', didData)
       .then((response) => {
         fetchDIDs();
         setNewDid(DEFAULT_NEW_DID);
@@ -560,7 +560,7 @@ function DIDsPage() {
     
     console.log('Updating DID data:', didData);
     
-    axios.put(`http://localhost:5001/api/admin/DIDs/modifier/${editDid.id}`, didData)
+    axios.put(`http://localhost:5000/api/admin/DIDs/modifier/${editDid.id}`, didData)
       .then(() => {
         fetchDIDs();
         setShowEditModal(false);
@@ -580,7 +580,7 @@ function DIDsPage() {
 
   const handleDeleteDid = (didId) => {
     if (window.confirm('Are you sure you want to delete this DID?')) {
-      axios.delete(`http://localhost:5001/api/admin/DIDs/supprimer/${didId}`)
+      axios.delete(`http://localhost:5000/api/admin/DIDs/supprimer/${didId}`)
         .then(() => {
           fetchDIDs();
           setSuccessMessage('DID deleted successfully!');

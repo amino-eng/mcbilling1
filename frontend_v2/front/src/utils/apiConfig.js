@@ -2,9 +2,9 @@
 import axios from 'axios';
 
 // Default API configuration
-let apiConfig = {
-  apiPort: 5002,
-  apiUrl: 'http://localhost:5001/api'
+const apiConfig = {
+  apiPort: 5000, // Changed from 5002 to match backend
+  apiUrl: 'http://localhost:5000/api'
 };
 
 // Function to load API configuration

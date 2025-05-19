@@ -53,7 +53,7 @@ function RestricNumber() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/admin/agent/affiche');
+      const response = await axios.get('http://localhost:5000/api/admin/RestrictNumber/affiche');
       setPhoneData(response.data.restrictions);
     } catch (error) {
       console.error('Erreur lors de la récupération des données:', error);
@@ -66,7 +66,7 @@ function RestricNumber() {
   const fetchUser = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/admin/agent/afficheuserRestrict');
+      const response = await axios.get('http://localhost:5000/api/admin/RestrictNumber/afficheuserRestrict');
       if (Array.isArray(response.data.users)) {
         setUserRestrict(response.data.users);
       }
@@ -102,10 +102,10 @@ function RestricNumber() {
     setLoading(true);
     try {
       if (isEditing) {
-        await axios.put(`http://localhost:5000/api/admin/agent/edit/${currentRestrictionId}`, data);
+        await axios.put(`http://localhost:5000/api/admin/RestrictNumber/edit/${currentRestrictionId}`, data);
         toast.success('Restriction modifiée avec succès !');
       } else {
-        await axios.post('http://localhost:5000/api/admin/agent/add', data);
+        await axios.post('http://localhost:5000/api/admin/RestrictNumber/add', data);
         toast.success('Restriction ajoutée avec succès !');
       }
       resetForm();
@@ -132,7 +132,7 @@ function RestricNumber() {
 
     setLoading(true);
     try {
-      await axios.delete(`http://localhost:5000/api/admin/agent/delete/${restrictionId}`);
+      await axios.delete(`http://localhost:5000/api/admin/RestrictNumber/delete/${restrictionId}`);
       toast.success('Restriction supprimée avec succès !');
       fetchData();
     } catch (error) {
@@ -355,7 +355,7 @@ function RestricNumber() {
                     type="text"
                     placeholder="Numéro"
                     value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+                    onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9+]/g, ''))}
                   />
                 </Form.Group>
               </Col>
@@ -555,7 +555,7 @@ function RestricNumber() {
                               currentItems.map((e, i) => (
                                 <tr key={i}>
                                   <td className="py-3 px-4">{e.agent?.username || <span className="text-muted fst-italic">Non spécifié</span>}</td>
-                                  <td className="py-3 px-4">{e.number}</td>
+                                  <td className="py-3 px-4">{e.number?.replace(/(\d{2})(?=\d)/g, '$1 ') || ''}</td>
                                   <td className="py-3 px-4 text-center">
                                     <DirectionBadge direction={e.direction} />
                                   </td>

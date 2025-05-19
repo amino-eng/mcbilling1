@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { afficher, del, getById,add } = require('../../controller/Billing/Refills');
+const { afficher, del, getById, add, update } = require('../../controller/Billing/Refills');
 
 // Affichage des refills
 router.get('/affiche', afficher);
@@ -12,7 +12,9 @@ router.delete('/delete/:id', del);
 router.get('/get/:id', getById);
 
 // Ajouter un nouveau refill
-
 router.post('/add', add);
+
+// Mettre à jour un refill
+router.put('/update/:id', update);
 
 module.exports = router;

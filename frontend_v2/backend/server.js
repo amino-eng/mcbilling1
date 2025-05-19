@@ -7,7 +7,7 @@ const app = express();
 const port = 5000; // Changed from 5000 to avoid port conflicts
 const {connect} = require("./config/dataBase");
 const routeAuth = require("./route/auth");
-const routeClient=require("./route/client");
+const routeRestrictNumber = require("./route/client/RestrictNumber.js");
 const routeCDR=require("./route/rapport/CDRroute");
 const routeSummaryPerDay=require("./route/rapport/SummaryPerDay");
 const routeSummaryPerMonth=require("./route/rapport/SummaryPerMonth");
@@ -54,7 +54,7 @@ app.use(cors({
 app.use(express.json())
 // Simple route to query the database
 app.use("/api/auth", routeAuth);
-app.use("/api/admin/agent",routeClient)
+app.use("/api/admin/RestrictNumber", routeRestrictNumber);
 app.use("/api/admin/CDR",routeCDR)
 app.use("/api/admin/SummaryPerDay",routeSummaryPerDay)
 app.use("/api/admin/SummaryPerMonth",routeSummaryPerMonth)

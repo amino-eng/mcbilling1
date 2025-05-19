@@ -125,54 +125,6 @@ exports.modifier = async (req, res) => {
   }
 };
 
-exports.bulkUpdate = (req, res) => {
-  const { updates } = req.body;
-  
-  if (!updates || !Array.isArray(updates) || updates.length === 0) {
-    return res.status(400).json({ error: "Valid updates array is required" });
-  }
-
-  // Use a transaction to ensure all updates are applied or none
-  connection.beginTransaction(err => {
-    if (err) return handleDatabaseError(res, err);
-
-    const updatePromises = updates.map(update => {
-      return new Promise((resolve, reject) => {
-        const { id, field, value } = update;
-        
-        if (!id || !field) {
-          reject(new Error("Each update must include id and field"));
-          return;
-        }
-
-        const query = `UPDATE pkg_queue_member SET ${field} = ? WHERE id = ?`;
-        connection.query(query, [value, id], (err, result) => {
-          if (err) reject(err);
-          else resolve(result);
-        });
-      });
-    });
-
-    Promise.all(updatePromises)
-      .then(results => {
-        connection.commit(err => {
-          if (err) {
-            connection.rollback(() => {
-              handleDatabaseError(res, err);
-            });
-            return;
-          }
-          res.json({ message: "Bulk update successful", updatedCount: results.length });
-        });
-      })
-      .catch(error => {
-        connection.rollback(() => {
-          handleDatabaseError(res, error);
-        });
-      });
-  });
-};
-
 exports.del = (req, res) => {
   const memberId = req.params.id;
 
@@ -186,4 +138,14 @@ exports.del = (req, res) => {
     if (result.affectedRows === 0) return res.status(404).json({ message: "Queue Member not found" });
     res.status(200).json({ message: "Queue Member deleted successfully" });
   });
+};
+
+module.exports = {
+  handleDatabaseError,
+  getQueues: exports.getQueues,
+  getSIPUsers: exports.getSIPUsers,
+  afficher: exports.afficher,
+  ajouter: exports.ajouter,
+  modifier: exports.modifier,
+  del: exports.del
 };

@@ -132,49 +132,54 @@ function EmptyState() {
 
 // Tariffs Table Component
 function TariffsTableComponent({ tariffs, onEdit, onDelete, isLoading }) {
-  if (isLoading) {
-    return (
-      <div className="text-center py-5">
-        <Spinner animation="border" variant="primary" />
-        <p className="mt-2 text-muted">Chargement des tarifs...</p>
-      </div>
-    )
-  }
-
-  if (tariffs.length === 0) {
-    return <EmptyState />
-  }
-
   return (
-    <div className="border rounded overflow-hidden">
-      <Table hover className="mb-0">
-        <thead className="bg-light">
+    <Table striped hover responsive className="mb-0">
+      <thead className="bg-light">
+        <tr>
+          <th>Prefix</th>
+          <th>Destination</th>
+          <th>Sell Price</th>
+          <th>Initial Block</th>
+          <th>Billing Block</th>
+          <th>Trunk Groups</th>
+          <th>Plan</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {isLoading ? (
           <tr>
-            <th>Préfixe</th>
-            <th>Destination</th>
-            <th>Plan</th>
-            <th>Tarif</th>
-            <th>Actions</th>
+            <td colSpan={8} className="text-center py-4">
+              <Spinner animation="border" />
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {tariffs.map((tariff) => (
-            <tr key={tariff.id} className="plan-row">
+        ) : tariffs.length > 0 ? (
+          tariffs.map((tariff) => (
+            <tr key={tariff.id}>
               <td>{tariff.prefix}</td>
               <td>{tariff.destination}</td>
-              <td>{tariff.plan}</td>
-              <td>{tariff.sellrate}</td>
+              <td>{tariff.sell_price || '-'}</td>
+              <td>{tariff.initial_block || '-'}</td>
+              <td>{tariff.billing_block || '-'}</td>
+              <td>{tariff.trunk_group_name || '-'}</td>
+              <td>{tariff.plan || '-'}</td>
               <td>
-                <ActionButtons
-                  onEdit={() => onEdit(tariff)}
-                  onDelete={() => onDelete(tariff.id)}
+                <ActionButtons 
+                  onEdit={() => onEdit(tariff)} 
+                  onDelete={() => onDelete(tariff.id)} 
                 />
               </td>
             </tr>
-          ))}
-        </tbody>
-      </Table>
-    </div>
+          ))
+        ) : (
+          <tr>
+            <td colSpan={8}>
+              <EmptyState />
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </Table>
   )
 }
 

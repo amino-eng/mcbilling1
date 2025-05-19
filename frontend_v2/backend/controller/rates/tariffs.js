@@ -5,6 +5,9 @@ exports.afficher = (req, res) => {
     const query = `
     SELECT 
       r.*, 
+      r.rateinitial AS sell_price,
+      r.initblock AS initial_block,
+      r.billingblock AS billing_block,
       p.name AS plan, 
       pr.destination AS destination, 
       pr.prefix AS prefix,
@@ -14,6 +17,7 @@ exports.afficher = (req, res) => {
     LEFT JOIN pkg_plan AS p ON r.id_plan = p.id
     LEFT JOIN pkg_prefix AS pr ON r.id_prefix = pr.id
     LEFT JOIN pkg_trunk_group AS tg ON r.id_trunk_group = tg.id
+    ORDER BY r.rateinitial, r.initblock, r.billingblock
   `;
   
   

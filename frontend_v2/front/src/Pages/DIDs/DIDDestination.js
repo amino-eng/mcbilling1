@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
-import { Table, Container, Alert, Button, Form, Dropdown, InputGroup, FormControl, Card, Badge, Spinner, Row, Col } from 'react-bootstrap';
+import { Table, Container, Alert, Button, Form, Dropdown, InputGroup, FormControl, Card, Badge, Spinner, Row, Col, Modal } from 'react-bootstrap';
 import {
   FaCheckCircle,
   FaTimesCircle,
@@ -10,6 +10,7 @@ import {
   FaTrashAlt,
   FaPhoneAlt,
   FaGlobe,
+  FaEdit
 } from 'react-icons/fa';
 import ReactPaginate from 'react-paginate';
 
@@ -28,6 +29,7 @@ const App = () => {
   const [user, setUser] = useState([]);
   const [sip, setSip] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [didsList, setDidsList] = useState([]);
   const apiUrl = 'http://localhost:5000/api/admin/DIDDestination/affiche';
 
   const [newDidData, setNewDidData] = useState({
@@ -40,6 +42,8 @@ const App = () => {
   });
 
   const [isAdding, setIsAdding] = useState(false);
+
+  const [editingDid, setEditingDid] = useState(null);
 
   const fetchSipUser = () => {
     axios.get("http://localhost:5000/api/admin/SIPUsers/nom")
@@ -80,6 +84,16 @@ const App = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fetchDIDsList = () => {
+    axios.get("http://localhost:5000/api/admin/DIDDestination/getDIDs")
+      .then((response) => {
+        setDidsList(response.data.dids);
+      })
+      .catch((err) => {
+        console.error('Error fetching DIDs list:', err);
+      });
   };
 
   const handleSearch = (e) => {
@@ -160,21 +174,38 @@ const App = () => {
     }
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer cet élément?")) {
-      setDids((prevDids) => prevDids.filter((did) => did.id !== id));
-      setFilteredDids((prevDids) => prevDids.filter((did) => did.id !== id));
-      setSuccessMessage('DID supprimé avec succès.');
-      setTimeout(() => setSuccessMessage(''), 3000);
+  const handleDelete = (didNumber) => {
+    if (!didNumber) {
+      setErrorMessage('Erreur: Numéro DID manquant');
+      return;
+    }
+    
+    if (window.confirm(`Supprimer le DID ${didNumber} ?`)) {
+      axios.delete(`http://localhost:5000/api/admin/DIDDestination/deleteByDid/${didNumber}`)
+        .then(() => {
+          setSuccessMessage(`DID ${didNumber} supprimé`);
+          fetchDIDs();
+        })
+        .catch(err => {
+          setErrorMessage(`Erreur: ${err.response?.data?.message || 'Échec de la suppression'}`);
+        });
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewDidData({
-      ...newDidData,
-      [name]: value,
-    });
+    if (name === 'sipUser') {
+      setNewDidData({
+        ...newDidData,
+        destination: value,
+        [name]: value
+      });
+    } else {
+      setNewDidData({
+        ...newDidData,
+        [name]: value
+      });
+    }
   };
   
   const handleAddUser = () => {
@@ -183,7 +214,7 @@ const App = () => {
       username: newDidData.username,
       priority: newDidData.priority,
       destinationType: newDidData.destinationType,
-      destination: newDidData.sipUser || '',
+      destination: newDidData.destination,
     };
 
     console.log('Formatted data being sent to API:', formattedData);
@@ -215,7 +246,45 @@ const App = () => {
         setIsAdding(false);
       });
   };
-    
+
+  const handleUpdate = async () => {
+    try {
+      // Prepare data matching backend expectations
+      const updateData = {
+        did: editingDid.did,
+        username: editingDid.username || editingDid.sipUser || '',
+        destinationType: editingDid.destinationType || 1,
+        priority: editingDid.priority || 1,
+        destination: editingDid.destination || ''
+      };
+      
+      console.log('Sending update data:', updateData);
+      
+      const response = await axios.put(
+        'http://localhost:5000/api/admin/DIDDestination/update', 
+        updateData
+      );
+      setSuccessMessage(response.data.message);
+      fetchDIDs();
+      setEditingDid(null);
+    } catch (err) {
+      console.error('Update error:', err.response?.data);
+      setErrorMessage(err.response?.data?.error || 'Erreur lors de la modification');
+    }
+  };
+
+  const handleEditClick = (did) => {
+    setEditingDid({
+      did: did.did,
+      username: did.username || '',
+      destinationType: did.Calltype || 1,
+      priority: did.Priority || 1,
+      destination: did.destination || '',
+      status: did.status || 'Active',
+      sipUser: did.sipUser || ''
+    });
+  };
+
   const pageCount = Math.ceil(filteredDids.length / ITEMS_PER_PAGE);
   const offset = currentPage * ITEMS_PER_PAGE;
   const currentDIDs = filteredDids.slice(offset, offset + ITEMS_PER_PAGE);
@@ -226,8 +295,9 @@ const App = () => {
 
   useEffect(() => {
     fetchDIDs();
-    fetchSipUser();
     fetchUser();
+    fetchSipUser();
+    fetchDIDsList();
   }, []);
 
   useEffect(() => {
@@ -435,12 +505,21 @@ const App = () => {
                 <td>{new Date(did.CreationDate).toLocaleString()}</td>
                 <td className="text-center">
                   <Button 
+                    variant="primary" 
+                    size="sm" 
+                    onClick={() => handleEditClick(did)}
+                    className="me-2"
+                    title="Modifier"
+                  >
+                    <FaEdit />
+                  </Button>
+                  <Button 
                     variant="danger" 
                     size="sm" 
-                    onClick={() => onDelete(did.id)}
-                    className="action-btn rounded-pill d-inline-flex align-items-center gap-1"
+                    onClick={() => handleDelete(did.did)}
+                    title="Supprimer"
                   >
-                    <FaTrashAlt size={12} className="btn-icon" /> Delete
+                    <FaTrashAlt />
                   </Button>
                 </td>
               </tr>
@@ -525,10 +604,11 @@ const App = () => {
                                 value={newDidData.did}
                                 onChange={handleInputChange}
                                 className="shadow-sm"
+                                required
                               >
                                 <option value="">Select DID</option>
-                                {dids.map((did) => (
-                                  <option key={did.id} value={did.id}>
+                                {didsList.map((did) => (
+                                  <option key={did.did} value={did.did}>
                                     {did.did}
                                   </option>
                                 ))}
@@ -637,6 +717,122 @@ const App = () => {
                       </Form>
                     </Card.Body>
                   </Card>
+                )}
+
+                {editingDid && (
+                  <Modal show={true} onHide={() => setEditingDid(null)} size="lg">
+                    <Modal.Header closeButton>
+                      <Modal.Title>Modifier DID {editingDid.did}</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                      <Card className="shadow-sm">
+                        <Card.Body>
+                          <Row>
+                            <Col md={6}>
+                              <Form.Group className="mb-3">
+                                <Form.Label>DID</Form.Label>
+                                <Form.Control 
+                                  value={editingDid.did} 
+                                  disabled
+                                />
+                              </Form.Group>
+                              
+                              <Form.Group className="mb-3">
+                                <Form.Label>Username</Form.Label>
+                                <Form.Control
+                                  as="select"
+                                  value={editingDid.username}
+                                  onChange={(e) => setEditingDid({...editingDid, username: e.target.value})}
+                                >
+                                  <option value="">Select Username</option>
+                                  {user.map((u) => (
+                                    <option key={u.id} value={u.username}>
+                                      {u.username}
+                                    </option>
+                                  ))}
+                                </Form.Control>
+                              </Form.Group>
+                              
+                              <Form.Group className="mb-3" controlId="formCallType">
+                              <Form.Label>Call Type</Form.Label>
+                              <Form.Control
+                                as="select"
+                                name="destinationType"
+                                value={newDidData.destinationType}
+                                onChange={handleInputChange}
+                                className="shadow-sm"
+                              >
+                                <option value="1">SIP</option>
+                                <option value="0">Call to PSTN</option>
+                                <option value="2">IVR</option>
+                                <option value="3">Calling Card</option>
+                                <option value="4">Direct Extension</option>
+                                <option value="5">Cid Callback</option>
+                                <option value="6">0800 Callback</option>
+                                <option value="7">Queue</option>
+                                <option value="8">Sip Group</option>
+                                <option value="9">Custom</option>
+                                <option value="10">Context</option>
+                                <option value="11">Multiples IPs</option>
+                              </Form.Control>
+                            </Form.Group>
+                            </Col>
+                            
+                            <Col md={6}>
+                              <Form.Group className="mb-3">
+                                <Form.Label>Priorité</Form.Label>
+                                <Form.Control
+                                  type="number"
+                                  min="1"
+                                  max="5"
+                                  value={editingDid.priority}
+                                  onChange={(e) => setEditingDid({...editingDid, priority: e.target.value})}
+                                />
+                              </Form.Group>
+                              
+                              <Form.Group className="mb-3" controlId="formSipUser">
+                              <Form.Label>SIP User</Form.Label>
+                              <Form.Control
+                                as="select"
+                                name="sipUser"
+                                value={newDidData.sipUser}
+                                onChange={handleInputChange}
+                                className="shadow-sm"
+                              >
+                                <option value="">Select SIP User</option>
+                                {sip.map((sipUser) => (
+                                  <option key={sipUser.id} value={sipUser.id}>
+                                    {sipUser.name}
+                                  </option>
+                                ))}
+                              </Form.Control>
+                            </Form.Group>
+                              
+                              <Form.Group className="mb-3">
+                                <Form.Label>Statut</Form.Label>
+                                <Form.Control
+                                  as="select"
+                                  value={editingDid.status}
+                                  onChange={(e) => setEditingDid({...editingDid, status: e.target.value})}
+                                >
+                                  <option value="Active">Active</option>
+                                  <option value="Inactive">Inactive</option>
+                                </Form.Control>
+                              </Form.Group>
+                            </Col>
+                          </Row>
+                        </Card.Body>
+                        <Card.Footer className="d-flex justify-content-end gap-2">
+                          <Button variant="secondary" onClick={() => setEditingDid(null)}>
+                            Annuler
+                          </Button>
+                          <Button variant="primary" onClick={handleUpdate}>
+                            Enregistrer
+                          </Button>
+                        </Card.Footer>
+                      </Card>
+                    </Modal.Body>
+                  </Modal>
                 )}
 
                 <div className="table-responsive shadow-sm rounded overflow-hidden">

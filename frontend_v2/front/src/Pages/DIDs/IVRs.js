@@ -479,7 +479,7 @@ function IvrTable() {
   // API endpoints
   const apiUrl = 'http://localhost:5000/api/admin/IVRs/affiche';
   const addIvrUrl = 'http://localhost:5000/api/admin/IVRs/add';
-  const editIvrUrl = 'http://localhost:5000/api/admin/IVRs/update';
+  const editIvrUrl = 'http://localhost:5000/api/admin/IVRs/modify';
   const deleteIvrUrl = 'http://localhost:5000/api/admin/IVRs/delete';
 
   const fetchUsers = () => {
@@ -587,6 +587,12 @@ function IvrTable() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    if (!newIvr.userId || !newIvr.name) {
+      setErrorMessage('User ID and Name are required');
+      setIsSubmitting(false);
+      return;
+    }
+
     const ivrData = {
       id_user: newIvr.userId,
       name: newIvr.name,
@@ -629,7 +635,7 @@ function IvrTable() {
   const handleDeleteIvr = async (ivrId) => {
     if (window.confirm('Are you sure you want to delete this IVR?')) {
       try {
-        await axios.delete(`http://localhost:5001/api/admin/IVRs/delete/${ivrId}`);
+        await axios.delete(`http://localhost:5000/api/admin/IVRs/delete/${ivrId}`);
         const response = await axios.get(apiUrl);
         setIvrs(response.data.ivrs);
         setSuccessMessage('IVR deleted successfully');

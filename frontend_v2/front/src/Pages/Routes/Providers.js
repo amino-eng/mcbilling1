@@ -24,6 +24,8 @@ import {
   BiXCircle
 } from "react-icons/bi";
 import { FaUserTie } from "react-icons/fa";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Constants
 const ITEMS_PER_PAGE = 10;
@@ -263,11 +265,11 @@ const AddProviderModal = ({ show, onHide, onProviderAdded, providerToEdit, setPr
     e.preventDefault();
     setLoading(true);
     setError('');
-
+    
     try {
       const url = providerToEdit 
-        ? `http://localhost:5000/api/admin/providers/modifier/${providerToEdit.id}` 
-        : 'http://localhost:5000/api/admin/providers/ajouter';
+        ? `/admin/providers/modifier/${providerToEdit.id}` 
+        : '/admin/providers/ajouter';
       
       const method = providerToEdit ? 'put' : 'post';
       
@@ -278,11 +280,32 @@ const AddProviderModal = ({ show, onHide, onProviderAdded, providerToEdit, setPr
         credit_control: formData.credit_control === 'yes' ? 1 : 0
       });
 
-      onProviderAdded();
-      onHide();
+      if (response.data.success) {
+        toast.success(response.data.message, {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true
+        });
+        onProviderAdded();
+        onHide();
+      }
     } catch (error) {
       console.error("Error saving provider:", error);
-      setError(error.response?.data?.message || 'Failed to save provider');
+      const errorMessage = error.response?.data?.message || 
+                         error.response?.data?.error || 
+                         'Une erreur est survenue';
+      setError(errorMessage);
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true
+      });
     } finally {
       setLoading(false);
     }
@@ -401,7 +424,7 @@ const BatchUpdateModal = ({ show, onHide, onBatchUpdate, providers }) => {
 
     try {
       const response = await axios.put(
-        'http://localhost:5000/api/admin/providers/batch-update', 
+        '/admin/providers/batch-update', 
         formData
       );
 
@@ -537,12 +560,12 @@ const Providers = () => {
   const fetchProviders = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get('http://localhost:5000/api/admin/providers/afficher');
+      const response = await axios.get('/admin/providers/afficher');
       setProviders(response.data.providers);
       setFilteredProviders(response.data.providers);
     } catch (error) {
       console.error("Error fetching providers:", error);
-      setError('Failed to fetch providers');
+      setError("Error fetching providers");
     } finally {
       setIsLoading(false);
     }
@@ -552,12 +575,12 @@ const Providers = () => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce provider?')) {
       try {
         setIsLoading(true);
-        await axios.delete(`http://localhost:5000/api/admin/providers/supprimer/${id}`);
+        await axios.delete(`/admin/providers/supprimer/${id}`);
         setSuccessMessage('Provider supprimé avec succès');
         fetchProviders();
       } catch (error) {
         console.error("Error deleting provider:", error);
-        setError(error.response?.data?.message || 'Failed to delete provider');
+        setError("Error deleting provider");
       } finally {
         setIsLoading(false);
       }

@@ -10,8 +10,8 @@ import { FaCheckCircle, FaTimesCircle, FaEdit, FaSearch, FaDownload, FaPlusCircl
 const ITEMS_PER_PAGE = 10;
 
 const DEFAULT_RATE_DATA = {
-  username: '',
-  prefix: '',
+  id_user: '',
+  id_prefix: '',
   destination: '',
   rateinitial: '',
   initblock: '',
@@ -218,7 +218,9 @@ function RateModal({
   onSubmit,
   modalData,
   onInputChange,
-  isSubmitting
+  isSubmitting,
+  usernames,
+  prefixes
 }) {
   return (
     <Modal show={show} onHide={onHide} centered>
@@ -227,32 +229,37 @@ function RateModal({
       </Modal.Header>
       <Modal.Body>
         <Form onSubmit={onSubmit}>
-          <Row className="mb-3">
-            <Col md={6}>
-              <Form.Group controlId="username">
-                <Form.Label>Username</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="username"
-                  value={modalData.username}
-                  onChange={onInputChange}
-                  required
-                />
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group controlId="prefix">
-                <Form.Label>Prefix</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="prefix"
-                  value={modalData.prefix}
-                  onChange={onInputChange}
-                  required
-                />
-              </Form.Group>
-            </Col>
-          </Row>
+          <Form.Group className="mb-3">
+            <Form.Label>Username</Form.Label>
+            <Form.Select 
+              name="id_user" 
+              value={modalData.id_user || ''}
+              onChange={onInputChange}
+              required
+            >
+              <option value="">Select a user</option>
+              {usernames.map(user => (
+                <option key={user.id} value={user.id}>{user.username}</option>
+              ))}
+            </Form.Select>
+          </Form.Group>
+          
+          <Form.Group className="mb-3">
+            <Form.Label>Prefix</Form.Label>
+            <Form.Select 
+              name="id_prefix" 
+              value={modalData.id_prefix || ''}
+              onChange={onInputChange}
+              required
+            >
+              <option value="">Select a prefix</option>
+              {prefixes.map(prefix => (
+                <option key={prefix.id} value={prefix.id}>
+                  {prefix.prefix} - {prefix.destination}
+                </option>
+              ))}
+            </Form.Select>
+          </Form.Group>
 
           <Row className="mb-3">
             <Col md={6}>
@@ -332,14 +339,16 @@ function RateModal({
 // Main Component
 function UserCustomRates() {
   const [userRates, setUserRates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalData, setModalData] = useState(DEFAULT_RATE_DATA);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [usernames, setUsernames] = useState([]);
+  const [prefixes, setPrefixes] = useState([]);
 
   const fetchUserRates = () => {
     setLoading(true);
@@ -414,8 +423,28 @@ function UserCustomRates() {
     setCurrentPage(selected);
   };
 
+  const fetchUsernames = async () => {
+    try {
+      const response = await axios.get('/rates/usernames');
+      setUsernames(response.data.usernames);
+    } catch (err) {
+      console.error('Error fetching usernames:', err);
+    }
+  };
+
+  const fetchPrefixes = async () => {
+    try {
+      const response = await axios.get('/rates/prefixes');
+      setPrefixes(response.data.prefixes);
+    } catch (err) {
+      console.error('Error fetching prefixes:', err);
+    }
+  };
+
   useEffect(() => {
     fetchUserRates();
+    fetchUsernames();
+    fetchPrefixes();
   }, []);
 
   // Filter rates based on search term
@@ -539,6 +568,8 @@ function UserCustomRates() {
         modalData={modalData}
         onInputChange={handleInputChange}
         isSubmitting={isSubmitting}
+        usernames={usernames}
+        prefixes={prefixes}
       />
     </div>
   );

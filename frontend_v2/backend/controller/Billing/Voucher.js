@@ -2,7 +2,7 @@ const connection = require('../../config/database');
 
 // Display all vouchers
 const afficher = (req, res) => {
-    connection.query('SELECT * FROM pkg_voucher', (error, results) => {
+    connection.query('SELECT * FROM pkg_voucher ORDER BY creationdate DESC', (error, results) => {
         if (error) return res.status(500).json({ error });
         res.json({ vouchers: results });
     });
@@ -25,10 +25,39 @@ const afficherPlans = (req, res) => {
 // Add a new voucher
 const ajouter = (req, res) => {
     const { credit, plan, language, prefix_rules, quantity, description } = req.body;
-    connection.query('INSERT INTO pkg_voucher (credit, plan, language, prefix_rules, quantity, description) VALUES (?, ?, ?, ?, ?, ?)', 
-    [credit, plan, language, prefix_rules, quantity, description], 
-    (error, results) => {
-        if (error) return res.status(500).json({ error });
+    console.log('Adding voucher with data:', req.body);
+    
+    if (!credit || !plan || !quantity) {
+        console.error('Missing required fields');
+        return res.status(400).json({ 
+            error: 'Missing required fields',
+            details: { 
+                received: req.body,
+                required: ['credit', 'plan', 'quantity']
+            }
+        });
+    }
+    
+    const sql = 'INSERT INTO pkg_voucher (credit, plan_id, language, prefix_rules, quantity, description) VALUES (?, ?, ?, ?, ?, ?)';
+    const values = [credit, plan, language, prefix_rules, quantity, description];
+    
+    console.log('Executing SQL:', sql, 'with values:', values);
+    
+    connection.query(sql, values, (error, results) => {
+        if (error) {
+            console.error('Database error details:', {
+                message: error.message,
+                code: error.code,
+                sqlState: error.sqlState,
+                sqlMessage: error.sqlMessage,
+                sql: error.sql
+            });
+            return res.status(500).json({ 
+                error: 'Database operation failed',
+                details: error.message,
+                code: error.code
+            });
+        }
         res.status(201).json({ id: results.insertId });
     });
 };
@@ -46,10 +75,16 @@ const del = (req, res) => {
 const modifier = (req, res) => {
     const { id } = req.params;
     const { credit, plan, language, prefix_rules, quantity, description } = req.body;
-    connection.query('UPDATE pkg_voucher SET credit = ?, plan = ?, language = ?, prefix_rules = ?, quantity = ?, description = ? WHERE id = ?', 
+    connection.query('UPDATE pkg_voucher SET credit = ?, plan_id = ?, language = ?, prefix_rules = ?, quantity = ?, description = ? WHERE id = ?', 
     [credit, plan, language, prefix_rules, quantity, description, id], 
     (error) => {
-        if (error) return res.status(500).json({ error });
+        if (error) {
+            console.error('Database error:', error);
+            return res.status(500).json({ 
+                error: 'Database error', 
+                details: error.message 
+            });
+        }
         res.status(204).send();
     });
 };

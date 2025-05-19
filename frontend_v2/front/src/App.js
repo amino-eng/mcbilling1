@@ -41,7 +41,7 @@ import CallArchive from './Pages/Reports/CallArchive';
 import ActivityDash from './Pages/Dashboard/ActivityDash';
 import RechargeHistory from './Pages/Dashboard/RechargeHistory';
 import Profile from './components/UserProfile/profile';
-import RestricNumber from './Pages/clients/RestricNumber';
+import RestrictNumber from './Pages/clients/RestrictNumber';
 import DIDHistory from './Pages/DIDs/DIDHistory';
 import Refills from './Pages/Billing/Refills';
 import PaymentMethods from './Pages/Billing/PaymentMethods';
@@ -141,7 +141,7 @@ function AppContent() {
     }
     
     // Use the correct API endpoint based on the API config
-    const apiUrl = localStorage.getItem('apiUrl') || 'http://localhost:5001/api';
+    const apiUrl = localStorage.getItem('apiUrl') || 'http://localhost:5000/api';
     
     // Temporarily disable data fetching to prevent 404 errors
     setData([]);
@@ -252,10 +252,10 @@ function AppContent() {
         )
       } />
       
-      <Route path="/clients/RestricNumber" element={
+      <Route path="/clients/RestrictNumber" element={
         isAuthenticated ? (
           <Layout user={user}>
-            <RestricNumber />
+            <RestrictNumber />
           </Layout>
         ) : (
           <Navigate to="/login" replace />

@@ -20,7 +20,7 @@ const menuItems = {
     { path: "/clients/Users", icon: "bi-people", label: "Users" },
     { path: "/clients/Iax", icon: "bi-building", label: "Iax" },
     { path: "/clients/SipUser", icon: "bi-telephone-forward", label: "SIP Users" },
-    { path: "/clients/RestricNumber", icon: "bi-ban", label: "RestricNumber" }
+    { path: "/clients/RestrictNumber", icon: "bi-ban", label: "RestricNumber" }
   ],
   Billing: [
     { path: "/Billing/Refills", icon: "bi-cash-stack", label: "Refills" },

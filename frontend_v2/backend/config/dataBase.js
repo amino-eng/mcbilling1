@@ -1,22 +1,27 @@
+const mysql = require("mysql2");
+const config = {
+  host: '213.32.34.34',
+  user: 'vicidial2',
+  password: 'vicidial2',
+  database: 'mbilling',
+  port: 3306,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+};
 
-const mysql =require("mysql2")
-// Database connection configuration
-  
-    const connection = mysql.createConnection({
-        host: '213.32.34.34',  
-        user: 'vicidial2',      
-        password: 'vicidial2', 
-        database: 'mbilling',   
-        port:3306
-           
-      });
-    
-    connection.connect((err) => {
-        if (err) {
-          console.error('Error connecting to the database:', err.stack);
-          return;
-        }
-        console.log('Connected to the database');
-      });
-    
-module.exports =connection
+// Create connection pool instead of single connection
+const pool = mysql.createPool(config);
+
+// Verify connection
+pool.getConnection((err, connection) => {
+  if (err) {
+    console.error('Database connection failed:', err);
+    process.exit(1); // Exit if can't connect
+  } else {
+    console.log('Successfully connected to database');
+    connection.release();
+  }
+});
+
+module.exports = pool;

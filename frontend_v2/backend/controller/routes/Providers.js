@@ -26,24 +26,37 @@ exports.afficher = (req, res) => {
 
 // Add a new provider
 exports.ajouter = (req, res) => {
-  const { name, creationdate, description, credit, credit_control } = req.body;
-  let crd=0
-if(credit_control=="yes"){
-  crd=1
-} 
+  const { provider_name, creationdate, description, credit, credit_control } = req.body;
+  
+  if (!provider_name) {
+    return res.status(400).json({ 
+      success: false,
+      error: "Le nom du provider est requis",
+      message: "Veuillez fournir un nom pour le provider" 
+    });
+  }
+  
+  let crd = credit_control === 1 ? 1 : 0;
 
   const query = `
     INSERT INTO pkg_provider (provider_name, creationdate, description, credit, credit_control) 
-    VALUES (?, ?, ?, ?,?)
-  `;
+    VALUES (?, ?, ?, ?, ?)`;
 
-  connection.query(query, [name, creationdate, description, credit, crd], (error, results) => {
+  connection.query(query, [provider_name, creationdate, description, credit, crd], (error, results) => {
     if (error) {
       console.error("Erreur lors de l'ajout du provider:", error);
-      return res.status(500).json({ error: "Erreur de base de données", details: error.message });
+      return res.status(500).json({ 
+        success: false,
+        error: "Erreur lors de l'ajout du provider",
+        message: "Une erreur est survenue lors de la création du provider" 
+      });
     }
 
-    res.status(201).json({ message: "Provider ajouté avec succès", id: results.insertId });
+    res.status(201).json({ 
+      success: true,
+      message: `Provider ${provider_name} a été créé avec succès`,
+      id: results.insertId 
+    });
   });
 };
 
@@ -87,6 +100,52 @@ exports.batchUpdate = (req, res) => {
     res.status(200).json({ 
       message: `Successfully updated ${results.affectedRows} providers`,
       updatedCount: results.affectedRows
+    });
+  });
+};
+
+// Update single provider
+exports.modifier = (req, res) => {
+  const providerId = req.params.id;
+  const { provider_name, creationdate, description, credit, credit_control } = req.body;
+  
+  if (!provider_name) {
+    return res.status(400).json({ 
+      success: false,
+      error: "Le nom du provider est requis",
+      message: "Veuillez fournir un nom pour le provider" 
+    });
+  }
+  
+  let crd = credit_control === 1 ? 1 : 0;
+
+  const query = `
+    UPDATE pkg_provider 
+    SET provider_name = ?, creationdate = ?, description = ?, credit = ?, credit_control = ?
+    WHERE id = ?
+  `;
+
+  connection.query(query, [provider_name, creationdate, description, credit, crd, providerId], (error, results) => {
+    if (error) {
+      console.error("Erreur lors de la modification du provider:", error);
+      return res.status(500).json({ 
+        success: false,
+        error: "Erreur lors de la modification du provider",
+        message: "Une erreur est survenue lors de la mise à jour du provider" 
+      });
+    }
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ 
+        success: false,
+        error: "Provider non trouvé",
+        message: "Le provider spécifié n'existe pas" 
+      });
+    }
+
+    res.status(200).json({ 
+      success: true,
+      message: `Provider ${provider_name} a été mis à jour avec succès`
     });
   });
 };

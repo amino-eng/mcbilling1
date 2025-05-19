@@ -1,4 +1,4 @@
-const connection = require("../config/dataBase");
+const connection = require("../../config/dataBase");
 
 // Affichage de l'agent
 const getAgent = (agentId) => {

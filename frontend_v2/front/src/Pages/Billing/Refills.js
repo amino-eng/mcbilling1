@@ -37,24 +37,19 @@ import axios from "axios";
 
 // Constants
 const ITEMS_PER_PAGE = 10;
-
-const DEFAULT_NEW_REFILL = {
-  id_user: "",
-  username: "",
-  credit: "",
-  description: "",
-  payment: false,
+const apiConfig = {
+  apiUrl: 'http://localhost:5000/api'
 };
 
 // Header with Export & Add
 function RefillHeader({ onAddClick, refills, isExporting }) {
   const csvData = [
-    ["Credit", "Utilisateur", "Date", "Description", "Paiement"],
+    ["Utilisateur", "Crédit", "Date", "Description", "Paiement"],
     ...refills.map((refill) => [
+      refill.username || 'N/A',
       refill.credit,
-      refill.username,
       new Date(refill.date).toLocaleDateString(),
-      refill.description,
+      refill.description || '-',
       refill.payment === 1 ? "Oui" : "Non",
     ]),
   ];
@@ -227,52 +222,30 @@ function EmptyState() {
 
 // Table
 function RefillTable({ refills, onEdit, onDelete, isLoading }) {
-  if (isLoading) {
-    return (
-      <div className="text-center py-5">
-        <Spinner animation="border" variant="primary" />
-        <p className="mt-3 text-muted">Chargement des refills...</p>
-      </div>
-    );
-  }
-
-  if (!refills || refills.length === 0) {
-    return <EmptyState />;
-  }
-
   return (
     <div className="table-responsive">
-      <Table hover className="align-middle mb-0 bg-white">
-        <thead className="bg-light">
+      <Table striped bordered hover className="mb-0">
+        <thead>
           <tr>
-            <th className="text-nowrap">Crédit</th>
-            <th className="text-nowrap">Utilisateur</th>
-            <th className="text-nowrap">Date</th>
-            <th className="text-nowrap">Description</th>
-            <th className="text-nowrap">Paiement</th>
-            <th className="text-nowrap text-center">Actions</th>
+            <th>Utilisateur</th>
+            <th>Crédit</th>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Paiement</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {refills.map((refill) => (
-            <tr key={refill.id} className="border-top">
-              <td className="fw-bold text-primary">{refill.credit}</td>
-              <td>
-                <div className="d-flex align-items-center">
-                  <div className="icon-circle bg-light me-2">
-                    <FaUsers className="text-primary" size={14} />
-                  </div>
-                  <span>{refill.username}</span>
-                </div>
-              </td>
+            <tr key={refill.id}>
+              <td>{refill.username || 'N/A'}</td>
+              <td>{refill.credit}</td>
               <td>{new Date(refill.date).toLocaleDateString()}</td>
-              <td className="text-truncate" style={{ maxWidth: "200px" }}>
-                {refill.description}
-              </td>
+              <td>{refill.description || '-'}</td>
               <td>
                 <PaymentBadge payment={refill.payment} />
               </td>
-              <td className="text-center">
+              <td>
                 <ActionButtons
                   onEdit={() => onEdit(refill)}
                   onDelete={() => onDelete(refill.id)}
@@ -450,8 +423,20 @@ function RefillApp() {
   const [isLoading, setIsLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [usernames, setUsernames] = useState([]);
-  const [newRefill, setNewRefill] = useState(DEFAULT_NEW_REFILL);
-  const [editRefill, setEditRefill] = useState(DEFAULT_NEW_REFILL);
+  const [newRefill, setNewRefill] = useState({
+    id_user: "",
+    username: "",
+    credit: "",
+    description: "",
+    payment: false,
+  });
+  const [editRefill, setEditRefill] = useState({
+    id_user: "",
+    username: "",
+    credit: "",
+    description: "",
+    payment: false,
+  });
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -462,13 +447,16 @@ function RefillApp() {
   const fetchRefills = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("http://localhost:5000/api/admin/Refills/affiche");
-      if (!response.ok) throw new Error("Failed to fetch refills");
-      const data = await response.json();
-      setRefills(data.refills);
-      setFilteredRefills(data.refills);
-    } catch (err) {
-      setError("Error fetching refills");
+      const response = await axios.get(`${apiConfig.apiUrl}/admin/Refills/affiche`);
+      setRefills(response.data.refills);
+      setFilteredRefills(response.data.refills);
+    } catch (error) {
+      if (error.code === 'ERR_NETWORK') {
+        setError("Backend server is not responding. Please try again later.");
+      } else {
+        setError("Failed to load refills");
+      }
+      console.error('FetchRefills error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -477,10 +465,14 @@ function RefillApp() {
   // Fetch usernames
   const fetchUsernames = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/admin/users/users");
+      const response = await axios.get(`${apiConfig.apiUrl}/admin/users/users`);
       setUsernames(response.data.users);
     } catch (error) {
-      console.error("Erreur lors du chargement des usernames", error);
+      if (error.code === 'ERR_NETWORK') {
+        console.error('Backend connection failed');
+      } else {
+        console.error('FetchUsernames error:', error);
+      }
     }
   };
 
@@ -495,17 +487,49 @@ function RefillApp() {
   // Handle add refill
   const handleAddRefill = async () => {
     try {
+      if (!newRefill.id_user || !newRefill.username) {
+        setError("Veuillez sélectionner un utilisateur");
+        clearMessages();
+        return;
+      }
+      
+      if (!newRefill.credit || isNaN(newRefill.credit)) {
+        setError("Veuillez entrer un montant valide");
+        clearMessages();
+        return;
+      }
+      
       setIsSubmitting(true);
-      const response = await axios.post("http://localhost:5000/api/admin/refills/add", newRefill);
+      const response = await axios.post(`${apiConfig.apiUrl}/admin/Refills/add`, {
+        ...newRefill,
+        id_user: parseInt(newRefill.id_user),
+        credit: parseFloat(newRefill.credit)
+      });
       if (response.status === 201) {
         await fetchRefills();
-        setNewRefill(DEFAULT_NEW_REFILL);
+        setNewRefill({
+          id_user: "",
+          username: "",
+          credit: "",
+          description: "",
+          payment: false,
+        });
         setShowAddModal(false);
         setSuccessMessage("Refill ajouté avec succès");
         clearMessages();
       }
     } catch (error) {
-      setError("Erreur lors de l'ajout du refill");
+      console.error('Refill submission error:', {
+        error: error.response?.data,
+        requestData: newRefill,
+        stack: error.stack
+      });
+      
+      if (error.response?.data?.error) {
+        setError(error.response.data.error);
+      } else {
+        setError("Erreur lors de l'ajout du refill");
+      }
       clearMessages();
     } finally {
       setIsSubmitting(false);
@@ -515,17 +539,46 @@ function RefillApp() {
   // Handle edit refill
   const handleEditRefill = async () => {
     try {
+      if (!editRefill.id_user || !editRefill.username) {
+        setError("Veuillez sélectionner un utilisateur");
+        clearMessages();
+        return;
+      }
+      
+      if (!editRefill.credit || isNaN(editRefill.credit)) {
+        setError("Veuillez entrer un montant valide");
+        clearMessages();
+        return;
+      }
+      
       setIsSubmitting(true);
-      const response = await axios.put(`http://localhost:5000/api/admin/refills/update/${editRefill.id}`, editRefill);
+      const response = await axios.put(
+        `${apiConfig.apiUrl}admin/Refills/update/${editRefill.id}`,
+        {
+          ...editRefill,
+          id_user: parseInt(editRefill.id_user),
+          credit: parseFloat(editRefill.credit)
+        }
+      );
+      
       if (response.status === 200) {
         await fetchRefills();
-        setEditRefill(DEFAULT_NEW_REFILL);
         setShowEditModal(false);
         setSuccessMessage("Refill modifié avec succès");
         clearMessages();
       }
     } catch (error) {
-      setError("Erreur lors de la modification du refill");
+      console.error('Refill update error:', {
+        error: error.response?.data,
+        requestData: editRefill,
+        stack: error.stack
+      });
+      
+      if (error.response?.data?.error) {
+        setError(error.response.data.error);
+      } else {
+        setError("Erreur lors de la modification du refill");
+      }
       clearMessages();
     } finally {
       setIsSubmitting(false);
@@ -536,7 +589,7 @@ function RefillApp() {
   const handleDeleteRefill = async (id) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer ce refill ?")) {
       try {
-        const response = await axios.delete(`http://localhost:5000/api/admin/refills/delete/${id}`);
+        const response = await axios.delete(`${apiConfig.apiUrl}/admin/Refills/delete/${id}`);
         if (response.status === 200) {
           await fetchRefills();
           setSuccessMessage("Refill supprimé avec succès");

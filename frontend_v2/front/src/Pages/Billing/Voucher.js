@@ -26,7 +26,7 @@ const ITEMS_PER_PAGE = 10;
 const DEFAULT_VOUCHER_DATA = {
   credit: '',
   plan: '',
-  language: 'English',
+  language: '',
   prefix_rules: '',
   quantity: '',
   description: '',
@@ -40,14 +40,14 @@ const DEFAULT_VOUCHER_DATA = {
 // Header with Export & Add
 function VoucherHeader({ onAddClick, vouchers, isExporting }) {
   const csvData = [
-    ["Credit", "Voucher", "Language", "Description", "Use Date", "Expiration Date"],
+    ["Credit", "Voucher", "Language", "Description", "Use Date", "Creation Date"],
     ...vouchers.map((voucher) => [
       voucher.credit,
       voucher.voucher,
       voucher.language,
       voucher.description || '',
       voucher.usedate,
-      voucher.expirationdate,
+      voucher.creationdate,
     ]),
   ];
 
@@ -225,27 +225,28 @@ function VoucherTable({ vouchers, onEdit, onDelete, isLoading, formatDate }) {
       <Table hover className="align-middle mb-0 bg-white">
         <thead className="bg-light">
           <tr>
+            <th className="fw-semibold">Username</th>
             <th className="fw-semibold">Credit</th>
             <th className="fw-semibold">Voucher</th>
             <th className="fw-semibold">Description</th>
-            <th className="fw-semibold">Date d'utilisation</th>
-            <th className="fw-semibold">Date de création</th>
+            <th className="fw-semibold">Use Date</th>
+            <th className="fw-semibold">Creation Date</th>
             <th className="fw-semibold text-center">Actions</th>
           </tr>
         </thead>
         <tbody>
           {vouchers.map((voucher) => (
             <tr key={voucher.id} className="border-bottom">
+              <td>{voucher.username || '-'}</td>
               <td>
                 <Badge bg="info" pill className="px-3 py-2">
-                  {voucher.credit.toFixed(4)}
+                  {voucher.credit?.toFixed(4) || '0.0000'}
                 </Badge>
               </td>
               <td>
                 <div className="fw-bold text-primary">{voucher.voucher}</div>
-                <div className="small text-muted">{voucher.language || 'N/A'}</div>
               </td>
-              <td>{voucher.tag || voucher.description || '-'}</td>
+              <td>{voucher.description || '-'}</td>
               <td>{formatDate(voucher.usedate) || '-'}</td>
               <td>{formatDate(voucher.creationdate) || '-'}</td>
               <td className="table-actions">
@@ -290,6 +291,14 @@ function PaginationSection({ pageCount, onPageChange, currentPage }) {
 
 // Modal Form
 function VoucherModal({ show, onHide, title, onSubmit, voucherData, plans, onInputChange, isSubmitting }) {
+  const languages = [
+    { value: '', label: 'Undefined' },
+    { value: 'English', label: 'English' },
+    { value: 'Portuguese', label: 'Portuguese' },
+    { value: 'Spanish', label: 'Spanish' },
+    { value: 'Russian', label: 'Russian' },
+  ];
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit();
@@ -335,13 +344,19 @@ function VoucherModal({ show, onHide, title, onSubmit, voucherData, plans, onInp
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label className="fw-semibold">Language</Form.Label>
-                <Form.Control
-                  type="text"
+                <Form.Label>Langue</Form.Label>
+                <Form.Select 
+                  name="language"
                   value={voucherData.language}
                   onChange={(e) => onInputChange({ ...voucherData, language: e.target.value })}
-                  className="shadow-sm"
-                />
+                  required
+                >
+                  {languages.map((lang) => (
+                    <option key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </option>
+                  ))}
+                </Form.Select>
               </Form.Group>
             </Col>
             <Col md={6}>
@@ -489,18 +504,27 @@ function VoucherPage() {
   const handleModalSubmit = async () => {
     setIsSubmitting(true);
     try {
+      const payload = {
+        credit: modalData.credit,
+        plan: modalData.plan,
+        language: modalData.language,
+        prefix_rules: modalData.prefix_rules,
+        quantity: Number(modalData.quantity),
+        description: modalData.description
+      };
+
       if (isEditing) {
-        await axios.put(`http://localhost:5000/api/admin/voucher/modifier/${modalData.id}`, modalData);
+        await axios.put(`http://localhost:5000/api/admin/voucher/modifier/${modalData.id}`, payload);
         setSuccessMessage("Voucher modifié avec succès!");
       } else {
-        await axios.post("http://localhost:5000/api/admin/voucher/ajouter", modalData);
+        await axios.post("http://localhost:5000/api/admin/voucher/ajouter", payload);
         setSuccessMessage("Voucher ajouté avec succès!");
       }
       fetchData();
       setShowModal(false);
     } catch (error) {
       console.error("Erreur lors de l'ajout ou de la modification du voucher", error);
-      setError("Erreur lors de l'ajout ou de la modification du voucher.");
+      setError(error.response?.data?.error || "Erreur lors de l'ajout ou de la modification du voucher.");
     } finally {
       setIsSubmitting(false);
     }

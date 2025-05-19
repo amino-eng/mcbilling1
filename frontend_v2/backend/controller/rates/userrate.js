@@ -92,3 +92,31 @@ exports.supprimer = (req, res) => {
     res.json({ message: "User rate supprimé avec succès" });
   });
 };
+
+// Get all usernames for dropdown
+exports.getUsernames = (req, res) => {
+  const query = `SELECT id, username FROM pkg_user ORDER BY username ASC`;
+
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error("Erreur récupération usernames:", err.message);
+      return res.status(500).json({ error: "Erreur base de données", details: err.message });
+    }
+
+    res.json({ usernames: results });
+  });
+};
+
+// Get all prefixes for dropdown
+exports.getPrefixes = (req, res) => {
+  const query = `SELECT id, prefix, destination FROM pkg_prefix ORDER BY destination ASC`;
+
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error("Erreur récupération prefixes:", err.message);
+      return res.status(500).json({ error: "Erreur base de données", details: err.message });
+    }
+
+    res.json({ prefixes: results });
+  });
+};

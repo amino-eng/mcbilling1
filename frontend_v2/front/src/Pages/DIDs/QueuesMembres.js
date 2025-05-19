@@ -134,11 +134,24 @@ function StatusBadge({ paused }) {
 }
 
 // Action Buttons Component
-function ActionButtons({ onEdit, onDelete }) {
+function ActionButtons({ onEdit, onDelete, onModify }) {
   return (
-    <div className="d-flex gap-2 action-btn">
-      <Button variant="outline-primary" size="sm" onClick={onEdit} className="d-flex align-items-center">
-        <FaEdit className="btn-icon" />
+    <div className="d-flex gap-2">
+      <Button 
+        variant="outline-primary" 
+        size="sm" 
+        onClick={onModify}
+        className="d-flex align-items-center"
+      >
+        <FaEdit />
+      </Button>
+      <Button 
+        variant="outline-danger" 
+        size="sm" 
+        onClick={onDelete}
+        className="d-flex align-items-center"
+      >
+        <FaTrashAlt />
       </Button>
     </div>
   );
@@ -158,12 +171,12 @@ function EmptyState() {
 }
 
 // Members Table Component
-function MembersTable({ members, onEdit, isLoading }) {
+function MembersTable({ members, onDelete, isLoading, onModify }) {
   if (isLoading) {
     return (
       <div className="text-center py-5">
         <Spinner animation="border" variant="primary" />
-        <p className="mt-3 text-muted">Loading queue members...</p>
+        <p className="mt-2">Loading queue members...</p>
       </div>
     );
   }
@@ -173,38 +186,30 @@ function MembersTable({ members, onEdit, isLoading }) {
   }
 
   return (
-    <Table responsive hover className="elegant-table">
-      <thead className="bg-light">
+    <Table striped bordered hover responsive className="mb-0">
+      <thead className="table-light">
         <tr>
           <th>Queue</th>
-          <th>Destination</th>
-          <th>Username</th>
-          <th>Paused</th>
-          <th className="text-end">Actions</th>
+          <th>Interface</th>
+          <th>User</th>
+          <th>Status</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {members.map((member) => (
-          <tr key={member.id} className="align-middle">
-            <td>
-              <div className="d-flex align-items-center">
-                <div className="bg-light rounded-circle p-2 me-2">
-                  <FaHeadset className="text-primary" />
-                </div>
-                <span className="fw-medium">{member.queue_name}</span>
-              </div>
-            </td>
+          <tr key={member.id}>
+            <td>{member.queue_name}</td>
             <td>{member.interface}</td>
-            <td className="align-middle">
-              <div className="d-flex align-items-center gap-2">
-                <span className="fw-semibold">{member.user_username || member.id_user}</span>
-              </div>
-            </td>
+            <td>{member.user_username || 'N/A'}</td>
             <td>
               <StatusBadge paused={member.paused} />
             </td>
-            <td className="text-end">
-              <ActionButtons onEdit={() => onEdit(member)} />
+            <td>
+              <ActionButtons 
+                onModify={() => onModify(member)}
+                onDelete={() => onDelete(member.id)}
+              />
             </td>
           </tr>
         ))}
@@ -255,11 +260,8 @@ const QueueMembersTable = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedQueue, setSelectedQueue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [editingId, setEditingId] = useState(null);
-  const [modifiedMembers, setModifiedMembers] = useState({});
-  const [showBulkEditModal, setShowBulkEditModal] = useState(false);
-  const [bulkEditField, setBulkEditField] = useState("");
-  const [bulkEditValue, setBulkEditValue] = useState("");
+  const [showModifyModal, setShowModifyModal] = useState(false);
+  const [memberToModify, setMemberToModify] = useState(null);
 
   useEffect(() => {
     const fetchQueues = async () => {
@@ -390,63 +392,87 @@ const QueueMembersTable = () => {
     }
   };
 
-  // New functions for bulk editing
-  const handleBulkEditStart = () => {
-    setShowBulkEditModal(true);
-  };
-
-  const handleBulkEditSave = () => {
-    setLoading(true);
-    const updates = Object.entries(modifiedMembers).map(([id, changes]) => ({
-      id: parseInt(id),
-      ...changes
-    }));
-
-    if (updates.length === 0) {
-      alert("No changes to save");
-      return;
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`/api/dids/queues-members/${id}`);
+      const fetchQueueMembers = async () => {
+        try {
+          const response = await axios.get("http://localhost:5000/api/admin/QueuesMembers/");
+          setQueueMembers(response.data.queueMembers);
+        } catch (error) {
+          setError("Failed to fetch queue members");
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchQueueMembers();
+      setSuccessMessage('Member deleted successfully');
+      clearMessages();
+    } catch (error) {
+      setError(error.response?.data?.error || 'Failed to delete member');
+      clearMessages();
     }
-
-    axios.put('http://localhost:5000/api/admin/QueuesMembers/bulk', { updates })
-      .then(() => {
-        alert("Bulk update successful!");
-        return axios.get('http://localhost:5000/api/admin/QueuesMembers/');
-      })
-      .then(response => {
-        setQueueMembers(response.data.queueMembers);
-        setModifiedMembers({});
-      })
-      .catch(error => {
-        setError("Failed to bulk update: " + (error.response?.data?.error || error.message));
-      })
-      .finally(() => {
-        setShowBulkEditModal(false);
-      });
   };
 
-  const handleBulkFieldChange = () => {
-    const newModifiedMembers = { ...modifiedMembers };
-    
-    filteredMembers.forEach(member => {
-      if (!newModifiedMembers[member.id]) {
-        newModifiedMembers[member.id] = {};
-      }
-      newModifiedMembers[member.id][bulkEditField] = bulkEditValue;
-    });
-
-    setModifiedMembers(newModifiedMembers);
-    setShowBulkEditModal(false);
-    alert(`Bulk edit applied to ${filteredMembers.length} members`);
+  const handleFieldChange = async (id, fieldName, value) => {
+    try {
+      await axios.put(`/api/dids/queues-members/${id}`, { [fieldName]: value });
+      const fetchQueueMembers = async () => {
+        try {
+          const response = await axios.get("http://localhost:5000/api/admin/QueuesMembers/");
+          setQueueMembers(response.data.queueMembers);
+        } catch (error) {
+          setError("Failed to fetch queue members");
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchQueueMembers();
+      setSuccessMessage('Member updated successfully');
+      clearMessages();
+    } catch (error) {
+      setError(error.response?.data?.error || 'Failed to update member');
+      clearMessages();
+    }
   };
 
-  const handleFieldChange = (id, fieldName, value) => {
-    setModifiedMembers(prev => ({
-      ...prev,
-      [id]: {
-        ...prev[id],
-        [fieldName]: value
-      }
-    }));
+  const handleModifyClick = (member) => {
+    setMemberToModify(member);
+    setShowModifyModal(true);
+  };
+
+  const handleModify = async () => {
+    try {
+      if (!memberToModify) return;
+      
+      const updateData = {
+        queue: memberToModify.queue,
+        sipUser: memberToModify.sipUser,
+        paused: memberToModify.paused
+      };
+
+      setLoading(true);
+      
+      await axios.put(`http://localhost:5000/api/dids/queues-members/${memberToModify.id}`, updateData);
+      
+      setSuccessMessage('Member updated successfully');
+      const fetchQueueMembers = async () => {
+        try {
+          const response = await axios.get("http://localhost:5000/api/admin/QueuesMembers/");
+          setQueueMembers(response.data.queueMembers);
+        } catch (error) {
+          setError("Failed to fetch queue members");
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchQueueMembers();
+      setShowModifyModal(false);
+    } catch (error) {
+      setError(error.response?.data?.error || 'Failed to update member');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Calculate pagination
@@ -548,11 +574,9 @@ const QueueMembersTable = () => {
 
                   <MembersTable 
                     members={paginatedMembers}
-                    onEdit={(member) => {
-                      setEditingId(member.id);
-                      setShowBulkEditModal(true);
-                    }}
+                    onDelete={handleDelete}
                     isLoading={loading}
+                    onModify={handleModifyClick}
                   />
 
                   <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
@@ -576,19 +600,6 @@ const QueueMembersTable = () => {
                       currentPage={currentPage}
                     />
                   </div>
-
-                  {Object.keys(modifiedMembers).length > 0 && (
-                    <div className="text-end mt-3">
-                      <Button 
-                        variant="success" 
-                        onClick={handleBulkEditSave}
-                        className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect ms-auto"
-                      >
-                        <FaCheckCircle />
-                        <span>Save All Changes ({Object.keys(modifiedMembers).length})</span>
-                      </Button>
-                    </div>
-                  )}
                 </Card.Body>
               </Card>
             </Col>
@@ -655,50 +666,74 @@ const QueueMembersTable = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-
-      {/* Bulk Edit Modal */}
-      <Modal show={showBulkEditModal} onHide={() => setShowBulkEditModal(false)} centered backdrop="static">
+      {/* Modify Modal */}
+      <Modal show={showModifyModal} onHide={() => setShowModifyModal(false)} centered backdrop="static">
         <Modal.Header closeButton className="bg-primary text-white">
-          <Modal.Title>Bulk Edit</Modal.Title>
+          <Modal.Title>Modify Queue Member</Modal.Title>
         </Modal.Header>
         <Modal.Body className="p-4">
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Field to Edit</Form.Label>
-              <Form.Select
-                value={bulkEditField}
-                onChange={(e) => setBulkEditField(e.target.value)}
-                required
-              >
-                <option value="">Select Field</option>
-                <option value="paused">Paused Status</option>
-              </Form.Select>
-            </Form.Group>
-
-            {bulkEditField === "paused" && (
-              <Form.Group className="mb-3">
-                <Form.Label>New Value</Form.Label>
+          {memberToModify && (
+            <Form>
+              <Form.Group className="mb-3" controlId="queue">
+                <Form.Label>Queue</Form.Label>
                 <Form.Select
-                  value={bulkEditValue}
-                  onChange={(e) => setBulkEditValue(e.target.value)}
+                  value={memberToModify.queue}
+                  onChange={(e) => setMemberToModify({...memberToModify, queue: e.target.value})}
                   required
                 >
-                  <option value="">Select Value</option>
-                  <option value="0">No (Active)</option>
-                  <option value="1">Yes (Paused)</option>
+                  <option value="">Select Queue</option>
+                  {queue.map((queueItem) => (
+                    <option key={queueItem.id} value={queueItem.id}>
+                      {queueItem.name}
+                    </option>
+                  ))}
                 </Form.Select>
               </Form.Group>
-            )}
-          </Form>
+
+              <Form.Group className="mb-3">
+                <Form.Label>SIP User</Form.Label>
+                <Form.Select
+                  value={memberToModify.sipUser}
+                  onChange={(e) => setMemberToModify({...memberToModify, sipUser: e.target.value})}
+                  required
+                >
+                  <option value="">Select User</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name} ({user.accountcode})
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label>Paused</Form.Label>
+                <Form.Select 
+                  value={memberToModify.paused} 
+                  onChange={(e) => setMemberToModify({...memberToModify, paused: e.target.value})}
+                  required
+                  id="pausedModify"
+                >
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </Form.Select>
+              </Form.Group>
+            </Form>
+          )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="outline-secondary" onClick={() => setShowBulkEditModal(false)} className="d-flex align-items-center gap-2">
+          <Button variant="outline-secondary" onClick={() => setShowModifyModal(false)} className="d-flex align-items-center gap-2">
             <FaTimesCircle />
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleBulkFieldChange} className="d-flex align-items-center gap-2">
-            <FaEdit />
-            Apply
+          <Button 
+            variant="primary" 
+            onClick={handleModify} 
+            disabled={loading}
+            className="d-flex align-items-center gap-2"
+          >
+            {loading ? <Spinner animation="border" size="sm" /> : <FaCheckCircle />}
+            Save Changes
           </Button>
         </Modal.Footer>
       </Modal>

@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+"use client"
+
+import { useEffect, useState } from "react"
+import axios from "axios"
 import {
   Button,
   Table,
@@ -14,21 +16,13 @@ import {
   Card,
   Badge,
   Spinner,
-} from "react-bootstrap";
-import { CSVLink } from "react-csv";
-import { 
-  BiSearch, 
-  BiEdit, 
-  BiTrash,
-  BiPlusCircle,
-  BiDownload,
-  BiCheckCircle,
-  BiXCircle
-} from "react-icons/bi";
-import { FaNetworkWired } from "react-icons/fa";
+} from "react-bootstrap"
+import { CSVLink } from "react-csv"
+import { BiSearch, BiEdit, BiTrash, BiPlusCircle, BiDownload, BiCheckCircle, BiXCircle } from "react-icons/bi"
+import { FaNetworkWired } from "react-icons/fa"
 
 // Constants
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 10
 
 // ------------------ TrunkHeader Component ------------------
 const TrunkHeader = ({ onAddClick, trunks, isExporting }) => {
@@ -43,30 +37,32 @@ const TrunkHeader = ({ onAddClick, trunks, isExporting }) => {
       trunk.status,
       new Date(trunk.creationdate).toLocaleDateString(),
     ]),
-  ];
+  ]
 
   return (
     <Card.Header className="d-flex flex-wrap align-items-center p-0 rounded-top overflow-hidden">
       <div className="bg-primary p-3 w-100 position-relative">
         <div className="position-absolute top-0 end-0 p-2 d-none d-md-block">
-          {Array(5).fill().map((_, i) => (
-            <div
-              key={i}
-              className="floating-icon position-absolute"
-              style={{
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-                animationDelay: `${i * 0.5}s`,
-              }}
-            >
-              <FaNetworkWired
-                className="text-white opacity-25"
+          {Array(5)
+            .fill()
+            .map((_, i) => (
+              <div
+                key={i}
+                className="floating-icon position-absolute"
                 style={{
-                  fontSize: `${Math.random() * 1.5 + 0.5}rem`,
+                  top: `${Math.random() * 100}%`,
+                  left: `${Math.random() * 100}%`,
+                  animationDelay: `${i * 0.5}s`,
                 }}
-              />
-            </div>
-          ))}
+              >
+                <FaNetworkWired
+                  className="text-white opacity-25"
+                  style={{
+                    fontSize: `${Math.random() * 1.5 + 0.5}rem`,
+                  }}
+                />
+              </div>
+            ))}
         </div>
         <div className="d-flex align-items-center position-relative z-2">
           <div className="bg-white rounded-circle p-3 me-3 shadow pulse-effect">
@@ -117,8 +113,8 @@ const TrunkHeader = ({ onAddClick, trunks, isExporting }) => {
         </div>
       </div>
     </Card.Header>
-  );
-};
+  )
+}
 
 // ------------------ StatusBadge Component ------------------
 const StatusBadge = ({ status }) => {
@@ -129,54 +125,38 @@ const StatusBadge = ({ status }) => {
     3: { label: "Envoyé", variant: "info" },
     4: { label: "Bloqué", variant: "danger" },
     5: { label: "AMD", variant: "primary" },
-  };
+  }
 
-  const statusInfo = statusLabels[status] || { label: "Inconnu", variant: "dark" };
+  const statusInfo = statusLabels[status] || { label: "Inconnu", variant: "dark" }
 
   return (
     <Badge bg={statusInfo.variant} className="text-capitalize">
       {statusInfo.label}
     </Badge>
-  );
-};
+  )
+}
 
 // ------------------ SearchBar Component ------------------
 const SearchBar = ({ searchTerm, onSearchChange }) => (
   <InputGroup className="search-bar">
-    <Form.Control
-      placeholder="Rechercher des trunks..."
-      value={searchTerm}
-      onChange={onSearchChange}
-    />
+    <Form.Control placeholder="Rechercher des trunks..." value={searchTerm} onChange={onSearchChange} />
     <InputGroup.Text>
       <BiSearch />
     </InputGroup.Text>
   </InputGroup>
-);
+)
 
 // ------------------ ActionButtons Component ------------------
 const ActionButtons = ({ onEdit, onDelete }) => (
   <div className="d-flex gap-2">
-    <Button 
-      variant="primary" 
-      size="sm"
-      onClick={onEdit}
-      className="btn-hover-effect"
-      title="Modifier"
-    >
+    <Button variant="primary" size="sm" onClick={onEdit} className="btn-hover-effect" title="Modifier">
       <BiEdit />
     </Button>
-    <Button 
-      variant="danger" 
-      size="sm"
-      onClick={onDelete}
-      className="btn-hover-effect"
-      title="Supprimer"
-    >
+    <Button variant="danger" size="sm" onClick={onDelete} className="btn-hover-effect" title="Supprimer">
       <BiTrash />
     </Button>
   </div>
-);
+)
 
 // ------------------ TrunkTable Component ------------------
 const TrunkTable = ({ trunks, onEdit, onDelete, isLoading }) => {
@@ -185,7 +165,7 @@ const TrunkTable = ({ trunks, onEdit, onDelete, isLoading }) => {
       <div className="text-center py-5">
         <Spinner animation="border" variant="primary" />
       </div>
-    );
+    )
   }
 
   if (trunks.length === 0) {
@@ -193,7 +173,7 @@ const TrunkTable = ({ trunks, onEdit, onDelete, isLoading }) => {
       <div className="text-center py-5">
         <h5 className="text-muted">Aucun trunk trouvé</h5>
       </div>
-    );
+    )
   }
 
   return (
@@ -214,28 +194,27 @@ const TrunkTable = ({ trunks, onEdit, onDelete, isLoading }) => {
         {trunks.map((trunk) => (
           <tr key={trunk.id}>
             <td>{trunk.trunkcode}</td>
-            <td>{trunk.trunkprefix || '-'}</td>
-            <td>{trunk.removeprefix || '-'}</td>
+            <td>{trunk.trunkprefix || "-"}</td>
+            <td>{trunk.removeprefix || "-"}</td>
             <td>{trunk.host}</td>
-            <td>{trunk.provider_name || '-'}</td>
-            <td><StatusBadge status={trunk.status} /></td>
+            <td>{trunk.provider_name || "-"}</td>
+            <td>
+              <StatusBadge status={trunk.status} />
+            </td>
             <td>{new Date(trunk.creationdate).toLocaleDateString()}</td>
             <td>
-              <ActionButtons 
-                onEdit={() => onEdit(trunk)}
-                onDelete={() => onDelete(trunk.id)}
-              />
+              <ActionButtons onEdit={() => onEdit(trunk)} onDelete={() => onDelete(trunk.id)} />
             </td>
           </tr>
         ))}
       </tbody>
     </Table>
-  );
-};
+  )
+}
 
 // ------------------ AddTrunkModal Component ------------------
 const AddTrunkModal = ({ show, onHide, onTrunkAdded, trunkToEdit, setTrunkToEdit }) => {
-  const [key, setKey] = useState("general");
+  const [key, setKey] = useState("general")
   const [formData, setFormData] = useState({
     provider: "",
     name: "",
@@ -259,19 +238,23 @@ const AddTrunkModal = ({ show, onHide, onTrunkAdded, trunkToEdit, setTrunkToEdit
     sendrpid: "no",
     addparameter: "",
     port: 5060,
-    asteriskParams: ""
-  });
+    asteriskParams: "",
+    status: 1,
+  })
 
-  const [providers, setProviders] = useState([]);
+  const [providers, setProviders] = useState([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [validationErrors, setValidationErrors] = useState({})
 
   const fetchProviders = () => {
-    axios.get("http://localhost:5000/api/admin/Providers/afficher")
+    axios
+      .get("http://localhost:5000/api/admin/Providers/afficher")
       .then((res) => setProviders(res.data.providers))
-      .catch(err => console.error("Error fetching providers:", err));
-  };
+      .catch((err) => console.error("Error fetching providers:", err))
+  }
 
   useEffect(() => {
-    fetchProviders();
+    fetchProviders()
     if (trunkToEdit) {
       // Populate form with trunk data when editing
       setFormData({
@@ -293,8 +276,9 @@ const AddTrunkModal = ({ show, onHide, onTrunkAdded, trunkToEdit, setTrunkToEdit
         port: trunkToEdit.port,
         sendrpid: trunkToEdit.sendrpid,
         directmedia: trunkToEdit.directmedia,
+        status: trunkToEdit.status,
         // Add other fields as needed
-      });
+      })
     } else {
       // Reset form when adding new trunk
       setFormData({
@@ -320,83 +304,128 @@ const AddTrunkModal = ({ show, onHide, onTrunkAdded, trunkToEdit, setTrunkToEdit
         sendrpid: "no",
         addparameter: "",
         port: 5060,
-        asteriskParams: ""
-      });
+        asteriskParams: "",
+        status: 1,
+      })
     }
-  }, [trunkToEdit]);
+    // Reset validation errors when form changes
+    setValidationErrors({})
+  }, [trunkToEdit])
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+    const { name, value } = e.target
+    setFormData({ ...formData, [name]: value })
+
+    // Clear validation error for this field when it's changed
+    if (validationErrors[name]) {
+      setValidationErrors({
+        ...validationErrors,
+        [name]: null,
+      })
+    }
+  }
+
+  const validateForm = () => {
+    const errors = {}
+
+    // Required fields
+    if (!formData.name) errors.name = "Le nom est requis"
+    if (!formData.host) errors.host = "L'hôte est requis"
+
+    // Set validation errors
+    setValidationErrors(errors)
+
+    // Return true if no errors
+    return Object.keys(errors).length === 0
+  }
 
   const handleSubmit = () => {
+    // Validate form
+    if (!validateForm()) {
+      return
+    }
+
+    setIsSubmitting(true)
+
+    // Common fields for both add and update
     const payload = {
-      id_provider: formData.provider,
+      id_provider: formData.provider || null,
       trunkcode: formData.name,
+      host: formData.host,
       user: formData.username,
       secret: formData.password,
-      host: formData.host,
-      trunkprefix: formData.addprefix,
-      removeprefix: formData.removeprefix,
-      fromuser: formData.fromuser,
-      fromdomain: formData.fromdomain,
-      context: formData.context,
-      dtmfmode: formData.dtmfmode,
-      insecure: formData.insecure,
-      nat: formData.nat,
-      qualify: formData.qualify,
-      type: formData.type,
+      trunkprefix: formData.addprefix || "",
+      removeprefix: formData.removeprefix || "",
+      fromuser: formData.fromuser || "",
+      fromdomain: formData.fromdomain || "",
+      context: formData.context || "billing",
+      dtmfmode: formData.dtmfmode || "RFC2833",
+      insecure: formData.insecure || "port,invite",
+      nat: formData.nat || "force_rport,comedia",
+      qualify: formData.qualify || "yes",
+      type: formData.type || "peer",
       disallow: "",
       allow: "ulaw,alaw",
-      port: formData.port,
-      sendrpid: formData.sendrpid,
-      directmedia: formData.directmedia,
-      providertech: formData.providertech,
-    };
+      port: formData.port || 5060,
+      sendrpid: formData.sendrpid || "no",
+      directmedia: formData.directmedia || "no",
+      status: formData.status !== undefined ? formData.status : 1,
+    }
 
     if (trunkToEdit) {
-      // Update existing trunk - THIS IS THE FIXED PART
-      const updateData = {
-        trunkIds: [trunkToEdit.id], // Send as array since batchUpdate expects an array
-        ...payload // Include all the updated fields
-      };
-      
+      // Update existing trunk using direct update instead of batch update
+      console.log("Updating trunk with ID:", trunkToEdit.id)
+      console.log("Sending update data:", payload)
+
+      // IMPORTANT: Use the modifier endpoint instead of batchUpdate
       axios
-        .put(`http://localhost:5000/api/admin/Trunks/batchUpdate`, updateData)
+        .put(`http://localhost:5000/api/admin/Trunks/modifier/${trunkToEdit.id}`, payload)
         .then((res) => {
-          console.log("Trunk updated:", res.data);
-          onTrunkAdded?.();
-          onHide();
-          setTrunkToEdit(null);
+          console.log("Trunk updated:", res.data)
+          onTrunkAdded?.()
+          onHide()
+          setTrunkToEdit(null)
         })
         .catch((err) => {
-          console.error("Error updating trunk:", err);
-          alert("Failed to update trunk. Please check required fields.");
-        });
+          console.error("Error updating trunk:", err)
+          alert(`Failed to update trunk: ${err.response?.data?.error || err.message}`)
+        })
+        .finally(() => {
+          setIsSubmitting(false)
+        })
     } else {
       // Add new trunk
-      payload.creationdate = new Date().toISOString().slice(0, 19).replace("T", " ");
-      payload.providerip = "";
+      payload.creationdate = new Date().toISOString().slice(0, 19).replace("T", " ")
+      payload.providerip = ""
+
+      console.log("Adding new trunk with data:", payload)
 
       axios
         .post("http://localhost:5000/api/admin/Trunks/ajouter", payload)
         .then((res) => {
-          console.log("Trunk added:", res.data);
-          onTrunkAdded?.();
-          onHide();
+          console.log("Trunk added:", res.data)
+          onTrunkAdded?.()
+          onHide()
         })
         .catch((err) => {
-          console.error("Error adding trunk:", err);
-          alert("Failed to add trunk. Please check required fields.");
-        });
+          console.error("Error adding trunk:", err)
+          alert(`Failed to add trunk: ${err.response?.data?.error || err.message}`)
+        })
+        .finally(() => {
+          setIsSubmitting(false)
+        })
     }
-  };
+  }
 
   return (
-    <Modal show={show} onHide={() => {
-      onHide();
-      setTrunkToEdit(null);
-    }} size="lg">
+    <Modal
+      show={show}
+      onHide={() => {
+        onHide()
+        setTrunkToEdit(null)
+      }}
+      size="lg"
+    >
       <Modal.Header closeButton>
         <Modal.Title>{trunkToEdit ? "Edit Trunk" : "Add New Trunk"}</Modal.Title>
       </Modal.Header>
@@ -419,49 +448,66 @@ const AddTrunkModal = ({ show, onHide, onTrunkAdded, trunkToEdit, setTrunkToEdit
                   </Form.Group>
 
                   {["name", "username", "password", "host", "addprefix", "removeprefix"].map((field) => (
-  <Form.Group key={field} controlId={field}>
-    <Form.Label>{field.charAt(0).toUpperCase() + field.slice(1)}</Form.Label>
-    <Form.Control
-      name={field}
-      type={field === "password" ? "password" : "text"}
-      value={formData[field]}
-      onChange={(e) => {
-        const value = e.target.value;
+                    <Form.Group key={field} controlId={field}>
+                      <Form.Label>
+                        {field.charAt(0).toUpperCase() + field.slice(1)}
+                        {(field === "name" || field === "host") && <span className="text-danger">*</span>}
+                      </Form.Label>
+                      <Form.Control
+                        name={field}
+                        type={field === "password" ? "password" : "text"}
+                        value={formData[field]}
+                        onChange={(e) => {
+                          const value = e.target.value
 
-        // Champs qui doivent contenir uniquement des chiffres
-        const numericOnly = ["host", "addprefix", "removeprefix"];
+                          // Champs qui doivent contenir uniquement des chiffres
+                          const numericOnly = ["addprefix", "removeprefix"]
 
-        if (numericOnly.includes(field)) {
-          // N'autoriser que les chiffres
-          if (/^\d*$/.test(value)) {
-            handleChange(e);
-          }
-        } else {
-          // Pour les autres champs, autoriser tout
-          handleChange(e);
-        }
-      }}
-    />
-  </Form.Group>
-))}
-
+                          if (numericOnly.includes(field)) {
+                            // N'autoriser que les chiffres
+                            if (/^\d*$/.test(value)) {
+                              handleChange(e)
+                            }
+                          } else {
+                            // Pour les autres champs, autoriser tout
+                            handleChange(e)
+                          }
+                        }}
+                        isInvalid={!!validationErrors[field]}
+                      />
+                      <Form.Control.Feedback type="invalid">{validationErrors[field]}</Form.Control.Feedback>
+                    </Form.Group>
+                  ))}
                 </Col>
 
                 <Col md={6}>
-                <Form.Label>Codec</Form.Label>
-<div>
-  {["g729", "g723", "gsm", "g726", "opus", "alaw", "ulaw", "g722", "ilbc", "speex", "h261", "h263"].map(codec => (
-    <Form.Check
-      inline
-      key={codec}
-      type="checkbox"
-      label={codec}
-      name="codec"
-      value={codec}
-      defaultChecked={["g729", "gsm", "opus", "alaw", "ulaw"].includes(codec)}
-    />
-  ))}
-</div>
+                  <Form.Label>Codec</Form.Label>
+                  <div>
+                    {[
+                      "g729",
+                      "g723",
+                      "gsm",
+                      "g726",
+                      "opus",
+                      "alaw",
+                      "ulaw",
+                      "g722",
+                      "ilbc",
+                      "speex",
+                      "h261",
+                      "h263",
+                    ].map((codec) => (
+                      <Form.Check
+                        inline
+                        key={codec}
+                        type="checkbox"
+                        label={codec}
+                        name="codec"
+                        value={codec}
+                        defaultChecked={["g729", "gsm", "opus", "alaw", "ulaw"].includes(codec)}
+                      />
+                    ))}
+                  </div>
 
                   {[
                     { name: "providertech", options: ["sip", "iax", "dahdi", "dgf", "extra", "local"] },
@@ -469,10 +515,10 @@ const AddTrunkModal = ({ show, onHide, onTrunkAdded, trunkToEdit, setTrunkToEdit
                       name: "status",
                       options: [
                         { value: 1, label: "Active" },
-                        { value: 0, label: "Inactive" }
-                      ]
+                        { value: 0, label: "Inactive" },
+                      ],
                     },
-                    { name: "registertrunk", options: ["No", "Yes"] }
+                    { name: "registertrunk", options: ["No", "Yes"] },
                   ].map(({ name, options }) => (
                     <Form.Group key={name} controlId={name}>
                       <Form.Label>{name.charAt(0).toUpperCase() + name.slice(1)}</Form.Label>
@@ -484,7 +530,7 @@ const AddTrunkModal = ({ show, onHide, onTrunkAdded, trunkToEdit, setTrunkToEdit
                             <option key={opt.value} value={opt.value}>
                               {opt.label}
                             </option>
-                          )
+                          ),
                         )}
                       </Form.Control>
                     </Form.Group>
@@ -498,29 +544,27 @@ const AddTrunkModal = ({ show, onHide, onTrunkAdded, trunkToEdit, setTrunkToEdit
             <Form>
               <Row>
                 <Col md={6}>
-                  {["fromuser", "fromdomain", "cidadd", "cidremove", "context", "dtmfmode", "insecure"].map(field => (
+                  {["fromuser", "fromdomain", "cidadd", "cidremove", "context", "dtmfmode", "insecure"].map((field) => (
                     <Form.Group key={field} controlId={field}>
                       <Form.Label>{field}</Form.Label>
-                      <Form.Control 
-                        name={field} 
-                        value={formData[field]} 
-                        onChange={handleChange} 
-                      />
+                      <Form.Control name={field} value={formData[field]} onChange={handleChange} />
                     </Form.Group>
                   ))}
                 </Col>
                 <Col md={6}>
-                  {["maxuse", "nat", "directmedia", "qualify", "type", "sendrpid", "addparameter", "port"].map(field => (
-                    <Form.Group key={field} controlId={field}>
-                      <Form.Label>{field}</Form.Label>
-                      <Form.Control
-                        name={field}
-                        type={field === "maxuse" || field === "port" ? "number" : "text"}
-                        value={formData[field]}
-                        onChange={handleChange}
-                      />
-                    </Form.Group>
-                  ))}
+                  {["maxuse", "nat", "directmedia", "qualify", "type", "sendrpid", "addparameter", "port"].map(
+                    (field) => (
+                      <Form.Group key={field} controlId={field}>
+                        <Form.Label>{field}</Form.Label>
+                        <Form.Control
+                          name={field}
+                          type={field === "maxuse" || field === "port" ? "number" : "text"}
+                          value={formData[field]}
+                          onChange={handleChange}
+                        />
+                      </Form.Group>
+                    ),
+                  )}
                 </Col>
               </Row>
             </Form>
@@ -529,102 +573,112 @@ const AddTrunkModal = ({ show, onHide, onTrunkAdded, trunkToEdit, setTrunkToEdit
           <Tab eventKey="asterisk" title="Asterisk Extra Config">
             <Form.Group controlId="asteriskParams">
               <Form.Label>Parameters</Form.Label>
-              <Form.Control 
-                as="textarea" 
-                rows={10} 
-                name="asteriskParams" 
-                value={formData.asteriskParams} 
-                onChange={handleChange} 
+              <Form.Control
+                as="textarea"
+                rows={10}
+                name="asteriskParams"
+                value={formData.asteriskParams}
+                onChange={handleChange}
               />
             </Form.Group>
           </Tab>
         </Tabs>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={() => {
-          onHide();
-          setTrunkToEdit(null);
-        }}>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            onHide()
+            setTrunkToEdit(null)
+          }}
+        >
           Cancel
         </Button>
-        <Button variant="primary" onClick={handleSubmit}>
-          {trunkToEdit ? "Update" : "Save"}
+        <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+              {trunkToEdit ? "Updating..." : "Saving..."}
+            </>
+          ) : trunkToEdit ? (
+            "Update"
+          ) : (
+            "Save"
+          )}
         </Button>
       </Modal.Footer>
     </Modal>
-  );
-};
+  )
+}
 
 // ------------------ Main Trunks Component ------------------
 const Trunks = () => {
-  const [trunks, setTrunks] = useState([]);
-  const [filteredTrunks, setFilteredTrunks] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [trunkToEdit, setTrunkToEdit] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isExporting, setIsExporting] = useState(false);
+  const [trunks, setTrunks] = useState([])
+  const [filteredTrunks, setFilteredTrunks] = useState([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [trunkToEdit, setTrunkToEdit] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [successMessage, setSuccessMessage] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [isExporting, setIsExporting] = useState(false)
 
   const fetchTrunks = async () => {
     try {
-      setIsLoading(true);
-      const res = await axios.get("http://localhost:5000/api/admin/Trunks/afficher");
-      setTrunks(res.data.trunks);
-      setFilteredTrunks(res.data.trunks);
+      setIsLoading(true)
+      const res = await axios.get("http://localhost:5000/api/admin/Trunks/afficher")
+      setTrunks(res.data.trunks)
+      setFilteredTrunks(res.data.trunks)
     } catch (err) {
-      setError("Erreur lors du chargement des trunks");
+      setError("Erreur lors du chargement des trunks")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchTrunks();
-  }, []);
+    fetchTrunks()
+  }, [])
 
   useEffect(() => {
     if (searchTerm) {
-      const filtered = trunks.filter(trunk => 
-        trunk.trunkcode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        trunk.provider_name?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredTrunks(filtered);
+      const filtered = trunks.filter(
+        (trunk) =>
+          trunk.trunkcode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          trunk.provider_name?.toLowerCase().includes(searchTerm.toLowerCase()),
+      )
+      setFilteredTrunks(filtered)
     } else {
-      setFilteredTrunks(trunks);
+      setFilteredTrunks(trunks)
     }
-  }, [searchTerm, trunks]);
+  }, [searchTerm, trunks])
 
   const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  };
+    setSearchTerm(e.target.value)
+    setCurrentPage(1)
+  }
 
   const handleEdit = (trunk) => {
-    setTrunkToEdit(trunk);
-    setShowAddModal(true);
-  };
+    setTrunkToEdit(trunk)
+    setShowAddModal(true)
+  }
 
   const handleDelete = async (id) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer ce trunk?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/admin/Trunks/supprimer/${id}`);
-        setSuccessMessage("Trunk supprimé avec succès");
-        fetchTrunks();
-        setTimeout(() => setSuccessMessage(null), 3000);
+        await axios.delete(`http://localhost:5000/api/admin/Trunks/supprimer/${id}`)
+        setSuccessMessage("Trunk supprimé avec succès")
+        fetchTrunks()
+        setTimeout(() => setSuccessMessage(null), 3000)
       } catch (err) {
-        setError("Erreur lors de la suppression du trunk");
+        setError("Erreur lors de la suppression du trunk")
       }
     }
-  };
+  }
 
-  const pageCount = Math.ceil(filteredTrunks.length / ITEMS_PER_PAGE);
-  const paginatedTrunks = filteredTrunks.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const pageCount = Math.ceil(filteredTrunks.length / ITEMS_PER_PAGE)
+  const paginatedTrunks = filteredTrunks.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
   return (
     <div className="container py-4">
@@ -665,11 +719,11 @@ const Trunks = () => {
 
       <Row className="justify-content-center">
         <Col xs={12} lg={11}>
-          <Card style={{ border: 'none', boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.15)' }}>
+          <Card style={{ border: "none", boxShadow: "0 0.5rem 1rem rgba(0, 0, 0, 0.15)" }}>
             <TrunkHeader
               onAddClick={() => {
-                setTrunkToEdit(null);
-                setShowAddModal(true);
+                setTrunkToEdit(null)
+                setShowAddModal(true)
               }}
               trunks={trunks}
               isExporting={isExporting}
@@ -692,19 +746,11 @@ const Trunks = () => {
 
               <Row className="mb-4">
                 <Col md={6} lg={4}>
-                  <SearchBar
-                    searchTerm={searchTerm}
-                    onSearchChange={handleSearchChange}
-                  />
+                  <SearchBar searchTerm={searchTerm} onSearchChange={handleSearchChange} />
                 </Col>
               </Row>
 
-              <TrunkTable
-                trunks={paginatedTrunks}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                isLoading={isLoading}
-              />
+              <TrunkTable trunks={paginatedTrunks} onEdit={handleEdit} onDelete={handleDelete} isLoading={isLoading} />
 
               {pageCount > 0 && (
                 <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
@@ -712,7 +758,8 @@ const Trunks = () => {
                     {!isLoading && (
                       <>
                         <Badge bg="light" text="dark" className="me-2 shadow-sm">
-                          <span className="fw-semibold">{paginatedTrunks.length}</span> sur {filteredTrunks.length} Trunks
+                          <span className="fw-semibold">{paginatedTrunks.length}</span> sur {filteredTrunks.length}{" "}
+                          Trunks
                         </Badge>
                         {searchTerm && (
                           <Badge bg="light" text="dark" className="shadow-sm">
@@ -727,7 +774,7 @@ const Trunks = () => {
                       variant="outline-primary"
                       size="sm"
                       disabled={currentPage === 1}
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                     >
                       Précédent
                     </Button>
@@ -735,7 +782,7 @@ const Trunks = () => {
                       variant="outline-primary"
                       size="sm"
                       disabled={currentPage === pageCount}
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, pageCount))}
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, pageCount))}
                     >
                       Suivant
                     </Button>
@@ -755,7 +802,7 @@ const Trunks = () => {
         setTrunkToEdit={setTrunkToEdit}
       />
     </div>
-  );
-};
+  )
+}
 
-export default Trunks;
+export default Trunks

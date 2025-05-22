@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { afficher, ajouter, batchUpdate, deleted, getAllProviders} = require("../../controller/routes/trunks");
+const { afficher, ajouter, batchUpdate, deleted, getAllProviders, modifier} = require("../../controller/routes/trunks");
 
 // Fetch all trunks
 router.get("/afficher", afficher);
@@ -13,6 +13,8 @@ router.put("/batchUpdate", batchUpdate);
 
 // Delete trunk
 router.delete("/supprimer/:id", deleted);
+
+router.put("/modifier/:id", modifier);
 
 
 module.exports = router;

@@ -298,6 +298,14 @@ function RefillModal({
   onInputChange,
   isSubmitting,
 }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 10;
+  
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = usernames.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(usernames.length / usersPerPage);
+  
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit();
@@ -325,15 +333,50 @@ function RefillModal({
                     <FaUsers />
                   </Dropdown.Toggle>
                   <Dropdown.Menu className="w-100">
-                    {usernames.map((user) => (
+                    {currentUsers.map((user) => (
                       <Dropdown.Item
                         key={user.id}
-                        onClick={() => onUsernameChange(user.username)}
+                        onClick={() => {
+                          onUsernameChange(user.username);
+                          onInputChange({
+                            target: {
+                              name: 'id_user',
+                              value: user.id
+                            }
+                          }, 'id_user');
+                        }}
                         active={refill.username === user.username}
                       >
                         {user.username}
                       </Dropdown.Item>
                     ))}
+                    {totalPages > 1 && (
+                      <div className="d-flex justify-content-between p-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline-secondary" 
+                          disabled={currentPage === 1}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentPage(prev => Math.max(1, prev - 1));
+                          }}
+                        >
+                          Précédent
+                        </Button>
+                        <span className="mx-2">Page {currentPage}/{totalPages}</span>
+                        <Button 
+                          size="sm" 
+                          variant="outline-secondary" 
+                          disabled={currentPage === totalPages}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentPage(prev => Math.min(totalPages, prev + 1));
+                          }}
+                        >
+                          Suivant
+                        </Button>
+                      </div>
+                    )}
                   </Dropdown.Menu>
                 </Dropdown>
               </Form.Group>
@@ -431,6 +474,7 @@ function RefillApp() {
     payment: false,
   });
   const [editRefill, setEditRefill] = useState({
+    id: "",
     id_user: "",
     username: "",
     credit: "",
@@ -487,7 +531,8 @@ function RefillApp() {
   // Handle add refill
   const handleAddRefill = async () => {
     try {
-      if (!newRefill.id_user || !newRefill.username) {
+      console.log('Données avant envoi:', newRefill);
+      if (!newRefill.id_user) {
         setError("Veuillez sélectionner un utilisateur");
         clearMessages();
         return;
@@ -500,11 +545,21 @@ function RefillApp() {
       }
       
       setIsSubmitting(true);
-      const response = await axios.post(`${apiConfig.apiUrl}/admin/Refills/add`, {
-        ...newRefill,
+      
+      const payload = {
         id_user: parseInt(newRefill.id_user),
-        credit: parseFloat(newRefill.credit)
-      });
+        credit: parseFloat(newRefill.credit),
+        description: newRefill.description || '',
+        payment: newRefill.payment ? 1 : 0
+      };
+      console.log('Payload corrigé:', payload);
+      
+      const response = await axios.post(
+        `http://localhost:5000/api/admin/Refills/add`, 
+        payload
+      );
+      console.log('Réponse du serveur:', response.data);
+      
       if (response.status === 201) {
         await fetchRefills();
         setNewRefill({
@@ -519,17 +574,8 @@ function RefillApp() {
         clearMessages();
       }
     } catch (error) {
-      console.error('Refill submission error:', {
-        error: error.response?.data,
-        requestData: newRefill,
-        stack: error.stack
-      });
-      
-      if (error.response?.data?.error) {
-        setError(error.response.data.error);
-      } else {
-        setError("Erreur lors de l'ajout du refill");
-      }
+      console.error('Refill submission error:', error);
+      setError(error.response?.data?.error || "Erreur lors de l'ajout du refill");
       clearMessages();
     } finally {
       setIsSubmitting(false);
@@ -539,7 +585,7 @@ function RefillApp() {
   // Handle edit refill
   const handleEditRefill = async () => {
     try {
-      if (!editRefill.id_user || !editRefill.username) {
+      if (!editRefill.id_user) {
         setError("Veuillez sélectionner un utilisateur");
         clearMessages();
         return;
@@ -552,12 +598,14 @@ function RefillApp() {
       }
       
       setIsSubmitting(true);
+      console.log('Calling API endpoint:', `http://localhost:5000/api/admin/Refills/update/${editRefill.id}`);
       const response = await axios.put(
-        `${apiConfig.apiUrl}admin/Refills/update/${editRefill.id}`,
+        `http://localhost:5000/api/admin/Refills/update/${editRefill.id}`,
         {
-          ...editRefill,
-          id_user: parseInt(editRefill.id_user),
-          credit: parseFloat(editRefill.credit)
+          id_user: editRefill.id_user,
+          credit: parseFloat(editRefill.credit),
+          description: editRefill.description || '',
+          payment: editRefill.payment
         }
       );
       
@@ -606,6 +654,7 @@ function RefillApp() {
   const openEditModal = (refill) => {
     setEditRefill({
       id: refill.id,
+      id_user: refill.id_user,
       username: refill.username,
       credit: refill.credit,
       description: refill.description,
@@ -823,7 +872,11 @@ function RefillApp() {
         onSubmit={handleEditRefill}
         refill={editRefill}
         usernames={usernames}
-        onUsernameChange={(username) => setEditRefill(prev => ({ ...prev, username }))}
+        onUsernameChange={(username) => {
+          setEditRefill(prev => ({ ...prev, username }));
+          const selectedUser = usernames.find(u => u.username === username);
+          setEditRefill(prev => ({ ...prev, id_user: selectedUser.id }));
+        }}
         onInputChange={handleInputChange}
         isSubmitting={isSubmitting}
       />

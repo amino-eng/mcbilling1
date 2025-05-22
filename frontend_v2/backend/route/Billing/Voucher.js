@@ -17,4 +17,16 @@ router.delete('/supprimer/:id', del);
 // Modify a voucher
 router.put('/modifier/:id', modifier);
 
+// Nouvelle route de diagnostic
+router.get('/structure', async (req, res) => {
+  try {
+    connection.query('DESCRIBE pkg_voucher', (error, results) => {
+      if (error) return res.status(500).json({ error: error.message });
+      res.json({ structure: results });
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

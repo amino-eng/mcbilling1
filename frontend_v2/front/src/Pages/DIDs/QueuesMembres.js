@@ -437,7 +437,19 @@ const QueueMembersTable = () => {
   };
 
   const handleModifyClick = (member) => {
-    setMemberToModify(member);
+    // Find matching queue and user from existing lists
+    const selectedQueue = queue.find(q => q.name === member.queue_name);
+    const selectedUser = users.find(u => {
+      // Extract SIP username from interface (format: SIP/username)
+      const sipName = member.interface?.replace('SIP/', '');
+      return u.name === sipName;
+    });
+    
+    setMemberToModify({
+      ...member,
+      queue: selectedQueue?.id || '',
+      sipUser: selectedUser?.id || ''
+    });
     setShowModifyModal(true);
   };
 
@@ -445,15 +457,16 @@ const QueueMembersTable = () => {
     try {
       if (!memberToModify) return;
       
+      // Prepare update data matching backend expectations
       const updateData = {
-        queue: memberToModify.queue,
-        sipUser: memberToModify.sipUser,
+        queue_name: queue.find(q => q.id === memberToModify.queue)?.name || '',
+        interface: `SIP/${users.find(u => u.id === memberToModify.sipUser)?.name || ''}`,
         paused: memberToModify.paused
       };
 
       setLoading(true);
       
-      await axios.put(`http://localhost:5000/api/dids/queues-members/${memberToModify.id}`, updateData);
+      await axios.put(`http://localhost:5000/api/admin/QueuesMembers/${memberToModify.id}`, updateData);
       
       setSuccessMessage('Member updated successfully');
       const fetchQueueMembers = async () => {

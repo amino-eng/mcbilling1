@@ -463,7 +463,7 @@ function VoucherPage() {
   // Fetch plans from API
   const fetchPlans = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/admin/users/plans");
+      const response = await axios.get("http://localhost:5000/api/admin/voucher/plans");
       setPlans(response.data.plans);
     } catch (error) {
       console.error("Error fetching plans:", error);
@@ -500,33 +500,63 @@ function VoucherPage() {
     setShowModal(true);
   };
 
-  // Handle modal submit
   const handleModalSubmit = async () => {
-    setIsSubmitting(true);
-    try {
-      const payload = {
-        credit: modalData.credit,
-        plan: modalData.plan,
-        language: modalData.language,
-        prefix_rules: modalData.prefix_rules,
-        quantity: Number(modalData.quantity),
-        description: modalData.description
-      };
+    // 1. Préparation du payload
+    const payload = {
+      credit: Number(modalData.credit),
+      id_plan: Number(modalData.plan),
+      used: Number(modalData.quantity || 0),
+      language: modalData.language || 'fr',
+      prefix_local: modalData.prefix_rules || '',
+      tag: modalData.description || '',
+      voucher: `VOUCH-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+    };
 
-      if (isEditing) {
-        await axios.put(`http://localhost:5000/api/admin/voucher/modifier/${modalData.id}`, payload);
-        setSuccessMessage("Voucher modifié avec succès!");
+    try {
+      // 2. Envoi direct avec gestion d'erreur améliorée
+      const res = await axios.post(
+        'http://localhost:5000/api/admin/voucher/ajouter',
+        payload,
+        { 
+          timeout: 3000,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+
+      // 3. Gestion réponse
+      if (res.data?.success) {
+        alert(`Voucher créé (ID: ${res.data.id})`);
+        setModalData({
+          credit: '',
+          plan: '',
+          quantity: '',
+          language: 'fr',
+          prefix_rules: '',
+          description: ''
+        });
       } else {
-        await axios.post("http://localhost:5000/api/admin/voucher/ajouter", payload);
-        setSuccessMessage("Voucher ajouté avec succès!");
+        throw new Error(res.data?.error || 'Réponse inattendue');
       }
-      fetchData();
-      setShowModal(false);
-    } catch (error) {
-      console.error("Erreur lors de l'ajout ou de la modification du voucher", error);
-      setError(error.response?.data?.error || "Erreur lors de l'ajout ou de la modification du voucher.");
-    } finally {
-      setIsSubmitting(false);
+    } catch (err) {
+      // 4. Gestion d'erreur complète
+      let errorMsg = 'Erreur lors de la création';
+      
+      if (err.code === 'ECONNABORTED') {
+        errorMsg = 'Le serveur ne répond pas (timeout)';
+      } else if (err.code === 'ERR_NETWORK') {
+        errorMsg = 'Serveur inaccessible. Veuillez le démarrer.';
+      } else if (err.response) {
+        errorMsg = err.response.data?.error || err.message;
+      }
+      
+      console.error('[VOUCHER ERROR]', {
+        timestamp: new Date(),
+        error: err.message,
+        code: err.code,
+        status: err.response?.status
+      });
+      
+      alert(errorMsg);
     }
   };
 

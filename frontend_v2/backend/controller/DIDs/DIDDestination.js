@@ -202,7 +202,7 @@ exports.update = (req, res) => {
   const { did, username, destinationType, priority, destination } = req.body;
 
   // Check for missing fields
-  if (!did || !username || destinationType === undefined || priority === undefined || !destination) {
+  if (!did || !username || destinationType === undefined || priority === undefined || destination === undefined) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 

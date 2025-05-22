@@ -8,6 +8,7 @@ import { FaCheckCircle, FaTimesCircle, FaEdit, FaSearch, FaDownload, FaPlusCircl
 
 // Constants
 const ITEMS_PER_PAGE = 10;
+const API_BASE_URL = 'http://localhost:5000/api';
 
 const DEFAULT_RATE_DATA = {
   id_user: '',
@@ -236,11 +237,16 @@ function RateModal({
               value={modalData.id_user || ''}
               onChange={onInputChange}
               required
+              disabled={isSubmitting}
             >
               <option value="">Select a user</option>
-              {usernames.map(user => (
-                <option key={user.id} value={user.id}>{user.username}</option>
-              ))}
+              {usernames.length === 0 ? (
+                <option value="" disabled>Loading users...</option>
+              ) : (
+                usernames.map(user => (
+                  <option key={user.id} value={user.id}>{user.username}</option>
+                ))
+              )}
             </Form.Select>
           </Form.Group>
           
@@ -251,13 +257,18 @@ function RateModal({
               value={modalData.id_prefix || ''}
               onChange={onInputChange}
               required
+              disabled={isSubmitting}
             >
               <option value="">Select a prefix</option>
-              {prefixes.map(prefix => (
-                <option key={prefix.id} value={prefix.id}>
-                  {prefix.prefix} - {prefix.destination}
-                </option>
-              ))}
+              {prefixes.length === 0 ? (
+                <option value="" disabled>Loading prefixes...</option>
+              ) : (
+                prefixes.map(prefix => (
+                  <option key={prefix.id} value={prefix.id}>
+                    {prefix.prefix} - {prefix.destination}
+                  </option>
+                ))
+              )}
             </Form.Select>
           </Form.Group>
 
@@ -352,7 +363,7 @@ function UserCustomRates() {
 
   const fetchUserRates = () => {
     setLoading(true);
-    axios.get('http://localhost:5000/api/admin/Userrate/afficher')
+    axios.get(`${API_BASE_URL}/admin/Userrate/afficher`)
       .then((response) => {
         setUserRates(response.data.userRates);
         setLoading(false);
@@ -367,7 +378,7 @@ function UserCustomRates() {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this rate?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/admin/Userrate/supprimer/${id}`);
+        await axios.delete(`${API_BASE_URL}/admin/Userrate/supprimer/${id}`);
         fetchUserRates();
         setSuccessMessage('Rate deleted successfully');
         setTimeout(() => setSuccessMessage(null), 3000);
@@ -395,11 +406,11 @@ function UserCustomRates() {
     try {
       if (modalData.id) {
         // Update existing rate
-        await axios.put(`http://localhost:5000/api/admin/Userrate/modifier/${modalData.id}`, modalData);
+        await axios.put(`${API_BASE_URL}/admin/Userrate/modifier/${modalData.id}`, modalData);
         setSuccessMessage('Rate updated successfully');
       } else {
         // Create new rate
-        await axios.post('http://localhost:5000/api/admin/Userrate/ajouter', modalData);
+        await axios.post(`${API_BASE_URL}/admin/Userrate/ajouter`, modalData);
         setSuccessMessage('Rate created successfully');
       }
       
@@ -425,26 +436,66 @@ function UserCustomRates() {
 
   const fetchUsernames = async () => {
     try {
-      const response = await axios.get('/rates/usernames');
-      setUsernames(response.data.usernames);
+      console.log('Fetching usernames from:', `${API_BASE_URL}/rates/usernames`);
+      const response = await axios.get(`${API_BASE_URL}/rates/usernames`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        withCredentials: true
+      });
+      console.log('Usernames response:', response.data);
+      setUsernames(response.data.usernames || []);
     } catch (err) {
-      console.error('Error fetching usernames:', err);
+      console.error('Full error details:', {
+        message: err.message,
+        response: err.response,
+        config: err.config
+      });
+      setError('Failed to load usernames: ' + (err.response?.data?.message || err.message));
     }
   };
 
   const fetchPrefixes = async () => {
     try {
-      const response = await axios.get('/rates/prefixes');
-      setPrefixes(response.data.prefixes);
+      console.log('Fetching prefixes from:', `${API_BASE_URL}/rates/prefixes`);
+      const response = await axios.get(`${API_BASE_URL}/rates/prefixes`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        withCredentials: true
+      });
+      console.log('Prefixes response:', response.data);
+      setPrefixes(response.data.prefixes || []);
     } catch (err) {
-      console.error('Error fetching prefixes:', err);
+      console.error('Full error details:', {
+        message: err.message,
+        response: err.response,
+        config: err.config
+      });
+      setError('Failed to load prefixes: ' + (err.response?.data?.message || err.message));
     }
   };
 
   useEffect(() => {
-    fetchUserRates();
-    fetchUsernames();
-    fetchPrefixes();
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        await Promise.all([
+          fetchUserRates(),
+          fetchUsernames(),
+          fetchPrefixes()
+        ]);
+      } catch (error) {
+        console.error('Error loading data:', error);
+        setError('Failed to load initial data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   // Filter rates based on search term

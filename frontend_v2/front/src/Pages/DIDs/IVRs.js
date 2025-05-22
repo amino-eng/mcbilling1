@@ -165,7 +165,7 @@ function EmptyState() {
 }
 
 // Table
-function IVRsTable({ ivrs, onEdit, onDelete, isLoading }) {
+function IVRsTable({ ivrs, onEdit, onDelete, isLoading, showTimeColumns }) {
   if (isLoading) {
     return (
       <div className="text-center py-5">
@@ -181,29 +181,38 @@ function IVRsTable({ ivrs, onEdit, onDelete, isLoading }) {
 
   return (
     <div className="table-responsive">
-      <Table hover className="elegant-table mb-0">
+      <Table className="modern-table">
         <thead>
-          <tr className="bg-light">
-            <th className="fw-semibold">Utilisateur</th>
-            <th className="fw-semibold">Nom</th>
-            <th className="fw-semibold">Début Semaine</th>
-            <th className="fw-semibold">Début Samedi</th>
-            <th className="fw-semibold">Début Dimanche</th>
-            <th className="fw-semibold text-end">Actions</th>
+          <tr>
+            <th className="bg-light fw-semibold">Utilisateur</th>
+            <th className="bg-light fw-semibold">Nom</th>
+            {showTimeColumns && (
+              <>
+                <th className="bg-light fw-semibold">Début Semaine</th>
+                <th className="bg-light fw-semibold">Début Samedi</th>
+                <th className="bg-light fw-semibold">Début Dimanche</th>
+              </>
+            )}
+            <th className="bg-light fw-semibold text-end">Actions</th>
           </tr>
         </thead>
         <tbody>
           {ivrs.map((ivr) => (
             <tr key={ivr.id} className="align-middle">
               <td>{ivr.username}</td>
-              <td>
-                <div className="fw-semibold">{ivr.name}</div>
-              </td>
-              <td>{ivr.monFriStart}</td>
-              <td>{ivr.satStart}</td>
-              <td>{ivr.sunStart}</td>
-              <td>
-                <ActionButtons onEdit={() => onEdit(ivr)} onDelete={onDelete ? () => onDelete(ivr.id) : null} />
+              <td className="fw-medium">{ivr.name}</td>
+              {showTimeColumns && (
+                <>
+                  <td>{ivr.monFriStart}</td>
+                  <td>{ivr.satStart}</td>
+                  <td>{ivr.sunStart}</td>
+                </>
+              )}
+              <td className="text-end">
+                <ActionButtons 
+                  onEdit={() => onEdit(ivr)} 
+                  onDelete={() => onDelete(ivr.id)} 
+                />
               </td>
             </tr>
           ))}
@@ -444,38 +453,15 @@ function IvrTable() {
   // Form states
   const [newIvr, setNewIvr] = useState({
     name: '',
-    userId: '',
+    id_user: '', // Consistent with backend
     monFriStart: '09:00-12:00|14:00-20:00',
     satStart: '09:00-12:00',
-    sunStart: '09:00-12:00',
-    useHolidays: '00:00',
-    selectedOptions: Array(10).fill(''),
-    options: [
-      { value: 'Undefined', label: 'Undefined' },
-      { value: 'SIP', label: 'SIP' },
-      { value: 'IVR', label: 'IVR' },
-      { value: 'Queue', label: 'Queue' },
-      { value: 'Group', label: 'Group' },
-      { value: 'Number', label: 'Number' },
-      { value: 'Repeat_ivr', label: 'Repeat_ivr' },
-      { value: 'Hangup', label: 'Hangup' },
-      { value: 'Custom', label: 'Custom' },
-    ]
+    sunStart: '09:00-12:00'
   });
   
   const [editIvr, setEditIvr] = useState(null);
   const [users, setUsers] = useState([]);
   
-  // Handle input changes for forms
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    if (showEditModal) {
-      setEditIvr({ ...editIvr, [name]: value });
-    } else {
-      setNewIvr({ ...newIvr, [name]: value });
-    }
-  };
-
   // API endpoints
   const apiUrl = 'http://localhost:5000/api/admin/IVRs/affiche';
   const addIvrUrl = 'http://localhost:5000/api/admin/IVRs/add';
@@ -493,21 +479,24 @@ function IvrTable() {
       });
   };
 
-  useEffect(() => {
-    const fetchIVRs = async () => {
-      try {
-        const response = await axios.get(apiUrl);
-        if (response.data.ivrs) {
-          setIvrs(response.data.ivrs);
-        } else {
-          setMessage('Aucun IVR trouvé');
-        }
-      } catch (error) {
-        console.error('Erreur lors de la récupération des IVRs :', error);
-        setMessage('Échec du chargement des données');
+  const fetchIVRs = async () => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get(apiUrl);
+      if (response.data.ivrs) {
+        setIvrs(response.data.ivrs);
+      } else {
+        setErrorMessage('No IVRs found');
       }
-    };
+    } catch (error) {
+      console.error('Error fetching IVRs:', error);
+      setErrorMessage('Failed to load IVRs');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchIVRs();
     fetchUsers();
   }, []);
@@ -566,15 +555,17 @@ function IvrTable() {
       const ivrData = response.data.ivr || ivr;
 
       setEditIvr({
-        ...ivrData,
-        userId: ivrData.id_user,
-        useHolidays: ivrData.use_holidays || '00:00',
-        selectedOptions: ivrData.options?.map(o => o.option) || Array(10).fill(''),
+        id: ivrData.id,
+        id_user: ivrData.id_user, 
+        name: ivrData.name,
+        monFriStart: ivrData.monFriStart,
+        satStart: ivrData.satStart,
+        sunStart: ivrData.sunStart
       });
       setShowEditModal(true);
     } catch (error) {
-      console.error('Erreur lors de la récupération de l\'IVR :', error);
-      setErrorMessage('Échec de la récupération de l\'IVR pour modification');
+      console.error('Error fetching IVR:', error);
+      setErrorMessage('Failed to fetch IVR for editing');
     }
   };
 
@@ -586,49 +577,53 @@ function IvrTable() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-
-    if (!newIvr.userId || !newIvr.name) {
-      setErrorMessage('User ID and Name are required');
-      setIsSubmitting(false);
-      return;
-    }
-
-    const ivrData = {
-      id_user: newIvr.userId,
-      name: newIvr.name,
-      monFriStart: newIvr.monFriStart,
-      satStart: newIvr.satStart,
-      sunStart: newIvr.sunStart,
-      use_holidays: newIvr.useHolidays,
-      options: newIvr.selectedOptions.map((option) => ({ option })),
-    };
+    setErrorMessage('');
+    setSuccessMessage('');
 
     try {
-      if (editIvr) {
-        await axios.put(`${editIvrUrl}/${editIvr.id}`, ivrData);
-        setSuccessMessage('IVR modifié avec succès');
-      } else {
-        await axios.post(addIvrUrl, ivrData);
-        setSuccessMessage('IVR ajouté avec succès');
+      // Validate required fields
+      const id_user = parseInt(showEditModal ? editIvr.id_user : newIvr.id_user);
+      const name = (showEditModal ? editIvr.name : newIvr.name).trim();
+      
+      if (isNaN(id_user) || id_user <= 0 || !name) {
+        setErrorMessage('User and Name are required');
+        setIsSubmitting(false);
+        return;
       }
-      const response = await axios.get(apiUrl);
-      setIvrs(response.data.ivrs);
+
+      // Prepare payload
+      const payload = {
+        id_user: id_user,
+        name: name,
+        monFriStart: showEditModal ? editIvr.monFriStart || '' : newIvr.monFriStart || '',
+        satStart: showEditModal ? editIvr.satStart || '' : newIvr.satStart || '',
+        sunStart: showEditModal ? editIvr.sunStart || '' : newIvr.sunStart || ''
+      };
+
+      console.log('Submitting payload:', payload);
+
+      // Make API call
+      const url = showEditModal 
+        ? `http://localhost:5000/api/admin/IVRs/modify/${editIvr.id}`
+        : `http://localhost:5000/api/admin/IVRs/add`;
+      
+      const method = showEditModal ? 'put' : 'post';
+      const response = await axios[method](url, payload);
+
+      if (response.data.message) {
+        setSuccessMessage(response.data.message);
+        await fetchIVRs(); // Refresh data
+        handleCloseModal();
+      }
     } catch (error) {
-      console.error('Erreur lors de l\'ajout ou de la modification de l\'IVR :', error);
-      setErrorMessage('Échec de l\'ajout ou de la modification de l\'IVR');
+      console.error('Error submitting IVR:', error);
+      setErrorMessage(
+        error.response?.data?.error || 
+        error.message || 
+        'Error submitting IVR'
+      );
     } finally {
       setIsSubmitting(false);
-      handleCloseModal();
-      setNewIvr({
-        name: '',
-        userId: '',
-        monFriStart: '09:00-12:00|14:00-20:00',
-        satStart: '09:00-12:00',
-        sunStart: '09:00-12:00',
-        useHolidays: '00:00',
-        selectedOptions: Array(10).fill(''),
-      });
-      setEditIvr(null);
     }
   };
 
@@ -664,28 +659,9 @@ function IvrTable() {
     setPagedIvrs(filteredIvrs.slice(startIndex, endIndex));
   }, [filteredIvrs, currentPage]);
 
-  // Fetch IVRs
-  useEffect(() => {
-    const fetchIVRs = async () => {
-      setIsLoading(true);
-      try {
-        const response = await axios.get(apiUrl);
-        if (response.data.ivrs) {
-          setIvrs(response.data.ivrs);
-        } else {
-          setErrorMessage('No IVRs found');
-        }
-      } catch (error) {
-        console.error('Error fetching IVRs:', error);
-        setErrorMessage('Failed to load IVRs');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const [showTimeColumns, setShowTimeColumns] = useState(false);
 
-    fetchIVRs();
-    fetchUsers();
-  }, []);
+  const toggleTimeColumns = () => setShowTimeColumns(!showTimeColumns);
 
   return (
     <div>
@@ -715,13 +691,39 @@ function IvrTable() {
         }
         .elegant-table th, .elegant-table td {
           border-top: none;
-          border-bottom: 1px solid #e9ecef;
+          border-bottom: 1px solid #e9e9e9;
         }
         .action-btn .btn-icon {
           transition: transform 0.2s ease;
         }
         .action-btn:hover .btn-icon {
           transform: scale(1.2);
+        }
+        .modern-table {
+          width: 100%;
+          border-collapse: separate;
+          border-spacing: 0;
+          border: 1px solid #e0e0e0;
+          border-radius: 8px;
+          overflow: hidden;
+        }
+        .modern-table th {
+          background-color: #f8f9fa;
+          padding: 12px 16px;
+          font-weight: 600;
+          text-align: left;
+          border-bottom: 2px solid #dee2e6;
+        }
+        .modern-table td {
+          padding: 12px 16px;
+          border-bottom: 1px solid #e0e0e0;
+          vertical-align: middle;
+        }
+        .modern-table tr:last-child td {
+          border-bottom: none;
+        }
+        .modern-table tr:hover {
+          background-color: #f8f9fa;
         }
       `,
       }} />
@@ -753,12 +755,16 @@ function IvrTable() {
                   onEdit={openEditModal}
                   onDelete={handleDeleteIvr}
                   isLoading={isLoading}
+                  showTimeColumns={showTimeColumns}
                 />
                 <PaginationSection
                   pageCount={Math.ceil(filteredIvrs.length / ITEMS_PER_PAGE)}
                   onPageChange={({ selected }) => setCurrentPage(selected)}
                   currentPage={currentPage}
                 />
+                <Button variant="primary" onClick={toggleTimeColumns}>
+                  Toggle Time Columns
+                </Button>
               </Card.Body>
             </Card>
           </Col>
@@ -772,7 +778,10 @@ function IvrTable() {
         title="Add IVR"
         onSubmit={handleSubmit}
         ivr={newIvr}
-        onInputChange={handleInputChange}
+        onInputChange={(e, field) => {
+          const { name, value } = e.target;
+          setNewIvr({ ...newIvr, [field]: value });
+        }}
         isSubmitting={isSubmitting}
         users={users}
       />
@@ -785,13 +794,16 @@ function IvrTable() {
           title="Edit IVR"
           onSubmit={handleSubmit}
           ivr={editIvr}
-          onInputChange={handleInputChange}
+          onInputChange={(e, field) => {
+            const { name, value } = e.target;
+            setEditIvr({ ...editIvr, [field]: value });
+          }}
           isSubmitting={isSubmitting}
           users={users}
         />
       )}
     </div>
-  );
+  )
 }
 
 export default IvrTable;

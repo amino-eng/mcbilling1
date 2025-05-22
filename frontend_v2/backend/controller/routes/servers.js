@@ -52,43 +52,64 @@ exports.ajouter = (req, res) => {
 
 // Update a server
 exports.modifier = (req, res) => {
-    const {
-      id,
-      name, host, public_ip, username, password,
-      port, sip_port, type, status, description
-    } = req.body;
+  console.log("Request body:", req.body);
   
-    const query = `
-      UPDATE pkg_servers SET
-        name = ?,
-        host = ?,
-        public_ip = ?,
-        username = ?,
-        password = ?,
-        port = ?,
-        sip_port = ?,
-        type = ?,
-        status = ?,
-        description = ?
-      WHERE id = ?
-    `;
+  // Extract the ID from the URL params, not the body
+  const id = req.params.id;
   
-    const values = [
-      name, host, public_ip, username, password,
-      port, sip_port, type, status, description,
-      id
-    ];
+  const {
+    name, host, public_ip, username, password,
+    port, sip_port, type, status, description
+  } = req.body;
+
+  // Log the status specifically to debug
+  console.log("Status value being sent to database:", status, "Type:", typeof status);
   
-    connection.query(query, values, (err, result) => {
-      if (err) {
-        console.error("Erreur lors de la modification du serveur:", err.message);
-        return res.status(500).json({ error: "Erreur de base de données", details: err.message });
-      }
+  // Ensure status is properly formatted for the database
+  // MySQL expects 0 or 1 for TINYINT fields used as boolean
+  const formattedStatus = status == 1 ? 1 : 0;
   
-      res.status(200).json({ message: "Serveur modifié avec succès" });
+  const query = `
+    UPDATE pkg_servers SET
+      name = ?,
+      host = ?,
+      public_ip = ?,
+      username = ?,
+      password = ?,
+      port = ?,
+      sip_port = ?,
+      type = ?,
+      status = ?,
+      description = ?
+    WHERE id = ?
+  `;
+
+  const values = [
+    name, host, public_ip, username, password,
+    port, sip_port, type, formattedStatus, description,
+    id
+  ];
+
+  connection.query(query, values, (err, result) => {
+    if (err) {
+      console.error("Erreur lors de la modification du serveur:", err.message);
+      return res.status(500).json({ error: "Erreur de base de données", details: err.message });
+    }
+    
+    console.log("Update result:", result);
+    
+    // Check if any rows were affected
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Serveur non trouvé ou aucune modification effectuée" });
+    }
+    
+    res.status(200).json({ 
+      message: "Serveur modifié avec succès",
+      status: formattedStatus // Return the status that was actually saved
     });
-  };
-  
+  });
+};
+
 
 // Delete a server
 exports.supprimer = (req, res) => {

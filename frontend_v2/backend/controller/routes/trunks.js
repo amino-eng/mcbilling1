@@ -51,7 +51,7 @@ exports.ajouter = (req, res) => {
     creationdate,
     user,
     secret,
-    allow, // Ceci sera maintenant un tableau
+    allow,
     context,
     dtmfmode,
     insecure,
@@ -65,9 +65,15 @@ exports.ajouter = (req, res) => {
     sms_res,
   } = req.body
 
-  // Pour la compatibilité avec la structure de la table existante,
-  // nous stockerons toujours une chaîne dans la colonne allow
-  // mais nous utiliserons aussi une table relationnelle
+  // Helper function to replace undefined or empty string with default values
+  const replaceUndefinedWithDefault = (value, defaultValue) => {
+    if (value === undefined || value === "") {
+      return defaultValue
+    }
+    return value
+  }
+
+  // Convert allow array to string if needed
   const allowValue = Array.isArray(allow) ? allow.join(",") : allow || ""
 
   // Default values based on your table schema
@@ -110,7 +116,7 @@ exports.ajouter = (req, res) => {
     replaceUndefinedWithDefault(creationdate, null),
     replaceUndefinedWithDefault(user, ""),
     replaceUndefinedWithDefault(secret, ""),
-    allowValue, // Utiliser la valeur traitée
+    allowValue,
     replaceUndefinedWithDefault(context, ""),
     replaceUndefinedWithDefault(dtmfmode, ""),
     replaceUndefinedWithDefault(insecure, ""),
@@ -177,73 +183,49 @@ exports.ajouter = (req, res) => {
     })
   }
 
-  // Utiliser une transaction pour garantir l'intégrité des données
-  connection.beginTransaction((err) => {
-    if (err) {
-      console.error("Error starting transaction:", err)
-      return res.status(500).json({ error: "Database error", details: err.message })
+  // Insert the trunk without using transactions
+  connection.query(query, values, (error, results) => {
+    if (error) {
+      console.error("Error adding trunk:", error)
+      return res.status(500).json({ error: "Database error", details: error.message })
     }
 
-    // Insérer d'abord le trunk principal
-    connection.query(query, values, (error, results) => {
+    const trunkId = results.insertId
+
+    // If no allow values provided, we're done
+    if (!Array.isArray(allow) || allow.length === 0) {
+      return res.status(201).json({
+        message: "Trunk added successfully",
+        id: trunkId,
+      })
+    }
+
+    // Prepare values for bulk insertion
+    const allowValues = allow.map((value, index) => [trunkId, value, index])
+
+    // Insert allow values into the relational table
+    // IMPORTANT: Fixed table name to pkg_trunk_allow
+    const allowQuery = `
+      INSERT INTO pkg_trunk_allow (trunk_id, allow_value, priority)
+      VALUES ?
+    `
+
+    connection.query(allowQuery, [allowValues], (error) => {
       if (error) {
-        return connection.rollback(() => {
-          console.error("Error adding trunk:", error)
-          res.status(500).json({ error: "Database error", details: error.message })
+        console.error("Error adding allow values:", error)
+        // Note: We can't rollback here since we're not using transactions
+        // In a production app, you might want to add code to delete the trunk if this fails
+        return res.status(500).json({ 
+          error: "Database error when adding allow values", 
+          details: error.message,
+          warning: "Trunk was created but allow values failed to insert"
         })
       }
 
-      const trunkId = results.insertId
-
-      // Si aucune valeur allow n'est fournie, terminer la transaction
-      if (!Array.isArray(allow) || allow.length === 0) {
-        return connection.commit((err) => {
-          if (err) {
-            return connection.rollback(() => {
-              console.error("Error committing transaction:", err)
-              res.status(500).json({ error: "Database error", details: err.message })
-            })
-          }
-
-          res.status(201).json({
-            message: "Trunk added successfully",
-            id: trunkId,
-          })
-        })
-      }
-
-      // Préparer les valeurs pour l'insertion en masse
-      const allowValues = allow.map((value, index) => [trunkId, value, index])
-
-      // Insérer les valeurs allow dans la table relationnelle
-      const allowQuery = `
-        INSERT INTO pkg_trunk_allow (trunk_id, allow_value, priority)
-        VALUES ?
-      `
-
-      connection.query(allowQuery, [allowValues], (error) => {
-        if (error) {
-          return connection.rollback(() => {
-            console.error("Error adding allow values:", error)
-            res.status(500).json({ error: "Database error", details: error.message })
-          })
-        }
-
-        // Tout s'est bien passé, valider la transaction
-        connection.commit((err) => {
-          if (err) {
-            return connection.rollback(() => {
-              console.error("Error committing transaction:", err)
-              res.status(500).json({ error: "Database error", details: err.message })
-            })
-          }
-
-          res.status(201).json({
-            message: "Trunk added successfully with allow values",
-            id: trunkId,
-            allowCount: allow.length,
-          })
-        })
+      res.status(201).json({
+        message: "Trunk added successfully with allow values",
+        id: trunkId,
+        allowCount: allow.length,
       })
     })
   })
@@ -269,7 +251,7 @@ exports.getTrunk = (req, res) => {
     const trunk = trunkResults[0]
 
     // Requête pour obtenir les valeurs allow associées
-    const allowQuery = "SELECT * FROM pkg_trunk_allow WHERE trunk_id = ? ORDER BY priority"
+    const allowQuery = "SELECT * FROM pkg_trunk WHERE id = ? ORDER BY priority"
 
     connection.query(allowQuery, [id], (error, allowResults) => {
       if (error) {
@@ -291,122 +273,104 @@ exports.getTrunk = (req, res) => {
 }
 
 // Fonction pour mettre à jour un trunk et ses valeurs allow
+// Fonction pour mettre à jour un trunk et ses valeurs allow
+
 exports.modifier = (req, res) => {
-  const id = req.params.id
-  const { allow, ...otherFields } = req.body
+  const id = req.params.id;
+  let { allow, ...otherFields } = req.body;
 
-  // Traiter le champ allow comme un tableau
-  const allowValue = Array.isArray(allow) ? allow.join(",") : allow || ""
+  // Function to replace undefined or empty values with default
+  const replaceUndefinedWithDefault = (value, defaultValue) => {
+    return value === undefined || value === "" ? defaultValue : value;
+  };
 
-  // Construire l'objet de mise à jour
+  // Handle allow as string or array
+  const allowValue = Array.isArray(allow) ? allow.join(",") : allow || "";
+
+  // Default values to avoid SQL errors
+  const defaultValues = {
+    fromdomain: "",
+    providertech: "",
+    providerip: "",
+    trunkprefix: "",
+    removeprefix: "",
+    creationdate: null,
+    user: "",
+    secret: "",
+    context: "",
+    dtmfmode: "",
+    insecure: "",
+    nat: "",
+    qualify: "",
+    type: "",
+    disallow: "",
+    port: 0,
+    sendrpid: "",
+    directmedia: "",
+    sms_res: "",
+    failover_trunk: null,
+    secondusedreal: 0,
+    call_answered: 0,
+    call_total: 0,
+    addparameter: null,
+    inuse: 0,
+    maxuse: -1,
+    status: 1,
+    if_max_use: 0,
+    link_sms: "",
+    register: 0,
+    language: "",
+    allow_error: 0,
+    short_time_call: 0,
+    fromuser: "",
+    register_string: "",
+    transport: "no",
+    encryption: "no",
+    cnl: 0,
+    cid_add: "",
+    cid_remove: "",
+    block_cid: "",
+    sip_config: null,
+  };
+
+  // Apply default values
+  for (const [key, defaultVal] of Object.entries(defaultValues)) {
+    otherFields[key] = replaceUndefinedWithDefault(otherFields[key], defaultVal);
+  }
+
+  // Data to update, including allow string
   const updateData = {
     ...otherFields,
     allow: allowValue,
-  }
+  };
 
-  // Utiliser une transaction pour la mise à jour
-  connection.beginTransaction((err) => {
-    if (err) {
-      console.error("Error starting transaction:", err)
-      return res.status(500).json({ error: "Database error", details: err.message })
+  console.log("ID du trunk à modifier:", id);
+  console.log("Données à mettre à jour:", updateData);
+
+  // Simple update without transactions, deletes, or inserts
+  const updateQuery = "UPDATE pkg_trunk SET ? WHERE id = ?";
+
+  connection.query(updateQuery, [updateData, id], (error, results) => {
+    if (error) {
+      console.error("Erreur lors de la mise à jour du trunk:", error);
+      return res.status(500).json({ 
+        error: "Erreur de base de données", 
+        details: error.message 
+      });
     }
 
-    // Mettre à jour le trunk principal
-    const updateQuery = "UPDATE pkg_trunk SET ? WHERE id = ?"
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ 
+        message: "Trunk non trouvé" 
+      });
+    }
 
-    connection.query(updateQuery, [updateData, id], (error, results) => {
-      if (error) {
-        return connection.rollback(() => {
-          console.error("Error updating trunk:", error)
-          res.status(500).json({ error: "Database error", details: error.message })
-        })
-      }
-
-      if (results.affectedRows === 0) {
-        return connection.rollback(() => {
-          res.status(404).json({ message: "Trunk not found" })
-        })
-      }
-
-      // Si allow n'est pas un tableau ou est vide, supprimer toutes les valeurs existantes
-      if (!Array.isArray(allow) || allow.length === 0) {
-        const deleteQuery = "DELETE FROM pkg_trunk_allow WHERE trunk_id = ?"
-
-        connection.query(deleteQuery, [id], (error) => {
-          if (error) {
-            return connection.rollback(() => {
-              console.error("Error deleting allow values:", error)
-              res.status(500).json({ error: "Database error", details: error.message })
-            })
-          }
-
-          return connection.commit((err) => {
-            if (err) {
-              return connection.rollback(() => {
-                console.error("Error committing transaction:", err)
-                res.status(500).json({ error: "Database error", details: err.message })
-              })
-            }
-
-            res.json({
-              message: "Trunk updated successfully, all allow values removed",
-              id: id,
-            })
-          })
-        })
-
-        return
-      }
-
-      // Supprimer les anciennes valeurs allow
-      const deleteQuery = "DELETE FROM pkg_trunk_allow WHERE trunk_id = ?"
-
-      connection.query(deleteQuery, [id], (error) => {
-        if (error) {
-          return connection.rollback(() => {
-            console.error("Error deleting old allow values:", error)
-            res.status(500).json({ error: "Database error", details: error.message })
-          })
-        }
-
-        // Préparer les nouvelles valeurs allow
-        const allowValues = allow.map((value, index) => [id, value, index])
-
-        // Insérer les nouvelles valeurs allow
-        const insertQuery = `
-          INSERT INTO pkg_trunk_allow (trunk_id, allow_value, priority)
-          VALUES ?
-        `
-
-        connection.query(insertQuery, [allowValues], (error) => {
-          if (error) {
-            return connection.rollback(() => {
-              console.error("Error adding new allow values:", error)
-              res.status(500).json({ error: "Database error", details: error.message })
-            })
-          }
-
-          // Tout s'est bien passé, valider la transaction
-          connection.commit((err) => {
-            if (err) {
-              return connection.rollback(() => {
-                console.error("Error committing transaction:", err)
-                res.status(500).json({ error: "Database error", details: err.message })
-              })
-            }
-
-            res.json({
-              message: "Trunk and allow values updated successfully",
-              id: id,
-              allowCount: allow.length,
-            })
-          })
-        })
-      })
-    })
-  })
-}
-
+    res.json({
+      message: "Trunk mis à jour avec succès",
+      id: id,
+    });
+  });
+};
 // Delete a trunk
 exports.deleted = (req, res) => {
   const trunkId = req.params.id

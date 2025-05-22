@@ -176,8 +176,7 @@ const TrunkGroupTable = ({ groups, onEdit, onDelete, isLoading }) => {
         <thead>
           <tr>
             <th>Nom</th>
-            <th>Type</th>
-            <th>Nombre de Trunks</th>
+            <th>Description</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -189,7 +188,6 @@ const TrunkGroupTable = ({ groups, onEdit, onDelete, isLoading }) => {
                 <td>
                   <span>{group.description || '-'}</span>
                 </td>
-                <td>{group.trunks?.length || 0}</td>
                 <td>
                   <ActionButtons
                     onEdit={() => onEdit(group)}

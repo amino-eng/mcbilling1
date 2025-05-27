@@ -1,4 +1,4 @@
-const pool = require('../../config/database');
+const pool = require('../../config/dataBase');
 
 // Display all vouchers
 const afficher = async (req, res) => {
@@ -95,7 +95,7 @@ const ajouter = async (req, res) => {
         used: parseInt(req.body.used || 0),
         language: req.body.language?.substring(0, 2) || 'fr',
         prefix_local: req.body.prefix_local?.substring(0, 10) || '',
-        tag: req.body.tag || '',
+        tag: req.body.description || '',
         voucher: req.body.voucher ? parseInt(req.body.voucher) : Math.floor(Math.random() * 999999),
         creationdate: new Date(),
         usedate: req.body.usedate ? new Date(req.body.usedate) : null,
@@ -146,10 +146,10 @@ const ajouter = async (req, res) => {
 
 // Modify a voucher
 const modifier = async (req, res) => {
-  const connection = await pool.getConnection();
-  
   try {
-    await connection.beginTransaction();
+    const connection = await pool.promise().getConnection();
+    try {
+      await connection.beginTransaction();
 
     // 1. Validate voucher exists
     const [existingVoucher] = await connection.query(
@@ -196,7 +196,7 @@ const modifier = async (req, res) => {
     }
 
     if (req.body.description) {
-      updateData.description = req.body.description.substring(0, 255);
+      updateData.tag = req.body.description.substring(0, 255);
     }
 
     if (req.body.usedate) {
@@ -243,18 +243,45 @@ const modifier = async (req, res) => {
       error: err.message,
       code: 'VOUCHER_UPDATE_FAILED'
     });
-  } finally {
-    connection.release();
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Database connection error:', error);
+    res.status(500).json({ error: 'Database connection failed' });
   }
 };
 
 // Delete a voucher
-const del = (req, res) => {
-    const { id } = req.params;
-    connection.query('DELETE FROM pkg_voucher WHERE id = ?', [id], (error) => {
-        if (error) return res.status(500).json({ error });
-        res.status(204).send();
+const del = async (req, res) => {
+  try {
+    const connection = await pool.promise().getConnection();
+    try {
+      const [result] = await connection.query('DELETE FROM pkg_voucher WHERE id = ?', [req.params.id]);
+      
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Voucher not found',
+          code: 'VOUCHER_NOT_FOUND'
+        });
+      }
+      
+      res.json({
+        success: true,
+        message: 'Voucher deleted successfully'
+      });
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    console.error('Error deleting voucher:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Database error',
+      code: 'DATABASE_ERROR'
     });
+  }
 };
 
 module.exports = { afficher, ajouter, del, modifier, afficherPlans };

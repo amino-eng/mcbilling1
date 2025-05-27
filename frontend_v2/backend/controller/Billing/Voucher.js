@@ -37,6 +37,8 @@ const afficherPlans = async (req, res) => {
 
 // Add a new voucher
 const ajouter = async (req, res) => {
+  console.log(req.body);
+  
   try {
     const connection = await pool.promise().getConnection();
     try {
@@ -45,20 +47,31 @@ const ajouter = async (req, res) => {
       // 1. Strict validation
       const requiredFields = ['credit', 'id_plan', 'language'];
       const missingFields = requiredFields.filter(field => !req.body[field]);
+      console.log(missingFields);
+      
       if (missingFields.length > 0) {
+        console.log("Missing required fields:");
+        
         throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
       }
 
       // 2. Type validation
       if (typeof req.body.credit !== 'number' || typeof req.body.id_plan !== 'number') {
+        console.log("Credit and Plan must be numbers");
+
         throw new Error('Credit and Plan must be numbers');
+        
       }
 
       // 3. Validate optional fields
       if (req.body.prefix_local && typeof req.body.prefix_local !== 'string') {
+        console.log('prefix_local must be a string');
+        
         throw new Error('prefix_local must be a string');
       }
       if (req.body.tag && typeof req.body.tag !== 'string') {
+        console.log('tag must be a string');
+        
         throw new Error('tag must be a string');
       }
 
@@ -69,6 +82,8 @@ const ajouter = async (req, res) => {
       );
       
       if (!plan.length) {
+        console.log(`Plan ${req.body.id_plan} does not exist`);
+        
         throw new Error(`Plan ${req.body.id_plan} does not exist`);
       }
 

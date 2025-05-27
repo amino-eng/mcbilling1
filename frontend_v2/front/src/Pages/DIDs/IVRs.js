@@ -283,13 +283,12 @@ function IVRModal({
                   <Form.Group controlId="formName">
                     <Form.Label>Nom</Form.Label>
                     <Form.Control
-                      type="text"
-                      name="name"
-                      value={ivr.name || ''}
-                      onChange={(e) => onInputChange(e, 'name')}
-                      required
-                      className="shadow-sm"
-                    />
+  type="text"
+  name="name"
+  value={ivr.name}
+  onChange={(e) => onInputChange(e, 'name')}
+/>
+
                   </Form.Group>
                 </Col>
                 <Col md={6}>

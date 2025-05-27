@@ -20,6 +20,7 @@ const Dashboard = () => {
     failedCalls: 0,
     callDuration: 0 // in minutes
   });
+  const [cdrFailedData, setCdrFailedData] = useState([]);
 
   // State for recent activity
   const [recentActivity, setRecentActivity] = useState([]);
@@ -43,43 +44,27 @@ const Dashboard = () => {
     labels: [],
     datasets: []
   });
+   const fetchCdrFailedData = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/admin/CdrFailed/affiche"
+        );
+        const data = response.data.cdr_failed;
+        setCdrFailedData(data);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setError("Unable to retrieve data.");
+      } finally {
+        setLoading(false);
+      }
+    };
   
   // Fetch call statistics from the SummaryPerDay API
   useEffect(() => {
-    const fetchCallStats = async () => {
-      try {
-        setLoading(prev => ({ ...prev, callStats: true }));
-        
-        // Fetch call summary data
-        const response = await axios.get("http://localhost:5000/api/admin/SummaryPerDay");
-        
-        if (response.data && response.data.data) {
-          const summaryData = response.data.data;
-          
-          // Calculate totals from the summary data
-          const totalCalls = summaryData.reduce((sum, day) => sum + (day.Nb_Call || 0), 0);
-          const failedCalls = summaryData.reduce((sum, day) => sum + (day.Nb_Call_Fail || 0), 0);
-          const successfulCalls = totalCalls - failedCalls;
-          const callDuration = summaryData.reduce((sum, day) => sum + (day.SessionTime || 0), 0);
-          
-          setCallStats({
-            totalCalls,
-            successfulCalls,
-            failedCalls,
-            callDuration: Math.round(callDuration / 60) // Convert seconds to minutes
-          });
-        }
-        
-        setLoading(prev => ({ ...prev, callStats: false }));
-      } catch (err) {
-        console.error("Error fetching call statistics:", err);
-        setError(prev => ({ ...prev, callStats: "Failed to load call statistics" }));
-        setLoading(prev => ({ ...prev, callStats: false }));
-      }
-    };
-    
-    fetchCallStats();
+    fetchCdrFailedData()
   }, []);
+  console.log(cdrFailedData);
   
   // Fetch call trends data from the SummaryPerDay API
   useEffect(() => {
@@ -354,7 +339,7 @@ const Dashboard = () => {
                 <div className="d-flex justify-content-between">
                   <div>
                     <h6 className="text-muted">Failed Calls</h6>
-                    <h3>{callStats.failedCalls.toLocaleString()}</h3>
+                    <h3>{cdrFailedData.length}</h3>
                   </div>
                   <div className="text-danger fs-1">
                     <i className="bi bi-telephone-x"></i>

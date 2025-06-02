@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Alert, Spinner } from 'react-bootstrap';
+import { Card, Row, Col, Alert, Spinner, Button, Badge } from 'react-bootstrap';
 import { Line, Doughnut } from 'react-chartjs-2';
 
 import axios from 'axios';
@@ -20,6 +20,201 @@ const StatusBadge = ({ status }) => (
 );
 
 function Dashboard() {
+  // Custom styles for dashboard elements
+  // Light theme styles
+  const getLightTheme = () => ({
+    container: {
+      padding: '1.5rem',
+      backgroundColor: '#f8f9fa',
+      backgroundImage: 'linear-gradient(to bottom, #f8f9fa, #ffffff)',
+      minHeight: '100vh',
+      transition: 'all 0.3s ease'
+    },
+    headerCard: {
+      borderLeft: '4px solid #007bff',
+      boxShadow: '0 0.25rem 0.5rem rgba(0, 0, 0, 0.05)',
+      marginBottom: '1.5rem',
+      borderRadius: '0.75rem',
+      background: 'linear-gradient(135deg, #ffffff, #f8f9fa)',
+      overflow: 'hidden',
+      position: 'relative'
+    },
+    statCard: {
+      borderRadius: '0.75rem',
+      boxShadow: '0 0.25rem 1rem rgba(0, 0, 0, 0.05)',
+      transition: 'all 0.3s ease',
+      height: '100%',
+      overflow: 'hidden',
+      border: 'none'
+    },
+    statCardHover: {
+      transform: 'translateY(-5px)',
+      boxShadow: '0 0.5rem 1.5rem rgba(0, 0, 0, 0.1)'
+    },
+    chartCard: {
+      borderRadius: '0.75rem',
+      boxShadow: '0 0.25rem 1rem rgba(0, 0, 0, 0.05)',
+      height: '100%',
+      border: 'none',
+      overflow: 'hidden'
+    },
+    chartContainer: {
+      height: '250px',
+      position: 'relative'
+    },
+    activityCard: {
+      borderRadius: '0.75rem',
+      boxShadow: '0 0.25rem 1rem rgba(0, 0, 0, 0.05)',
+      border: 'none',
+      overflow: 'hidden',
+      transition: 'all 0.3s ease'
+    },
+    activityItem: {
+      borderLeft: '3px solid #dee2e6',
+      padding: '0.75rem 1rem',
+      marginBottom: '0.5rem',
+      backgroundColor: 'white',
+      borderRadius: '0.5rem',
+      display: 'flex',
+      alignItems: 'center',
+      transition: 'all 0.2s ease',
+      boxShadow: '0 0.125rem 0.25rem rgba(0, 0, 0, 0.03)'
+    },
+    activityItemHover: {
+      transform: 'translateX(5px)',
+      boxShadow: '0 0.25rem 0.5rem rgba(0, 0, 0, 0.05)'
+    },
+    iconContainer: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '48px',
+      height: '48px',
+      borderRadius: '12px',
+      marginRight: '1rem'
+    },
+    cardHeader: {
+      background: 'linear-gradient(to right, #ffffff, #f8f9fa)',
+      borderBottom: 'none',
+      padding: '1.25rem 1.5rem 0.75rem'
+    },
+    progressBar: {
+      height: '8px',
+      borderRadius: '4px',
+      marginTop: '0.5rem'
+    },
+    badge: {
+      padding: '0.5rem 0.75rem',
+      fontWeight: '500',
+      borderRadius: '50rem'
+    }
+  });
+  
+  // Dark theme styles
+  const getDarkTheme = () => ({
+    container: {
+      padding: '1.5rem',
+      backgroundColor: '#212529',
+      backgroundImage: 'linear-gradient(to bottom, #212529, #343a40)',
+      minHeight: '100vh',
+      transition: 'all 0.3s ease',
+      color: '#e9ecef'
+    },
+    headerCard: {
+      borderLeft: '4px solid #007bff',
+      boxShadow: '0 0.25rem 0.5rem rgba(0, 0, 0, 0.2)',
+      marginBottom: '1.5rem',
+      borderRadius: '0.75rem',
+      background: 'linear-gradient(135deg, #343a40, #212529)',
+      overflow: 'hidden',
+      position: 'relative'
+    },
+    statCard: {
+      borderRadius: '0.75rem',
+      boxShadow: '0 0.25rem 1rem rgba(0, 0, 0, 0.2)',
+      transition: 'all 0.3s ease',
+      height: '100%',
+      overflow: 'hidden',
+      border: 'none',
+      backgroundColor: '#343a40',
+      color: '#e9ecef'
+    },
+    statCardHover: {
+      transform: 'translateY(-5px)',
+      boxShadow: '0 0.5rem 1.5rem rgba(0, 0, 0, 0.3)'
+    },
+    chartCard: {
+      borderRadius: '0.75rem',
+      boxShadow: '0 0.25rem 1rem rgba(0, 0, 0, 0.2)',
+      height: '100%',
+      border: 'none',
+      overflow: 'hidden',
+      backgroundColor: '#343a40',
+      color: '#e9ecef'
+    },
+    chartContainer: {
+      height: '250px',
+      position: 'relative'
+    },
+    activityCard: {
+      borderRadius: '0.75rem',
+      boxShadow: '0 0.25rem 1rem rgba(0, 0, 0, 0.2)',
+      border: 'none',
+      overflow: 'hidden',
+      backgroundColor: '#343a40',
+      color: '#e9ecef',
+      transition: 'all 0.3s ease'
+    },
+    activityItem: {
+      borderLeft: '3px solid #495057',
+      padding: '0.75rem 1rem',
+      marginBottom: '0.5rem',
+      backgroundColor: '#343a40',
+      borderRadius: '0.5rem',
+      display: 'flex',
+      alignItems: 'center',
+      transition: 'all 0.2s ease',
+      boxShadow: '0 0.125rem 0.25rem rgba(0, 0, 0, 0.1)'
+    },
+    activityItemHover: {
+      transform: 'translateX(5px)',
+      boxShadow: '0 0.25rem 0.5rem rgba(0, 0, 0, 0.2)'
+    },
+    iconContainer: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '48px',
+      height: '48px',
+      borderRadius: '12px',
+      marginRight: '1rem'
+    },
+    cardHeader: {
+      background: 'linear-gradient(to right, #343a40, #212529)',
+      borderBottom: 'none',
+      padding: '1.25rem 1.5rem 0.75rem',
+      color: '#e9ecef'
+    },
+    progressBar: {
+      height: '8px',
+      borderRadius: '4px',
+      marginTop: '0.5rem'
+    },
+    badge: {
+      padding: '0.5rem 0.75rem',
+      fontWeight: '500',
+      borderRadius: '50rem'
+    }
+  });
+  
+  // State for theme
+  const [darkMode, setDarkMode] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [dateRange, setDateRange] = useState('week'); // 'day', 'week', 'month', 'year'
+  
+  // Get theme based on dark mode state
+  const dashboardStyles = darkMode ? getDarkTheme() : getLightTheme();
+  
   const [loading, setLoading] = useState({
     callTrends: false,
     recentActivity: false,
@@ -31,8 +226,14 @@ function Dashboard() {
     recentActivity: '',
     callStats: ''
   });
-  const [callTrendsData, setCallTrendsData] = useState(false);
-  const [monthlyStatsData, setMonthlyStatsData] = useState(false);
+  const [callTrendsData, setCallTrendsData] = useState({
+    labels: [],
+    datasets: []
+  });
+  const [monthlyStatsData, setMonthlyStatsData] = useState({
+    labels: [],
+    datasets: []
+  });
   const [callTrendsOptions, setCallTrendsOptions] = useState({
     responsive: true,
     maintainAspectRatio: false,
@@ -197,19 +398,20 @@ function Dashboard() {
         console.log('Summary Per Month Response:', monthlyResponse.data);
         
         // Process monthly statistics
-        const monthlyStats = monthlyResponse.data ? {
-          labels: monthlyResponse.data.map(item => item.month),
+        const monthlyData = monthlyResponse.data && monthlyResponse.data.data;
+        const monthlyStats = monthlyData && Array.isArray(monthlyData) ? {
+          labels: monthlyData.map(item => item.month),
           datasets: [
             {
               label: 'Appels réussis',
-              data: monthlyResponse.data.map(item => item.nbcall - item.nbcall_fail),
+              data: monthlyData.map(item => item.nbcall - item.nbcall_fail),
               borderColor: '#4CAF50',
               backgroundColor: 'rgba(76, 175, 80, 0.2)',
               fill: true
             },
             {
               label: 'Appels échoués',
-              data: monthlyResponse.data.map(item => item.nbcall_fail),
+              data: monthlyData.map(item => item.nbcall_fail),
               borderColor: '#f44336',
               backgroundColor: 'rgba(244, 67, 54, 0.2)',
               fill: true
@@ -383,11 +585,256 @@ function Dashboard() {
     }
   }
 
+  // Custom animation for cards
+  const fadeInAnimation = {
+    opacity: 0,
+    animation: 'fadeIn 0.6s ease-in-out forwards',
+    animationDelay: '0.2s'
+  };
+  
+  // Handle theme toggle
+  const toggleTheme = () => {
+    setDarkMode(!darkMode);
+    // Update chart options for dark mode
+    updateChartOptions();
+  };
+  
+  // Handle refresh data
+  const refreshData = () => {
+    setRefreshing(true);
+    // Call all the fetch functions directly
+    Promise.all([
+      fetchCallSummaryData(),
+      fetchRecentActivity(),
+      fetchCallStats()
+    ]).finally(() => {
+      setTimeout(() => setRefreshing(false), 1500);
+    });
+  };
+  
+  // Handle date range change
+  const handleDateRangeChange = (range) => {
+    setDateRange(range);
+    // In a real app, you would fetch data for the new range
+    // For demo, we'll just simulate a refresh
+    refreshData();
+  };
+  
+  // Update chart options based on theme
+  const updateChartOptions = () => {
+    const textColor = darkMode ? '#e9ecef' : '#666';
+    const gridColor = darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+    
+    // Update options for all charts with safe access to nested properties
+    setCallTrendsOptions(prev => {
+      // Create a safe copy of the previous options
+      const safeOptions = { ...prev };
+      
+      // Ensure scales and its properties exist
+      if (!safeOptions.scales) safeOptions.scales = {};
+      if (!safeOptions.scales.x) safeOptions.scales.x = {};
+      if (!safeOptions.scales.y) safeOptions.scales.y = {};
+      
+      // Ensure plugins and legend exist
+      if (!safeOptions.plugins) safeOptions.plugins = {};
+      if (!safeOptions.plugins.legend) safeOptions.plugins.legend = {};
+      if (!safeOptions.plugins.legend.labels) safeOptions.plugins.legend.labels = {};
+      
+      return {
+        ...safeOptions,
+        scales: {
+          ...safeOptions.scales,
+          x: { ...safeOptions.scales.x, grid: { color: gridColor }, ticks: { color: textColor } },
+          y: { ...safeOptions.scales.y, grid: { color: gridColor }, ticks: { color: textColor } }
+        },
+        plugins: {
+          ...safeOptions.plugins,
+          legend: { 
+            ...safeOptions.plugins.legend, 
+            labels: { ...safeOptions.plugins.legend.labels, color: textColor } 
+          }
+        }
+      };
+    });
+    
+    // Only update monthly stats if they exist
+    if (monthlyStatsData && monthlyStatsData.datasets && monthlyStatsData.datasets.length > 0) {
+      // We'll update the monthly stats options in the future if needed
+      // For now, we'll skip this part as setMonthlyStatsOptions is not defined
+    }
+    
+    // Update call distribution options with safe access
+    setCallDistributionOptions(prev => {
+      // Create a safe copy of the previous options
+      const safeOptions = { ...prev };
+      
+      // Ensure plugins and legend exist
+      if (!safeOptions.plugins) safeOptions.plugins = {};
+      if (!safeOptions.plugins.legend) safeOptions.plugins.legend = {};
+      if (!safeOptions.plugins.legend.labels) safeOptions.plugins.legend.labels = {};
+      
+      return {
+        ...safeOptions,
+        plugins: {
+          ...safeOptions.plugins,
+          legend: { 
+            ...safeOptions.plugins.legend, 
+            labels: { ...safeOptions.plugins.legend.labels, color: textColor } 
+          }
+        }
+      };
+    });
+  };
+  
+  // Effect to update chart options when theme changes
+  useEffect(() => {
+    if (callTrendsData.datasets.length > 0) {
+      updateChartOptions();
+    }
+  }, [darkMode]);
+  
+  // Effect to update chart options when theme changes - removed duplicate
+
   return (
-    <div className="dashboard-container">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Dashboard</h2>
-      </div>
+    <div style={dashboardStyles.container}>
+      <style>
+        {`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+          }
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          .stat-card:hover .icon-container {
+            animation: pulse 1s infinite;
+          }
+          .chart-container {
+            transition: all 0.3s ease;
+          }
+          .chart-container:hover {
+            transform: scale(1.02);
+          }
+          .refresh-icon {
+            transition: all 0.3s ease;
+          }
+          .refresh-icon.spinning {
+            animation: spin 1s infinite linear;
+          }
+          .date-range-btn {
+            border-radius: 20px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.85rem;
+            margin-right: 0.5rem;
+            transition: all 0.2s ease;
+          }
+          .date-range-btn.active {
+            background-color: #007bff;
+            color: white;
+            font-weight: 500;
+          }
+          .theme-toggle {
+            cursor: pointer;
+            width: 48px;
+            height: 24px;
+            border-radius: 12px;
+            background-color: ${darkMode ? '#007bff' : '#e9ecef'};
+            position: relative;
+            transition: all 0.3s ease;
+          }
+          .theme-toggle-circle {
+            position: absolute;
+            top: 2px;
+            left: ${darkMode ? '26px' : '2px'};
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: white;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: ${darkMode ? '#343a40' : '#f8f9fa'};
+            font-size: 12px;
+          }
+          .refresh-icon {
+            transition: all 0.3s ease;
+          }
+          .refresh-icon.spinning {
+            animation: spin 1s infinite linear;
+          }
+          .date-range-btn {
+            border-radius: 20px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.85rem;
+            margin-right: 0.5rem;
+            transition: all 0.2s ease;
+          }
+          .date-range-btn.active {
+            background-color: #007bff;
+            color: white;
+            font-weight: 500;
+          }
+          .theme-toggle {
+            cursor: pointer;
+            width: 48px;
+            height: 24px;
+            border-radius: 12px;
+            background-color: ${darkMode ? '#007bff' : '#e9ecef'};
+            position: relative;
+            transition: all 0.3s ease;
+          }
+          .theme-toggle-circle {
+            position: absolute;
+            top: 2px;
+            left: ${darkMode ? '26px' : '2px'};
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: white;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: ${darkMode ? '#343a40' : '#f8f9fa'};
+            font-size: 12px;
+          }
+        `}
+      </style>
+      
+ 
+      <Card style={{...dashboardStyles.headerCard, ...fadeInAnimation, animationDelay: '0.1s'}} className="mb-4">
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: '150px',
+          height: '150px',
+          background: 'radial-gradient(circle, rgba(0,123,255,0.1) 0%, rgba(255,255,255,0) 70%)',
+          borderRadius: '0 0 0 100%',
+          zIndex: 0
+        }}></div>
+        <Card.Body style={{position: 'relative', zIndex: 1}}>
+          <div className="d-flex justify-content-between align-items-center">
+            <div>
+              <h2 className="mb-0 fw-bold">Call Analytics Dashboard</h2>
+              <p className="text-muted mb-0">Welcome back! Here's your call activity overview</p>
+            </div>
+            <div className="d-flex align-items-center">
+              <div className="bg-light rounded-pill px-3 py-2 d-flex align-items-center">
+                <i className="bi bi-calendar3 text-primary me-2"></i>
+                <span>{new Date().toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}</span>
+              </div>
+            </div>
+          </div>
+        </Card.Body>
+      </Card>
 
       {/* Error Alert */}
       {Object.values(error).some(Boolean) && (
@@ -406,93 +853,281 @@ function Dashboard() {
       )}
 
       {/* Call Statistics */}
-      <Row>
+      <Row className="g-3 mb-4">
         <Col md={3}>
-          <Card className="mb-4">
-            <Card.Body>
-              <h5 className="card-title">Total Calls</h5>
-              <h2 className="text-primary">{callStats.totalCalls}</h2>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3}>
-          <Card className="mb-4">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-2">
-                <h5 className="card-title mb-0">Successful Calls</h5>
-                <StatusBadge status="success" />
+          <Card 
+            style={{...dashboardStyles.statCard}} 
+            className="h-100"
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            <div style={{height: '4px', background: 'linear-gradient(to right, #007bff, #00c6ff)'}}></div>
+            <Card.Body className="d-flex flex-column">
+              <div className="d-flex align-items-center mb-3">
+                <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(0,123,255,0.1), rgba(0,198,255,0.1))'}} className="icon-container">
+                  <i className="bi bi-telephone-fill text-primary fs-4"></i>
+                </div>
+                <div>
+                  <h5 className="card-title mb-0">Total Calls</h5>
+                  <p className="text-muted mb-0 small">All calls in the selected period</p>
+                </div>
               </div>
-              <h2 className="text-success">{callStats.successfulCalls}</h2>
+              <div className="mt-3">
+                <h2 className="text-primary mb-1">{callStats.totalCalls}</h2>
+                <div className="progress" style={dashboardStyles.progressBar}>
+                  <div className="progress-bar bg-primary" style={{width: '100%'}}></div>
+                </div>
+              </div>
             </Card.Body>
           </Card>
         </Col>
         <Col md={3}>
-          <Card className="mb-4">
-            <Card.Body>
-              <h5 className="card-title">Failed Calls</h5>
-              <h2 className="text-danger">{callStats.failedCalls}</h2>
+          <Card 
+            style={{...dashboardStyles.statCard}} 
+            className="h-100"
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            <div style={{height: '4px', background: 'linear-gradient(to right, #28a745, #5cb85c)'}}></div>
+            <Card.Body className="d-flex flex-column">
+              <div className="d-flex align-items-center mb-3">
+                <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(40,167,69,0.1), rgba(92,184,92,0.1))'}} className="icon-container">
+                  <i className="bi bi-check-circle-fill text-success fs-4"></i>
+                </div>
+                <div>
+                  <h5 className="card-title mb-0">Successful Calls</h5>
+                  <p className="text-muted mb-0 small">Completed without errors</p>
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <h2 className="text-success mb-0">{callStats.successfulCalls}</h2>
+                  <span className="badge bg-success bg-opacity-10 text-success" style={dashboardStyles.badge}>
+                    {Math.round((callStats.successfulCalls / (callStats.totalCalls || 1)) * 100)}% success rate
+                  </span>
+                </div>
+                <div className="progress" style={dashboardStyles.progressBar}>
+                  <div className="progress-bar bg-success" style={{width: `${Math.round((callStats.successfulCalls / (callStats.totalCalls || 1)) * 100)}%`}}></div>
+                </div>
+              </div>
             </Card.Body>
           </Card>
         </Col>
         <Col md={3}>
-          <Card className="mb-4">
-            <Card.Body>
-              <h5 className="card-title">Total Duration</h5>
-              <h2 className="text-info">{formatDuration(callStats.totalDuration)}</h2>
+          <Card 
+            style={{...dashboardStyles.statCard}} 
+            className="h-100"
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            <div style={{height: '4px', background: 'linear-gradient(to right, #dc3545, #ff6b81)'}}></div>
+            <Card.Body className="d-flex flex-column">
+              <div className="d-flex align-items-center mb-3">
+                <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(220,53,69,0.1), rgba(255,107,129,0.1))'}} className="icon-container">
+                  <i className="bi bi-x-circle-fill text-danger fs-4"></i>
+                </div>
+                <div>
+                  <h5 className="card-title mb-0">Failed Calls</h5>
+                  <p className="text-muted mb-0 small">Calls with errors</p>
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <h2 className="text-danger mb-0">{callStats.failedCalls}</h2>
+                  <span className="badge bg-danger bg-opacity-10 text-danger" style={dashboardStyles.badge}>
+                    {Math.round((callStats.failedCalls / (callStats.totalCalls || 1)) * 100)}% failure rate
+                  </span>
+                </div>
+                <div className="progress" style={dashboardStyles.progressBar}>
+                  <div className="progress-bar bg-danger" style={{width: `${Math.round((callStats.failedCalls / (callStats.totalCalls || 1)) * 100)}%`}}></div>
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={3}>
+          <Card 
+            style={{...dashboardStyles.statCard}} 
+            className="h-100"
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            <div style={{height: '4px', background: 'linear-gradient(to right, #17a2b8, #36c7d0)'}}></div>
+            <Card.Body className="d-flex flex-column">
+              <div className="d-flex align-items-center mb-3">
+                <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(23,162,184,0.1), rgba(54,199,208,0.1))'}} className="icon-container">
+                  <i className="bi bi-clock-fill text-info fs-4"></i>
+                </div>
+                <div>
+                  <h5 className="card-title mb-0">Total Duration</h5>
+                  <p className="text-muted mb-0 small">Time spent on calls</p>
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <h2 className="text-info mb-0">{formatDuration(callStats.totalDuration)}</h2>
+                  <span className="badge bg-info bg-opacity-10 text-info" style={dashboardStyles.badge}>
+                    Avg: {formatDuration(Math.round(callStats.totalDuration / (callStats.successfulCalls || 1)))}
+                  </span>
+                </div>
+                <div className="progress" style={dashboardStyles.progressBar}>
+                  <div className="progress-bar bg-info" style={{width: '100%'}}></div>
+                </div>
+              </div>
             </Card.Body>
           </Card>
         </Col>
       </Row>
 
-      {/* Charts */}
-      <Row>
+      {/* Charts Section */}
+      {/* First row with Call Distribution */}
+      <Row className="g-3 mb-4">
         <Col md={4}>
-          <Card className="mb-4">
+          <Card style={dashboardStyles.chartCard}>
+            <Card.Header style={dashboardStyles.cardHeader} className="border-bottom-0 pt-3 pb-0">
+              <div className="d-flex align-items-center">
+                <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(108,117,125,0.05), rgba(173,181,189,0.05))', width: '36px', height: '36px', marginRight: '0.75rem'}}>
+                  <i className="bi bi-pie-chart-fill text-primary"></i>
+                </div>
+                <div>
+                  <h5 className="card-title mb-0">Call Distribution</h5>
+                  <p className="text-muted small mb-0">Success vs. Failure Rate</p>
+                </div>
+              </div>
+            </Card.Header>
             <Card.Body>
-              <h5 className="card-title">Statistiques des appels</h5>
-            </Card.Body>
-            <Card.Body>
-              <div className="doughnut-chart">
-                <Doughnut 
-                  data={callDistributionData} 
-                  options={callDistributionOptions}
-                />
+              <div style={dashboardStyles.chartContainer} className="chart-container">
+                {callDistributionData && callDistributionData.datasets && callDistributionData.datasets.length > 0 ? (
+                  <Doughnut 
+                    data={callDistributionData} 
+                    options={{
+                      ...callDistributionOptions,
+                      plugins: {
+                        legend: {
+                          position: 'bottom',
+                          labels: {
+                            usePointStyle: true,
+                            padding: 20
+                          }
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: (context) => {
+                              const label = context.label || '';
+                              const value = context.raw || 0;
+                              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                              const percentage = Math.round((value / total) * 100);
+                              return `${label}: ${value} (${percentage}%)`;
+                            }
+                          }
+                        }
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="d-flex justify-content-center align-items-center h-100">
+                    <div className="text-center text-muted">
+                      <i className="bi bi-bar-chart-line fs-1 d-block mb-2 text-secondary"></i>
+                      No data available
+                    </div>
+                  </div>
+                )}
               </div>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={4}>
-          <Card className="mb-4">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="card-title mb-0">Statistiques par jour</h5>
+        <Col md={8}>
+          <Card 
+            style={{...dashboardStyles.chartCard, height: '100%', ...fadeInAnimation, animationDelay: '0.6s'}}
+            onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0.5rem 1.5rem rgba(0, 0, 0, 0.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 0.25rem 1rem rgba(0, 0, 0, 0.05)'}
+          >
+            <Card.Header style={dashboardStyles.cardHeader} className="border-bottom-0 pt-3 pb-0">
+              <div className="d-flex align-items-center">
+                <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(108,117,125,0.05), rgba(173,181,189,0.05))', width: '36px', height: '36px', marginRight: '0.75rem'}}>
+                  <i className="bi bi-graph-up text-success"></i>
+                </div>
+                <div>
+                  <h5 className="card-title mb-0">Daily Call Trends</h5>
+                  <p className="text-muted small mb-0">Call volume by day</p>
+                </div>
               </div>
-            </Card.Body>
+            </Card.Header>
             <Card.Body>
-              <div className="line-chart">
-                <Line 
-                  data={callTrendsData} 
-                  options={callTrendsOptions}
-                />
+              <div style={{...dashboardStyles.chartContainer, height: '250px'}} className="chart-container">
+                {callTrendsData && callTrendsData.datasets && callTrendsData.datasets.length > 0 ? (
+                  <Line 
+                    data={callTrendsData} 
+                    options={{
+                      ...callTrendsOptions,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: 'bottom',
+                          labels: {
+                            usePointStyle: true,
+                            padding: 20
+                          }
+                        }
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="d-flex justify-content-center align-items-center h-100">
+                    <div className="text-center text-muted">
+                      <i className="bi bi-graph-up fs-1 d-block mb-2 text-secondary"></i>
+                      No data available
+                    </div>
+                  </div>
+                )}
               </div>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={4}>
-          <Card className="mb-4">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="card-title mb-0">Statistiques mensuelles</h5>
+      </Row>
+      
+      {/* Second row with Monthly Statistics */}
+      <Row className="g-3 mb-4">
+        <Col md={12}>
+          <Card style={dashboardStyles.chartCard}>
+            <Card.Header style={dashboardStyles.cardHeader} className="border-bottom-0 pt-3 pb-0">
+              <div className="d-flex align-items-center">
+                <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(108,117,125,0.05), rgba(173,181,189,0.05))', width: '36px', height: '36px', marginRight: '0.75rem'}}>
+                  <i className="bi bi-calendar3 text-info"></i>
+                </div>
+                <div>
+                  <h5 className="card-title mb-0">Monthly Statistics</h5>
+                  <p className="text-muted small mb-0">Call trends over months</p>
+                </div>
               </div>
-            </Card.Body>
+            </Card.Header>
             <Card.Body>
-              <div className="line-chart">
-                {monthlyStatsData && monthlyStatsData.labels.length > 0 && (
-                <Line 
-                  data={monthlyStatsData} 
-                  options={callTrendsOptions}
-                />
-              )}
+              <div style={{...dashboardStyles.chartContainer, height: '300px'}} className="chart-container">
+                {monthlyStatsData && monthlyStatsData.datasets && monthlyStatsData.datasets.length > 0 ? (
+                  <Line 
+                    data={monthlyStatsData} 
+                    options={{
+                      ...callTrendsOptions,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: 'bottom',
+                          labels: {
+                            usePointStyle: true,
+                            padding: 20
+                          }
+                        }
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="d-flex justify-content-center align-items-center h-100">
+                    <div className="text-center text-muted">
+                      <i className="bi bi-calendar3 fs-1 d-block mb-2 text-secondary"></i>
+                      No data available
+                    </div>
+                  </div>
+                )}
               </div>
             </Card.Body>
           </Card>
@@ -500,25 +1135,123 @@ function Dashboard() {
       </Row>
 
       {/* Recent Activity */}
-      <Card>
-        <Card.Header>
-          <h5 className="card-title mb-0">Recent Activity</h5>
-        </Card.Header>
-        <Card.Body>
-          <div className="activity-list">
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className="activity-item">
-                <StatusBadge status={activity.status} />
-                <div className="activity-content">
-                  <div className="activity-user">{activity.user}</div>
-                  <div className="activity-details">{activity.details}</div>
-                </div>
-                <div className="activity-timestamp">
-                  {activity.timestamp}
-                </div>
+      <Card 
+        style={{...dashboardStyles.activityCard, ...fadeInAnimation, animationDelay: '0.8s'}}
+        onMouseEnter={(e) => e.currentTarget.style.boxShadow = darkMode ? '0 0.5rem 1.5rem rgba(0, 0, 0, 0.3)' : '0 0.5rem 1.5rem rgba(0, 0, 0, 0.1)'}
+        onMouseLeave={(e) => e.currentTarget.style.boxShadow = darkMode ? '0 0.25rem 1rem rgba(0, 0, 0, 0.2)' : '0 0.25rem 1rem rgba(0, 0, 0, 0.05)'}
+      >
+        <Card.Header style={dashboardStyles.cardHeader} className="d-flex justify-content-between align-items-center">
+          <div>
+            <div className="d-flex align-items-center">
+              <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(108,117,125,0.05), rgba(173,181,189,0.05))', width: '36px', height: '36px', marginRight: '0.75rem'}}>
+                <i className="bi bi-activity text-secondary"></i>
               </div>
-            ))}
+              <div>
+                <h5 className="card-title mb-0">Recent Activity</h5>
+                <p className="text-muted small mb-0">Latest call records</p>
+              </div>
+            </div>
           </div>
+          {recentActivity.length > 0 && (
+            <span className="badge bg-primary rounded-pill" style={{fontSize: '0.8rem', padding: '0.35rem 0.75rem'}}>{recentActivity.length}</span>
+          )}
+        </Card.Header>
+        <Card.Body className="p-3">
+          {recentActivity.length > 0 ? (
+            <div className="position-relative">
+              {/* Timeline line */}
+              <div style={{
+                position: 'absolute',
+                left: '24px',
+                top: '0',
+                bottom: '0',
+                width: '2px',
+                backgroundColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                zIndex: '1'
+              }}></div>
+              
+              {recentActivity.map((activity, index) => (
+                <div 
+                  key={activity.id || index} 
+                  style={{...dashboardStyles.activityItem, position: 'relative', zIndex: '2', borderLeft: 'none', marginLeft: '20px'}}
+                  className="mb-3 ps-4"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 123, 255, 0.05)';
+                    e.currentTarget.style.transform = 'translateX(5px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = darkMode ? '#343a40' : 'white';
+                    e.currentTarget.style.transform = 'translateX(0)';
+                  }}
+                >
+                  {/* Timeline dot */}
+                  <div style={{
+                    position: 'absolute',
+                    left: '-6px',
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '50%',
+                    backgroundColor: activity.status === 'success' ? '#28a745' : (activity.status === 'warning' ? '#ffc107' : '#dc3545'),
+                    border: darkMode ? '2px solid #343a40' : '2px solid white',
+                    zIndex: '3'
+                  }}></div>
+                  
+                  <div className="d-flex align-items-start">
+                    <div style={{
+                      width: '40px', 
+                      height: '40px', 
+                      borderRadius: '50%', 
+                      backgroundColor: activity.status === 'success' ? 
+                        (darkMode ? 'rgba(40, 167, 69, 0.2)' : 'rgba(40, 167, 69, 0.1)') : 
+                        (activity.status === 'warning' ? 
+                          (darkMode ? 'rgba(255, 193, 7, 0.2)' : 'rgba(255, 193, 7, 0.1)') : 
+                          (darkMode ? 'rgba(220, 53, 69, 0.2)' : 'rgba(220, 53, 69, 0.1)')), 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      marginRight: '1rem',
+                      transition: 'all 0.3s ease'
+                    }}>
+                      <i className={`bi ${activity.status === 'success' ? 'bi-check-lg text-success' : (activity.status === 'warning' ? 'bi-exclamation-triangle text-warning' : 'bi-x-lg text-danger')}`} style={{fontSize: '1.2rem'}}></i>
+                    </div>
+                    
+                    <div className="flex-grow-1">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <h6 className="mb-0" style={{fontWeight: '600'}}>{activity.user}</h6>
+                        <Badge bg={darkMode ? 'dark' : 'light'} text={darkMode ? 'light' : 'dark'} style={{borderRadius: '12px', padding: '0.35rem 0.75rem'}}>
+                          <i className="bi bi-clock me-1"></i>
+                          {activity.timestamp}
+                        </Badge>
+                      </div>
+                      <p className="mb-0 text-muted small">{activity.details}</p>
+                      <div className="mt-1">
+                        <Badge bg={activity.status === 'success' ? 'success' : (activity.status === 'warning' ? 'warning' : 'danger')} style={{opacity: 0.8, fontSize: '0.7rem'}}>
+                          {activity.status === 'success' ? 'SUCCESSFUL' : (activity.status === 'warning' ? 'WARNING' : 'FAILED')}
+                        </Badge>
+                        {activity.duration && (
+                          <Badge bg={darkMode ? 'secondary' : 'light'} text={darkMode ? 'light' : 'dark'} className="ms-2" style={{fontSize: '0.7rem'}}>
+                            {activity.duration} min
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-5">
+              <div style={{width: '70px', height: '70px', borderRadius: '50%', backgroundColor: darkMode ? 'rgba(108, 117, 125, 0.2)' : 'rgba(108, 117, 125, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem'}}>
+                <i className="bi bi-activity text-muted" style={{fontSize: '2rem'}}></i>
+              </div>
+              <h6 className="mb-1">No Recent Activity</h6>
+              <p className="mb-3 text-muted small">Call activity will appear here</p>
+              <Button variant="outline-primary" size="sm" onClick={refreshData}>
+                <i className="bi bi-arrow-clockwise me-2"></i>
+                Refresh Data
+              </Button>
+            </div>
+          )}
         </Card.Body>
       </Card>
     </div>

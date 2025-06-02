@@ -1,0 +1,74 @@
+.chart-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  margin: 0 auto;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.chart-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Override Bootstrap card height for charts */
+.card-body {
+  min-height: 300px;
+}
+
+/* First CardBody for title */
+.card-body:first-child {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  margin-bottom: 0;
+}
+
+/* Second CardBody for chart */
+.card-body:last-child {
+  padding: 1rem;
+  min-height: 400px;
+}
+
+/* Specific styling for Doughnut chart */
+.doughnut-chart {
+  width: 100%;
+  height: 1200px;
+  position: relative;
+  margin: 0 auto;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.doughnut-chart canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Specific styling for Line chart */
+.line-chart {
+  width: 100%;
+  height: 1200px;
+  position: relative;
+  margin: 0 auto;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.line-chart canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Specific styling for Date picker */
+.date-picker {
+  width: 240px;
+  margin: 0 10px;
+}
+
+.date-picker .form-control {
+  height: 80px;
+  font-size: 16px;
+  padding: 16px 24px;
+  box-sizing: border-box;
+}

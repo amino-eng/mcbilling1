@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Default API configuration
 const apiConfig = {
-  apiPort: 5000, // Changed from 5002 to match backend
+  apiPort: 5000, 
   apiUrl: 'http://localhost:5000/api'
 };
 

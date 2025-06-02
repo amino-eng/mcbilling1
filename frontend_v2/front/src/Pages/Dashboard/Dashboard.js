@@ -1,522 +1,528 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import ActivityDash from './ActivityDash';
 import { Card, Row, Col, Alert, Spinner } from 'react-bootstrap';
-import { Chart, registerables } from 'chart.js';
-import { Doughnut, Line, Bar } from 'react-chartjs-2';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap-icons/font/bootstrap-icons.css';
-import { getApiEndpoint } from '../../utils/apiConfig';
+import { Line, Doughnut } from 'react-chartjs-2';
 
-// Register Chart.js components
-Chart.register(...registerables);
+import axios from 'axios';
 
-// Dashboard component that provides an overview of the system
-const Dashboard = () => {
-  // State for call statistics
-  const [callStats, setCallStats] = useState({
-    totalCalls: 0,
-    successfulCalls: 0,
-    failedCalls: 0,
-    callDuration: 0 // in minutes
-  });
+// Helper function to format duration
+const formatDuration = (seconds) => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+  return `${hours}h ${minutes}m ${remainingSeconds}s`;
+};
 
-  // State for recent activity
-  const [recentActivity, setRecentActivity] = useState([]);
-  
-  // State for loading indicators
+// Status badge component
+const StatusBadge = ({ status }) => (
+  <span className={`badge bg-${status}`}>
+    {status.charAt(0).toUpperCase() + status.slice(1)}
+  </span>
+);
+
+function Dashboard() {
   const [loading, setLoading] = useState({
-    callStats: true,
-    callTrends: true,
-    recentActivity: true
+    callTrends: false,
+    recentActivity: false,
+    callStats: false
   });
-  
-  // State for error messages
+
   const [error, setError] = useState({
-    callStats: null,
-    callTrends: null,
-    recentActivity: null
+    callTrends: '',
+    recentActivity: '',
+    callStats: ''
   });
-  
-  // State for call trends data
-  const [callTrendsData, setCallTrendsData] = useState({
-    labels: [],
-    datasets: []
-  });
-  
-  // Fetch call statistics from the SummaryPerDay API
-  useEffect(() => {
-    const fetchCallStats = async () => {
-      try {
-        setLoading(prev => ({ ...prev, callStats: true }));
-        
-        // Fetch call summary data
-        const response = await axios.get("http://localhost:5000/api/admin/SummaryPerDay");
-        
-        if (response.data && response.data.data) {
-          const summaryData = response.data.data;
-          
-          // Calculate totals from the summary data
-          const totalCalls = summaryData.reduce((sum, day) => sum + (day.Nb_Call || 0), 0);
-          const failedCalls = summaryData.reduce((sum, day) => sum + (day.Nb_Call_Fail || 0), 0);
-          const successfulCalls = totalCalls - failedCalls;
-          const callDuration = summaryData.reduce((sum, day) => sum + (day.SessionTime || 0), 0);
-          
-          setCallStats({
-            totalCalls,
-            successfulCalls,
-            failedCalls,
-            callDuration: Math.round(callDuration / 60) // Convert seconds to minutes
-          });
-        }
-        
-        setLoading(prev => ({ ...prev, callStats: false }));
-      } catch (err) {
-        console.error("Error fetching call statistics:", err);
-        setError(prev => ({ ...prev, callStats: "Failed to load call statistics" }));
-        setLoading(prev => ({ ...prev, callStats: false }));
-      }
-    };
-    
-    fetchCallStats();
-  }, []);
-  
-  // Fetch call trends data from the SummaryPerDay API
-  useEffect(() => {
-    const fetchCallTrends = async () => {
-      try {
-        setLoading(prev => ({ ...prev, callTrends: true }));
-        
-        // Fetch call summary data
-        const response = await axios.get("http://localhost:5000/api/admin/SummaryPerDay");
-        
-        if (response.data && response.data.data) {
-          const summaryData = response.data.data;
-          
-          // Sort data by day
-          summaryData.sort((a, b) => new Date(a.Day) - new Date(b.Day));
-          
-          // Take the last 6 days or all days if less than 6
-          const recentData = summaryData.slice(-6);
-          
-          // Extract labels (days) and call volumes
-          const labels = recentData.map(day => {
-            const date = new Date(day.Day);
-            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-          });
-          
-          const callVolumes = recentData.map(day => day.Nb_Call || 0);
-          const failedVolumes = recentData.map(day => day.Nb_Call_Fail || 0);
-          const successVolumes = recentData.map(day => (day.Nb_Call || 0) - (day.Nb_Call_Fail || 0));
-          
-          setCallTrendsData({
-            labels,
-            datasets: [
-              {
-                label: 'Total Calls',
-                data: callVolumes,
-                fill: false,
-                borderColor: '#007bff',
-                backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                tension: 0.1
-              },
-              {
-                label: 'Successful Calls',
-                data: successVolumes,
-                fill: false,
-                borderColor: '#28a745',
-                backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                tension: 0.1
-              },
-              {
-                label: 'Failed Calls',
-                data: failedVolumes,
-                fill: false,
-                borderColor: '#dc3545',
-                backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                tension: 0.1
-              }
-            ]
-          });
-        }
-        
-        setLoading(prev => ({ ...prev, callTrends: false }));
-      } catch (err) {
-        console.error("Error fetching call trends:", err);
-        setError(prev => ({ ...prev, callTrends: "Failed to load call trends" }));
-        setLoading(prev => ({ ...prev, callTrends: false }));
-      }
-    };
-    
-    fetchCallTrends();
-  }, []);
-  
-  // Fetch recent activity from CDR and user history
-  useEffect(() => {
-    const fetchRecentActivity = async () => {
-      try {
-        setLoading(prev => ({ ...prev, recentActivity: true }));
-        
-        // Fetch recent calls from CDR
-        const cdrResponse = await axios.get("http://localhost:5000/api/admin/CDR/affiche");
-        
-        // Fetch user history
-        const userHistoryResponse = await axios.get("http://localhost:5000/api/admin/UserHistory/affiche");
-        
-        const activities = [];
-        
-        // Process CDR data
-        if (cdrResponse.data && Array.isArray(cdrResponse.data)) {
-          const recentCalls = cdrResponse.data.slice(0, 5).map(call => ({
-            id: `call-${call.id || Math.random().toString(36).substr(2, 9)}`,
-            type: 'call',
-            user: call.src || 'Unknown',
-            timestamp: new Date(call.calldate || Date.now()).toLocaleString(),
-            status: call.disposition === 'ANSWERED' ? 'success' : 'danger',
-            details: `${call.disposition === 'ANSWERED' ? 'Successful' : 'Failed'} call to ${call.dst || 'Unknown'}`
-          }));
-          
-          activities.push(...recentCalls);
-        }
-        
-        // Process user history data
-        if (userHistoryResponse.data && Array.isArray(userHistoryResponse.data)) {
-          const userActivities = userHistoryResponse.data.slice(0, 5).map(activity => ({
-            id: `activity-${activity.id || Math.random().toString(36).substr(2, 9)}`,
-            type: 'user',
-            user: activity.username || 'Unknown',
-            timestamp: new Date(activity.date || Date.now()).toLocaleString(),
-            status: 'info',
-            details: activity.description || 'User activity'
-          }));
-          
-          activities.push(...userActivities);
-        }
-        
-        // Sort activities by timestamp (most recent first)
-        activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        
-        // Take the 10 most recent activities
-        setRecentActivity(activities.slice(0, 10));
-        
-        setLoading(prev => ({ ...prev, recentActivity: false }));
-      } catch (err) {
-        console.error("Error fetching recent activity:", err);
-        setError(prev => ({ ...prev, recentActivity: "Failed to load recent activity" }));
-        setLoading(prev => ({ ...prev, recentActivity: false }));
-      }
-    };
-    
-    fetchRecentActivity();
-  }, []);
-
-  // Chart data for call distribution
-  const callDistributionData = {
-    labels: ['Successful Calls', 'Failed Calls'],
-    datasets: [
-      {
-        data: [callStats.successfulCalls, callStats.failedCalls],
-        backgroundColor: ['#28a745', '#dc3545'],
-        hoverBackgroundColor: ['#218838', '#c82333'],
-        borderWidth: 1
-      }
-    ]
-  };
-
-  // Options for the doughnut chart
-  const doughnutOptions = {
+  const [callTrendsData, setCallTrendsData] = useState(false);
+  const [monthlyStatsData, setMonthlyStatsData] = useState(false);
+  const [callTrendsOptions, setCallTrendsOptions] = useState({
     responsive: true,
     maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom'
-      }
-    },
-    cutout: '70%'
-  };
-
-  // Options for the line chart
-  const lineOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top'
-      }
-    },
     scales: {
       y: {
         beginAtZero: true
       }
+    },
+    animation: false
+  });
+  const [callDistributionData, setCallDistributionData] = useState({
+    labels: ['Successful', 'Failed'],
+    datasets: [{
+      data: [0, 0],
+      backgroundColor: ['#28a745', '#dc3545'],
+      hoverOffset: 4
+    }]
+  });
+  const [callDistributionOptions, setCallDistributionOptions] = useState({
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '50%',
+    animation: false
+  });
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [callStats, setCallStats] = useState({
+    totalCalls: 0,
+    successfulCalls: 0,
+    failedCalls: 0,
+    totalDuration: 0
+  });
+
+  useEffect(() => {
+    // Initialize chart options
+    setCallTrendsOptions({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top'
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Nombre d\'appels'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Date'
+          }
+        }
+      }
+    });
+
+    setCallDistributionOptions({
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '50%'
+    });
+
+    // Fetch initial data
+    const fetchData = async () => {
+      try {
+        await fetchCallSummaryData();
+        await fetchRecentActivity();
+        await fetchCallStats();
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setError(prev => ({
+          ...prev,
+          callTrends: "Failed to load call trends",
+          recentActivity: "Failed to load recent activity",
+          callStats: "Failed to load call stats"
+        }));
+      }
+    };
+
+    fetchData();
+    const interval = setInterval(fetchData, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchCallSummaryData = async () => {
+    setLoading(prev => ({ ...prev, callTrends: true }));
+    try {
+      // Get today's date
+      const today = new Date();
+      const date = today.toISOString().split('T')[0];
+      
+      const response = await axios.get(`http://localhost:5000/api/admin/SummaryPerDay`, {
+        params: {
+          date: date
+        }
+      });
+      console.log('Summary Per Day Response:', response.data);
+      
+      if (response.data && Array.isArray(response.data.data)) {
+        const summaryData = response.data.data;
+        
+        // Sort data by day
+        summaryData.sort((a, b) => new Date(a.day) - new Date(b.day));
+        
+        // Extract labels (days) and call volumes
+        const labels = summaryData.map(day => {
+          const date = new Date(day.day);
+          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
+        
+        const callVolumes = summaryData.map(day => day.nbcall || 0);
+        const failedVolumes = summaryData.map(day => day.nbcall_fail || 0);
+        const successVolumes = summaryData.map(day => (day.nbcall || 0) - (day.nbcall_fail || 0));
+        
+        // Update call trends data
+        setCallTrendsData({
+          labels,
+          datasets: [
+            {
+              label: 'Total Calls',
+              data: callVolumes,
+              fill: false,
+              borderColor: '#007bff',
+              backgroundColor: 'rgba(0, 123, 255, 0.1)',
+              tension: 0.1,
+              order: 1,
+              yAxisID: 'y'
+            },
+            {
+              label: 'Successful Calls',
+              data: successVolumes,
+              fill: false,
+              borderColor: '#28a745',
+              backgroundColor: 'rgba(40, 167, 69, 0.1)',
+              tension: 0.1,
+              order: 2,
+              yAxisID: 'y'
+            },
+            {
+              label: 'Failed Calls',
+              data: failedVolumes,
+              fill: false,
+              borderColor: '#dc3545',
+              backgroundColor: 'rgba(220, 53, 69, 0.1)',
+              tension: 0.1,
+              order: 3,
+              yAxisID: 'y'
+            }
+          ]
+        });
+
+        // Fetch monthly statistics
+        const monthlyResponse = await axios.get(`http://localhost:5000/api/admin/SummaryPerMonth`);
+        console.log('Summary Per Month Response:', monthlyResponse.data);
+        
+        // Process monthly statistics
+        const monthlyStats = monthlyResponse.data ? {
+          labels: monthlyResponse.data.map(item => item.month),
+          datasets: [
+            {
+              label: 'Appels réussis',
+              data: monthlyResponse.data.map(item => item.nbcall - item.nbcall_fail),
+              borderColor: '#4CAF50',
+              backgroundColor: 'rgba(76, 175, 80, 0.2)',
+              fill: true
+            },
+            {
+              label: 'Appels échoués',
+              data: monthlyResponse.data.map(item => item.nbcall_fail),
+              borderColor: '#f44336',
+              backgroundColor: 'rgba(244, 67, 54, 0.2)',
+              fill: true
+            }
+          ]
+        } : {
+          labels: [],
+          datasets: []
+        };
+        setMonthlyStatsData(monthlyStats);
+      }
+
+    } catch (error) {
+      console.error("Error fetching call trends:", error);
+      setError(prev => ({
+        ...prev,
+        callTrends: "Failed to load call trends"
+      }));
+    } finally {
+      setLoading(prev => ({ ...prev, callTrends: false }));
     }
-  };
+  }
 
-  // Function to format minutes into hours and minutes
-  const formatDuration = (minutes) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
-  };
+  const fetchRecentActivity = async () => {
+    setLoading(prev => ({ ...prev, recentActivity: true }));
+    try {
+      // Fetch CDR data
+      const cdrResponse = await axios.get("http://localhost:5000/api/admin/CDR/affiche");
+      
+      // Fetch user history
+      const userHistoryResponse = await axios.get("http://localhost:5000/api/admin/UserHistory/affiche");
+      
+      const activities = [];
+      
+      // Process CDR data
+      if (cdrResponse.data && Array.isArray(cdrResponse.data)) {
+        const recentCalls = cdrResponse.data.slice(0, 5).map(call => ({
+          id: `call-${call.id || Math.random().toString(36).substr(2, 9)}`,
+          type: 'call',
+          user: call.src || 'Unknown',
+          timestamp: new Date(call.calldate || Date.now()).toLocaleString(),
+          status: call.disposition === 'ANSWERED' ? 'success' : 'danger',
+          details: `${call.disposition === 'ANSWERED' ? 'Successful' : 'Failed'} call to ${call.dst || 'Unknown'}`
+        }));
+        
+        activities.push(...recentCalls);
+      }
+      
+      // Process user history data
+      if (userHistoryResponse.data && Array.isArray(userHistoryResponse.data)) {
+        const userActivities = userHistoryResponse.data.slice(0, 5).map(activity => ({
+          id: `activity-${activity.id || Math.random().toString(36).substr(2, 9)}`,
+          type: 'user',
+          user: activity.username || 'Unknown',
+          timestamp: new Date(activity.date || Date.now()).toLocaleString(),
+          status: 'info',
+          details: activity.description || 'User activity'
+        }));
+        
+        activities.push(...userActivities);
+      }
+      
+      // Sort activities by timestamp (most recent first)
+      activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      
+      // Take the 10 most recent activities
+      setRecentActivity(activities.slice(0, 10));
+    } catch (error) {
+      console.error("Error fetching activity data:", error);
+      setError(prev => ({
+        ...prev,
+        recentActivity: "Failed to load recent activity"
+      }));
+    } finally {
+      setLoading(prev => ({ ...prev, recentActivity: false }));
+    }
+  }
 
-  // Status badge component
-  const StatusBadge = ({ status }) => {
-    const badgeClass = {
-      success: 'bg-success',
-      info: 'bg-info',
-      warning: 'bg-warning',
-      danger: 'bg-danger'
-    }[status] || 'bg-secondary';
+  const fetchCallStats = async () => {
+    setLoading(prev => ({ ...prev, callStats: true }));
+    try {
+      // Fetch failed CDR data
+      let failedData = [];
+      try {
+        const failedResponse = await axios.get("http://localhost:5000/api/admin/CdrFailed/affiche");
+        console.log('Failed CDR Response:', failedResponse.data);
+        failedData = failedResponse.data?.cdr_failed || [];
+        console.log('Number of failed calls:', failedData.length);
+      } catch (error) {
+        console.error("Error fetching failed CDR data:", error);
+      }
 
-    return <span className={`badge ${badgeClass}`}>{status}</span>;
-  };
+      // Fetch successful CDR data
+      const successResponse = await axios.get("http://localhost:5000/api/admin/CDR/affiche");
+      console.log('CDR Response:', successResponse.data);
+      
+      if (!successResponse.data || !Array.isArray(successResponse.data.cdr)) {
+        console.error('Invalid CDR data format:', successResponse.data);
+        throw new Error('Invalid CDR data format');
+      }
+
+      // Filter successful calls
+      const successData = successResponse.data.cdr.filter(call => {
+        console.log('Call details:', {
+          terminatecauseid: call.terminatecauseid,
+          sessiontime: call.sessiontime,
+          real_sessiontime: call.real_sessiontime,
+          sessionbill: call.sessionbill,
+          calledstation: call.calledstation,
+          callerid: call.callerid
+        });
+        // Consider a call successful if it has sessiontime > 0
+        return call.sessiontime > 0;
+      });
+
+      // Calculate statistics
+      const totalCalls = successData.length + failedData.length;
+      const successfulCalls = successData.length;
+      const failedCalls = failedData.length;
+      
+      // Calculate average duration using sessiontime
+      const totalDuration = successData.reduce((sum, call) => sum + call.sessiontime, 0);
+      const averageDuration = successfulCalls > 0 ? totalDuration / successfulCalls : 0;
+      
+      console.log('Call Stats:', {
+        totalCalls,
+        successfulCalls,
+        failedCalls,
+        totalDuration
+      });
+      
+      // Update call stats
+      setCallStats({
+        totalCalls,
+        successfulCalls,
+        failedCalls,
+        totalDuration
+      });
+      
+      // Update call distribution data
+      setCallDistributionData({
+        labels: ['Successful', 'Failed'],
+        datasets: [{
+          data: [successfulCalls, failedCalls],
+          backgroundColor: ['#28a745', '#dc3545'],
+          hoverOffset: 4
+        }]
+      });
+    } catch (error) {
+      console.error("Error fetching call stats:", error);
+      setError(prev => ({
+        ...prev,
+        callStats: error.message || "Failed to load call stats"
+      }));
+      setCallStats({
+        totalCalls: 0,
+        successfulCalls: 0,
+        failedCalls: 0,
+        totalDuration: 0
+      });
+      setCallDistributionData({
+        labels: ['Successful', 'Failed'],
+        datasets: [{
+          data: [0, 0],
+          backgroundColor: ['#28a745', '#dc3545'],
+          hoverOffset: 4
+        }]
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, callStats: false }));
+    }
+  }
 
   return (
     <div className="dashboard-container">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>Dashboard</h2>
-        <div>
-          <button className="btn btn-sm btn-outline-primary me-2">
-            <i className="bi bi-arrow-clockwise me-1"></i> Refresh
-          </button>
-          <button className="btn btn-sm btn-outline-secondary">
-            <i className="bi bi-gear me-1"></i> Settings
-          </button>
-        </div>
       </div>
 
-      {/* Quick Stats Cards */}
-      <Row className="mb-4">
+      {/* Error Alert */}
+      {Object.values(error).some(Boolean) && (
+        <Alert variant="danger" className="mb-4">
+          {Object.entries(error).find(([_, value]) => value)?.[1]}
+        </Alert>
+      )}
+
+      {/* Loading Spinner */}
+      {Object.values(loading).some(Boolean) && (
+        <div className="d-flex justify-content-center mb-4">
+          <Spinner animation="border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </Spinner>
+        </div>
+      )}
+
+      {/* Call Statistics */}
+      <Row>
         <Col md={3}>
-          <Card className="h-100 shadow-sm">
+          <Card className="mb-4">
             <Card.Body>
-              {loading.callStats ? (
-                <div className="d-flex justify-content-center align-items-center h-100">
-                  <Spinner animation="border" variant="primary" />
-                </div>
-              ) : error.callStats ? (
-                <div className="text-danger">
-                  <i className="bi bi-exclamation-triangle me-2"></i>
-                  {error.callStats}
-                </div>
-              ) : (
-                <div className="d-flex justify-content-between">
-                  <div>
-                    <h6 className="text-muted">Total Calls</h6>
-                    <h3>{callStats.totalCalls.toLocaleString()}</h3>
-                  </div>
-                  <div className="text-primary fs-1">
-                    <i className="bi bi-telephone"></i>
-                  </div>
-                </div>
-              )}
+              <h5 className="card-title">Total Calls</h5>
+              <h2 className="text-primary">{callStats.totalCalls}</h2>
             </Card.Body>
           </Card>
         </Col>
         <Col md={3}>
-          <Card className="h-100 shadow-sm">
+          <Card className="mb-4">
             <Card.Body>
-              {loading.callStats ? (
-                <div className="d-flex justify-content-center align-items-center h-100">
-                  <Spinner animation="border" variant="success" />
-                </div>
-              ) : error.callStats ? (
-                <div className="text-danger">
-                  <i className="bi bi-exclamation-triangle me-2"></i>
-                  {error.callStats}
-                </div>
-              ) : (
-                <div className="d-flex justify-content-between">
-                  <div>
-                    <h6 className="text-muted">Success Rate</h6>
-                    <h3>{callStats.totalCalls > 0 ? Math.round((callStats.successfulCalls / callStats.totalCalls) * 100) : 0}%</h3>
-                  </div>
-                  <div className="text-success fs-1">
-                    <i className="bi bi-graph-up"></i>
-                  </div>
-                </div>
-              )}
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <h5 className="card-title mb-0">Successful Calls</h5>
+                <StatusBadge status="success" />
+              </div>
+              <h2 className="text-success">{callStats.successfulCalls}</h2>
             </Card.Body>
           </Card>
         </Col>
         <Col md={3}>
-          <Card className="h-100 shadow-sm">
+          <Card className="mb-4">
             <Card.Body>
-              {loading.callStats ? (
-                <div className="d-flex justify-content-center align-items-center h-100">
-                  <Spinner animation="border" variant="danger" />
-                </div>
-              ) : error.callStats ? (
-                <div className="text-danger">
-                  <i className="bi bi-exclamation-triangle me-2"></i>
-                  {error.callStats}
-                </div>
-              ) : (
-                <div className="d-flex justify-content-between">
-                  <div>
-                    <h6 className="text-muted">Failed Calls</h6>
-                    <h3>{callStats.failedCalls.toLocaleString()}</h3>
-                  </div>
-                  <div className="text-danger fs-1">
-                    <i className="bi bi-telephone-x"></i>
-                  </div>
-                </div>
-              )}
+              <h5 className="card-title">Failed Calls</h5>
+              <h2 className="text-danger">{callStats.failedCalls}</h2>
             </Card.Body>
           </Card>
         </Col>
         <Col md={3}>
-          <Card className="h-100 shadow-sm">
+          <Card className="mb-4">
             <Card.Body>
-              {loading.callStats ? (
-                <div className="d-flex justify-content-center align-items-center h-100">
-                  <Spinner animation="border" variant="warning" />
-                </div>
-              ) : error.callStats ? (
-                <div className="text-danger">
-                  <i className="bi bi-exclamation-triangle me-2"></i>
-                  {error.callStats}
-                </div>
-              ) : (
-                <div className="d-flex justify-content-between">
-                  <div>
-                    <h6 className="text-muted">Total Duration</h6>
-                    <h3>{formatDuration(callStats.callDuration)}</h3>
-                  </div>
-                  <div className="text-warning fs-1">
-                    <i className="bi bi-clock"></i>
-                  </div>
-                </div>
-              )}
+              <h5 className="card-title">Total Duration</h5>
+              <h2 className="text-info">{formatDuration(callStats.totalDuration)}</h2>
             </Card.Body>
           </Card>
         </Col>
       </Row>
 
-      {/* Charts Row */}
-      <Row className="mb-4">
-        <Col md={6}>
-          <Card className="h-100 shadow-sm">
-            <Card.Header className="bg-white">
-              <h5 className="mb-0">Call Distribution</h5>
-            </Card.Header>
+      {/* Charts */}
+      <Row>
+        <Col md={4}>
+          <Card className="mb-4">
             <Card.Body>
-              {loading.callStats ? (
-                <div className="d-flex justify-content-center align-items-center" style={{ height: '250px' }}>
-                  <Spinner animation="border" variant="primary" />
-                </div>
-              ) : error.callStats ? (
-                <div className="text-danger d-flex justify-content-center align-items-center" style={{ height: '250px' }}>
-                  <div>
-                    <i className="bi bi-exclamation-triangle-fill fs-1 d-block text-center mb-3"></i>
-                    <p>{error.callStats}</p>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ height: '250px' }}>
-                  <Doughnut data={callDistributionData} options={doughnutOptions} />
-                </div>
-              )}
+              <h5 className="card-title">Statistiques des appels</h5>
+            </Card.Body>
+            <Card.Body>
+              <div className="doughnut-chart">
+                <Doughnut 
+                  data={callDistributionData} 
+                  options={callDistributionOptions}
+                />
+              </div>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={6}>
-          <Card className="h-100 shadow-sm">
-            <Card.Header className="bg-white">
-              <h5 className="mb-0">Call Trends</h5>
-            </Card.Header>
+        <Col md={4}>
+          <Card className="mb-4">
             <Card.Body>
-              {loading.callTrends ? (
-                <div className="d-flex justify-content-center align-items-center" style={{ height: '250px' }}>
-                  <Spinner animation="border" variant="primary" />
-                </div>
-              ) : error.callTrends ? (
-                <div className="text-danger d-flex justify-content-center align-items-center" style={{ height: '250px' }}>
-                  <div>
-                    <i className="bi bi-exclamation-triangle-fill fs-1 d-block text-center mb-3"></i>
-                    <p>{error.callTrends}</p>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ height: '250px' }}>
-                  <Line data={callTrendsData} options={lineOptions} />
-                </div>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5 className="card-title mb-0">Statistiques par jour</h5>
+              </div>
+            </Card.Body>
+            <Card.Body>
+              <div className="line-chart">
+                <Line 
+                  data={callTrendsData} 
+                  options={callTrendsOptions}
+                />
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={4}>
+          <Card className="mb-4">
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5 className="card-title mb-0">Statistiques mensuelles</h5>
+              </div>
+            </Card.Body>
+            <Card.Body>
+              <div className="line-chart">
+                {monthlyStatsData && monthlyStatsData.labels.length > 0 && (
+                <Line 
+                  data={monthlyStatsData} 
+                  options={callTrendsOptions}
+                />
               )}
+              </div>
             </Card.Body>
           </Card>
         </Col>
       </Row>
 
       {/* Recent Activity */}
-      <Row className="mb-4">
-        <Col md={12}>
-          <Card className="shadow-sm">
-            <Card.Header className="bg-white">
-              <h5 className="mb-0">Recent Activity</h5>
-            </Card.Header>
-            <Card.Body>
-              {loading.recentActivity ? (
-                <div className="d-flex justify-content-center py-5">
-                  <Spinner animation="border" variant="primary" />
+      <Card>
+        <Card.Header>
+          <h5 className="card-title mb-0">Recent Activity</h5>
+        </Card.Header>
+        <Card.Body>
+          <div className="activity-list">
+            {recentActivity.map((activity) => (
+              <div key={activity.id} className="activity-item">
+                <StatusBadge status={activity.status} />
+                <div className="activity-content">
+                  <div className="activity-user">{activity.user}</div>
+                  <div className="activity-details">{activity.details}</div>
                 </div>
-              ) : error.recentActivity ? (
-                <Alert variant="danger">
-                  <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                  {error.recentActivity}
-                </Alert>
-              ) : recentActivity.length === 0 ? (
-                <div className="text-center py-5 text-muted">
-                  <i className="bi bi-inbox fs-1 d-block mb-3"></i>
-                  <p>No recent activities found</p>
+                <div className="activity-timestamp">
+                  {activity.timestamp}
                 </div>
-              ) : (
-                <div className="table-responsive">
-                  <table className="table table-hover">
-                    <thead>
-                      <tr>
-                        <th>Type</th>
-                        <th>User</th>
-                        <th>Details</th>
-                        <th>Status</th>
-                        <th>Time</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentActivity.map(activity => (
-                        <tr key={activity.id}>
-                          <td>
-                            <i className={`bi bi-${activity.type === 'call' ? 'telephone' : activity.type === 'user' ? 'person' : 'gear'} me-2`}></i>
-                            {activity.type.charAt(0).toUpperCase() + activity.type.slice(1)}
-                          </td>
-                          <td>{activity.user}</td>
-                          <td>{activity.details}</td>
-                          <td><StatusBadge status={activity.status} /></td>
-                          <td>{activity.timestamp}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* System Notifications */}
-      <Row>
-        <Col md={12}>
-          <Alert variant="info" className="d-flex align-items-center">
-            <i className="bi bi-info-circle-fill me-2 fs-4"></i>
-            <div>
-              <strong>System Notification:</strong> The next scheduled maintenance will be on May 15, 2025 at 02:00 AM.
-            </div>
-          </Alert>
-        </Col>
-      </Row>
-
-
+              </div>
+            ))}
+          </div>
+        </Card.Body>
+      </Card>
     </div>
   );
-};
+}
 
 export default Dashboard;

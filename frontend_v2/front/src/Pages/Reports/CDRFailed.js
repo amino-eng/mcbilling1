@@ -150,12 +150,13 @@ function CdrFailedTable() {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`http://localhost:5000/api/admin/CdrFailed/${confirmDeleteId}`);
+      await axios.delete(`http://localhost:5000/api/admin/CdrFailed/delete/${confirmDeleteId}`);
       toast.success("Record deleted successfully!");
-      setCdrFailedData(cdrFailedData.filter((cdr) => cdr.id !== confirmDeleteId));
+      // Refresh the data from the server instead of just filtering
+      await fetchCdrFailedData();
     } catch (error) {
       console.error("Error deleting record:", error);
-      toast.error("Failed to delete record.");
+      toast.error(error.response?.data?.error || "Failed to delete record.");
     } finally {
       setShowModal(false);
     }

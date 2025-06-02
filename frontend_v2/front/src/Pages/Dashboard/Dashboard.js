@@ -903,7 +903,7 @@ function Dashboard() {
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <h2 className="text-success mb-0">{callStats.successfulCalls}</h2>
                   <span className="badge bg-success bg-opacity-10 text-success" style={dashboardStyles.badge}>
-                    {Math.round((callStats.successfulCalls / (callStats.totalCalls || 1)) * 100)}% success rate
+                    {Math.round((callStats.successfulCalls / (callStats.totalCalls || 1)) * 100)}% success call
                   </span>
                 </div>
                 <div className="progress" style={dashboardStyles.progressBar}>
@@ -935,7 +935,7 @@ function Dashboard() {
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <h2 className="text-danger mb-0">{callStats.failedCalls}</h2>
                   <span className="badge bg-danger bg-opacity-10 text-danger" style={dashboardStyles.badge}>
-                    {Math.round((callStats.failedCalls / (callStats.totalCalls || 1)) * 100)}% failure rate
+                    {Math.round((callStats.failedCalls / (callStats.totalCalls || 1)) * 100)}% failure call
                   </span>
                 </div>
                 <div className="progress" style={dashboardStyles.progressBar}>
@@ -991,7 +991,7 @@ function Dashboard() {
                 </div>
                 <div>
                   <h5 className="card-title mb-0">Call Distribution</h5>
-                  <p className="text-muted small mb-0">Success vs. Failure Rate</p>
+                  <p className="text-muted small mb-0">Success vs. Failure call</p>
                 </div>
               </div>
             </Card.Header>

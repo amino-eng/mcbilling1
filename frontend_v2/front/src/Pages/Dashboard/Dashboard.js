@@ -329,7 +329,6 @@ function Dashboard() {
   const fetchCallSummaryData = async () => {
     setLoading(prev => ({ ...prev, callTrends: true }));
     try {
-      // Get today's date
       const today = new Date();
       const date = today.toISOString().split('T')[0];
       

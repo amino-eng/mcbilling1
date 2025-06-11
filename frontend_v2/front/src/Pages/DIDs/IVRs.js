@@ -32,6 +32,7 @@ function IVRsHeader({ onAddClick, ivrs, isExporting }) {
       ivr.sunStart || "",
     ]),
   ]
+  // Note: CSV Headers are already mostly French or identifiers, keeping them as is.
 
   return (
     <Card.Header className="d-flex flex-wrap align-items-center p-0 rounded-top overflow-hidden">
@@ -61,8 +62,8 @@ function IVRsHeader({ onAddClick, ivrs, isExporting }) {
             <FaRobot className="text-primary fs-3" />
           </div>
           <div>
-            <h2 className="fw-bold mb-0 text-white">Manage IVRs</h2>
-            <p className="text-white-50 mb-0 d-none d-md-block">Manage your Interactive Voice Response systems</p>
+            <h2 className="fw-bold mb-0 text-white">Gérer les IVRs</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos systèmes de Réponse Vocale Interactive</p>
           </div>
         </div>
       </div>
@@ -70,7 +71,7 @@ function IVRsHeader({ onAddClick, ivrs, isExporting }) {
         <div className="d-flex align-items-center gap-3">
           <Badge bg="primary" className="d-flex align-items-center p-2 ps-3 rounded-pill">
             <span className="me-2 fw-normal">
-              Total: <span className="fw-bold">{ivrs.length}</span>
+              Total : <span className="fw-bold">{ivrs.length}</span>
             </span>
             <span
               className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center"
@@ -89,18 +90,18 @@ function IVRsHeader({ onAddClick, ivrs, isExporting }) {
             <div className="icon-container">
               <FaPlusCircle />
             </div>
-            <span>Add IVR</span>
+            <span>Ajouter IVR</span>
           </Button>
           <CSVLink
             data={csvData}
-            filename={"ivrs.csv"}
+            filename={"IVR.csv"}
             className="btn btn-success d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
             disabled={isExporting}
           >
             <div className="icon-container">
               {isExporting ? <Spinner animation="border" size="sm" /> : <FaDownload />}
             </div>
-            <span>Export</span>
+            <span>Exporter</span>
           </CSVLink>
         </div>
       </div>
@@ -114,7 +115,7 @@ function SearchBar({ searchTerm, onSearchChange }) {
     <div className="position-relative">
       <Form.Control
         type="text"
-        placeholder="Search IVRs..."
+        placeholder="Rechercher des IVR..."
         value={searchTerm}
         onChange={onSearchChange}
         className="ps-4 rounded-pill border-0 shadow-sm"
@@ -158,8 +159,8 @@ function EmptyState() {
       <div className="mb-3 text-muted">
         <FaRobot size={48} />
       </div>
-      <h5>No IVRs Found</h5>
-      <p className="text-muted">Add your first IVR to get started</p>
+      <h5>Aucun IVR trouvé</h5>
+      <p className="text-muted">Ajoutez votre premier IVR pour commencer</p>
     </div>
   )
 }
@@ -170,7 +171,7 @@ function IVRsTable({ ivrs, onEdit, onDelete, isLoading, showTimeColumns }) {
     return (
       <div className="text-center py-5">
         <Spinner animation="border" variant="primary" />
-        <p className="mt-3 text-muted">Loading IVRs...</p>
+        <p className="mt-3 text-muted">Chargement des IVR...</p>
       </div>
     )
   }
@@ -226,8 +227,8 @@ function IVRsTable({ ivrs, onEdit, onDelete, isLoading, showTimeColumns }) {
 function PaginationSection({ pageCount, onPageChange, currentPage }) {
   return (
     <ReactPaginate
-      previousLabel={"Previous"}
-      nextLabel={"Next"}
+      previousLabel={"Précédent"}
+      nextLabel={"Suivant"}
       breakLabel={"..."}
       pageCount={pageCount}
       marginPagesDisplayed={2}
@@ -277,7 +278,7 @@ function IVRModal({
       <Form onSubmit={handleSubmit}>
         <Modal.Body className="p-4">
           <Tabs defaultActiveKey="General" className="mb-4">
-            <Tab eventKey="General" title="General Information">
+            <Tab eventKey="General" title="Informations Générales">
               <Row className="g-3">
                 <Col md={6}>
                   <Form.Group controlId="formName">
@@ -404,7 +405,7 @@ function IVRModal({
         </Modal.Body>
         <Modal.Footer className="border-top-0 pt-0">
           <Button variant="light" onClick={onHide} className="fw-semibold">
-            Cancel
+            Annuler
           </Button>
           <Button 
             variant="primary" 
@@ -413,7 +414,7 @@ function IVRModal({
             disabled={isSubmitting}
           >
             {isSubmitting ? <Spinner animation="border" size="sm" /> : <FaCheckCircle />}
-            {title === "Add IVR" ? "Add" : "Save Changes"}
+            {title === "Ajouter IVR" || title === "Add IVR" ? "Ajouter" : "Enregistrer les modifications"}
           </Button>
         </Modal.Footer>
       </Form>
@@ -486,11 +487,11 @@ function IvrTable() {
       if (response.data.ivrs) {
         setIvrs(response.data.ivrs);
       } else {
-        setErrorMessage('No IVRs found');
+        setErrorMessage('Aucun IVR trouvé');
       }
     } catch (error) {
       console.error('Error fetching IVRs:', error);
-      setErrorMessage('Failed to load IVRs');
+      setErrorMessage('Échec du chargement des IVR');
     } finally {
       setIsLoading(false);
     }
@@ -565,7 +566,7 @@ function IvrTable() {
       setShowEditModal(true);
     } catch (error) {
       console.error('Error fetching IVR:', error);
-      setErrorMessage('Failed to fetch IVR for editing');
+      setErrorMessage('Échec de la récupération du IVR pour modification');
     }
   };
 
@@ -591,7 +592,7 @@ function IvrTable() {
       console.log('Parsed values - id_user:', id_user, 'name:', name); // Debug log
       
       if (isNaN(id_user) || id_user <= 0 || !name) {
-        setErrorMessage(`User and Name are required (id_user: ${currentIvr.id_user}, name: ${currentIvr.name})`);
+        setErrorMessage(`Utilisateur et Nom sont requis (id_user: ${currentIvr.id_user}, name: ${currentIvr.name})`);
         setIsSubmitting(false);
         return;
       }
@@ -625,7 +626,7 @@ function IvrTable() {
       setErrorMessage(
         error.response?.data?.error || 
         error.message || 
-        'Error submitting IVR'
+        'Erreur lors de la soumission du IVR'
       );
     } finally {
       setIsSubmitting(false);
@@ -633,15 +634,15 @@ function IvrTable() {
   };
 
   const handleDeleteIvr = async (ivrId) => {
-    if (window.confirm('Are you sure you want to delete this IVR?')) {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce IVR ?')) {
       try {
         await axios.delete(`http://localhost:5000/api/admin/IVRs/delete/${ivrId}`);
         const response = await axios.get(apiUrl);
         setIvrs(response.data.ivrs);
-        setSuccessMessage('IVR deleted successfully');
+        setSuccessMessage('IVR supprimé avec succès');
       } catch (error) {
         console.error('Error deleting IVR:', error);
-        setErrorMessage('Failed to delete IVR');
+        setErrorMessage('Échec de la suppression du IVR');
       }
     }
   };
@@ -768,7 +769,7 @@ function IvrTable() {
                   currentPage={currentPage}
                 />
                 <Button variant="primary" onClick={toggleTimeColumns}>
-                  Toggle Time Columns
+                  Afficher/Masquer Colonnes Horaires
                 </Button>
               </Card.Body>
             </Card>
@@ -780,7 +781,7 @@ function IvrTable() {
       <IVRModal
         show={showAddModal}
         onHide={handleCloseModal}
-        title="Add IVR"
+        title="Ajouter IVR"
         onSubmit={handleSubmit}
         ivr={newIvr}
         onInputChange={(e, field) => {
@@ -796,7 +797,7 @@ function IvrTable() {
         <IVRModal
           show={showEditModal}
           onHide={handleCloseModal}
-          title="Edit IVR"
+          title="Modifier IVR"
           onSubmit={handleSubmit}
           ivr={editIvr}
           onInputChange={(e, field) => {

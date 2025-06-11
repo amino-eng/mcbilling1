@@ -25,7 +25,7 @@ const SummaryMonthUserTable = () => {
         setLoading(false)
       })
       .catch((err) => {
-        setError("Error fetching data.")
+        setError("Impossible de récupérer les données.")
         setLoading(false)
       })
   }, [])
@@ -115,8 +115,8 @@ const SummaryMonthUserTable = () => {
                     <FaChartLine className="text-primary fs-3" />
                   </div>
                   <div>
-                    <h2 className="fw-bold mb-0 text-white">Monthly User Reports</h2>
-                    <p className="text-white-50 mb-0 d-none d-md-block">Detailed monthly usage statistics by user</p>
+                    <h2 className="fw-bold mb-0 text-white">Rapports mensuels des utilisateurs</h2>
+                    <p className="text-white-50 mb-0 d-none d-md-block">Statistiques détaillées d'utilisation mensuelles par utilisateur</p>
                   </div>
                 </div>
               </Card.Header>
@@ -126,7 +126,7 @@ const SummaryMonthUserTable = () => {
                   <Col md={6} lg={4}>
                     <Form.Control
                       type="text"
-                      placeholder="Search by month..."
+                      placeholder="Rechercher par mois..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="shadow-sm"
@@ -135,7 +135,7 @@ const SummaryMonthUserTable = () => {
                   <Col md={6} lg={8} className="d-flex justify-content-end">
                     <CSVLink
                       data={csvData}
-                      filename="monthly_user_reports.csv"
+                      filename="rapports_mensuels_utilisateurs.csv"
                       className="btn btn-success d-flex align-items-center gap-2"
                       disabled={isExporting}
                     >
@@ -149,14 +149,14 @@ const SummaryMonthUserTable = () => {
                   <Table striped bordered hover className="elegant-table">
                     <thead>
                       <tr>
-                        <th>Month</th>
-                        <th>Username</th>
-                        <th>Duration</th>
-                        <th>Allocated Calls</th>
-                        <th>Answered Calls</th>
-                        <th>Buy Price (€)</th>
-                        <th>Sell Price (€)</th>
-                        <th>Markup</th>
+                        <th>Mois</th>
+                        <th>Nom d'utilisateur</th>
+                        <th>Durée</th>
+                        <th>Appels alloués</th>
+                        <th>Appels répondus</th>
+                        <th>Prix d'achat (€)</th>
+                        <th>Prix de vente (€)</th>
+                        <th>Marge</th>
                         <th>ASR (%)</th>
                       </tr>
                     </thead>
@@ -185,18 +185,18 @@ const SummaryMonthUserTable = () => {
                 <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
                   <div className="text-muted small">
                     <Badge bg="light" text="dark" className="me-2 shadow-sm">
-                      <span className="fw-semibold">{pagedData.length}</span> of {filteredData.length} records
+                      <span className="fw-semibold">{pagedData.length}</span> sur {filteredData.length} enregistrements
                     </Badge>
                     {searchTerm && (
                       <Badge bg="light" text="dark" className="shadow-sm">
-                        Filtered from {data.length} total
+                        Filtré à partir de {data.length} enregistrements au total
                       </Badge>
                     )}
                   </div>
                   
                   <ReactPaginate
-                    previousLabel="Previous"
-                    nextLabel="Next"
+                    previousLabel="Précédent"
+                    nextLabel="Suivant"
                     breakLabel="..."
                     pageCount={pageCount}
                     marginPagesDisplayed={2}

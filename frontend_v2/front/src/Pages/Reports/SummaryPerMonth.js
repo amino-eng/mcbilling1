@@ -68,13 +68,13 @@ const SummaryPerMonth = () => {
 
   // State for column visibility
   const [visibleColumns, setVisibleColumns] = useState({
-    Month: true,
+    Mois: true,
     SessionTime: true,
     TotalCalls: true,
     FailedCalls: true,
     BuyCost: true,
     SessionBill: true,
-    Profit: true,
+    Bénéfice: true,
     ASR: true,
   });
 
@@ -85,11 +85,11 @@ const SummaryPerMonth = () => {
       .then((response) => {
         setData(response.data.data);
         setLoading(false);
-        setSuccessMessage("Data loaded successfully");
+        setSuccessMessage("Données chargées avec succès");
         setTimeout(() => setSuccessMessage(null), 3000);
       })
       .catch((err) => {
-        setError("Failed to fetch data");
+        setError("Échec du chargement des données");
         setLoading(false);
       });
   }, []);
@@ -107,14 +107,14 @@ const SummaryPerMonth = () => {
   // Function to export table data to CSV
   const exportToCSV = () => {
     const headers = [
-      "Month",
-      "Session Time",
-      "Total Calls",
-      "Failed Calls",
-      "Buy Cost (€)",
-      "Session Bill",
-      "Profit (Lucro)",
-      "ASR (%)",
+      "Mois",
+      "Temps de session",
+      "Appels totaux",
+      "Appels échoués",
+      "Coût d'achat (€)",
+      "Facture de session",
+      "Bénéfice",
+      "Taux de succès (%)",
     ];
     const rows = filteredData.map((item) => [
       `${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}`,
@@ -132,7 +132,7 @@ const SummaryPerMonth = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "summary_per_month.csv";
+    link.download = "resume_mensuel.csv";
     link.click();
   };
 
@@ -140,7 +140,7 @@ const SummaryPerMonth = () => {
     return (
       <div className="text-center mt-5">
         <Spinner animation="border" variant="primary" />
-        <p className="mt-2 text-muted">Loading monthly summary...</p>
+        <p className="mt-2 text-muted">Chargement du résumé mensuel...</p>
       </div>
     );
   }
@@ -181,15 +181,15 @@ const SummaryPerMonth = () => {
                       <FaPercent className="text-primary fs-3" />
                     </div>
                     <div>
-                      <h2 className="fw-bold mb-0 text-white">Monthly Summary</h2>
-                      <p className="text-white-50 mb-0 d-none d-md-block">Overview of monthly call statistics and revenue</p>
+                      <h2 className="fw-bold mb-0 text-white">Résumé mensuel</h2>
+                      <p className="text-white-50 mb-0 d-none d-md-block">Vue d'ensemble des statistiques et revenus mensuels</p>
                     </div>
                   </div>
                 </div>
                 <div className="w-100 bg-white p-2 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
                   <Badge bg="primary" className="d-flex align-items-center p-2 ps-3 rounded-pill">
                     <span className="me-2 fw-normal">
-                      Records: <span className="fw-bold">{filteredData.length}</span>
+                      Enregistrements: <span className="fw-bold">{filteredData.length}</span>
                     </span>
                   </Badge>
                   <div className="d-flex gap-2">
@@ -199,7 +199,7 @@ const SummaryPerMonth = () => {
                       className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
                     >
                       <FaDownload />
-                      <span>Export</span>
+                      <span>Exporter</span>
                     </Button>
                     <ColumnVisibilityDropdown
                       visibleColumns={visibleColumns}
@@ -222,7 +222,7 @@ const SummaryPerMonth = () => {
                     <div className="position-relative">
                       <Form.Control
                         type="text"
-                        placeholder="Search by Month"
+                        placeholder="Rechercher par mois"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="ps-5"
@@ -236,20 +236,20 @@ const SummaryPerMonth = () => {
                   <Table striped bordered hover className="elegant-table">
                     <thead className="bg-primary text-white">
                       <tr>
-                        {visibleColumns.Month && <th>Month</th>}
-                        {visibleColumns.SessionTime && <th>Session Time</th>}
-                        {visibleColumns.TotalCalls && <th>Total Calls</th>}
-                        {visibleColumns.FailedCalls && <th>Failed Calls</th>}
-                        {visibleColumns.BuyCost && <th>Buy Cost (€)</th>}
-                        {visibleColumns.SessionBill && <th>Session Bill</th>}
-                        {visibleColumns.Profit && <th>Profit</th>}
-                        {visibleColumns.ASR && <th>ASR (%)</th>}
+                        {visibleColumns.Mois && <th>Mois</th>}
+                        {visibleColumns.SessionTime && <th>Temps de session</th>}
+                        {visibleColumns.TotalCalls && <th>Appels totaux</th>}
+                        {visibleColumns.FailedCalls && <th>Appels échoués</th>}
+                        {visibleColumns.BuyCost && <th>Coût d'achat (€)</th>}
+                        {visibleColumns.SessionBill && <th>Facture de session</th>}
+                        {visibleColumns.Bénéfice && <th>Bénéfice</th>}
+                        {visibleColumns.ASR && <th>Taux de succès (%)</th>}
                       </tr>
                     </thead>
                     <tbody>
                       {currentItems.map((item) => (
                         <tr key={item.id}>
-                          {visibleColumns.Month && (
+                          {visibleColumns.Mois && (
                             <td>
                               {`${item.month.toString().slice(0, 4)}-${item.month
                                 .toString()
@@ -261,7 +261,7 @@ const SummaryPerMonth = () => {
                           {visibleColumns.FailedCalls && <td>{item.nbcall_fail.toFixed(2)}</td>}
                           {visibleColumns.BuyCost && <td>{item.buycost.toFixed(2)} €</td>}
                           {visibleColumns.SessionBill && <td>{item.sessionbill.toFixed(2)}</td>}
-                          {visibleColumns.Profit && <td>{item.lucro.toFixed(2)}</td>}
+                          {visibleColumns.Bénéfice && <td>{item.lucro.toFixed(2)}</td>}
                           {visibleColumns.ASR && <td>{item.asr.toFixed(2)} %</td>}
                         </tr>
                       ))}
@@ -272,17 +272,17 @@ const SummaryPerMonth = () => {
                 <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
                   <div className="text-muted small">
                     <Badge bg="light" text="dark" className="me-2 shadow-sm">
-                      <span className="fw-semibold">{currentItems.length}</span> of {filteredData.length} records
+                      <span className="fw-semibold">{currentItems.length}</span> sur {filteredData.length} enregistrements
                     </Badge>
                     {searchTerm && (
                       <Badge bg="light" text="dark" className="shadow-sm">
-                        Filtered from {data.length} total
+                        Filtré à partir de {data.length} enregistrements au total
                       </Badge>
                     )}
                   </div>
                   <ReactPaginate
-                    previousLabel={'Previous'}
-                    nextLabel={'Next'}
+                    previousLabel={'Précédent'}
+                    nextLabel={'Suivant'}
                     breakLabel={'...'}
                     breakClassName={'break-me'}
                     pageCount={pageCount}

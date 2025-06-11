@@ -25,21 +25,21 @@ const CDRTable = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [visibleColumns, setVisibleColumns] = useState({
     Date: true,
-    SipUser: true,
-    CallerID: true,
-    Number: true,
+    utilisateurSip: true,
+    idAppelant: true,
+    numero: true,
     Destination: true,
-    Duration: true,
-    RealDuration: false,
-    Username: true,
-    Trunk: true,
+    duree: true,
+    realDuree: false,
+    nomUtilisateur: true,
+    trunk: true,
     Type: true,
-    BuyPrice: true,
-    SellPrice: true,
-    UniqueID: false,
+    prixAchat: true,
+    prixVente: true,
+    idUnique: false,
     Plan: false,
-    Campaign: false,
-    Server: false,
+    campagne: false,
+    serveur: false,
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -53,7 +53,7 @@ const CDRTable = () => {
         const response = await axios.get("http://localhost:5000/api/admin/CDR/affiche");
         setCdrData(response.data.cdr || []);
       } catch (error) {
-        setError("Error fetching CDR data. Please try again.");
+        setError("Erreur lors de la récupération des données CDR. Veuillez réessayer.");
       }
     };
 
@@ -66,7 +66,7 @@ const CDRTable = () => {
         }, {});
         setUsers(userMap);
       } catch (error) {
-        console.error("Error fetching user data:", error);
+        console.error("Erreur lors de la récupération des données utilisateur:", error);
       }
     };
 
@@ -79,7 +79,7 @@ const CDRTable = () => {
         }, {});
         setTrunks(trunkMap);
       } catch (error) {
-        console.error("Error fetching trunk data:", error);
+        console.error("Erreur lors de la récupération des données de trunk:", error);
       }
     };
 
@@ -92,7 +92,7 @@ const CDRTable = () => {
         }, {});
         setPkgTrunks(pkgTrunkMap);
       } catch (error) {
-        console.error("Error fetching pkg_trunk data:", error);
+        console.error("Erreur lors de la récupération des données pkg_trunk:", error);
       }
     };
 
@@ -146,21 +146,21 @@ const CDRTable = () => {
       .map(cdr => {
         return [
           visibleColumns.Date ? new Date(cdr.starttime).toLocaleString() : null,
-          visibleColumns.SipUser ? cdr.src : null,
-          visibleColumns.CallerID ? cdr.callerid : null,
-          visibleColumns.Number ? cdr.calledstation : null,
+          visibleColumns.utilisateurSip ? cdr.src : null,
+          visibleColumns.idAppelant ? cdr.callerid : null,
+          visibleColumns.numero ? cdr.calledstation : null,
           visibleColumns.Destination ? cdr.id_prefix : null,
-          visibleColumns.Duration ? cdr.sessiontime + " seconds" : null,
-          visibleColumns.RealDuration ? cdr.real_sessiontime + " seconds" : null,
-          visibleColumns.Username ? cdr.username : null,
-          visibleColumns.Trunk ? cdr.trunkcode : null,
+          visibleColumns.duree ? cdr.sessiontime + " secondes" : null,
+          visibleColumns.realDuree ? cdr.real_sessiontime + " secondes" : null,
+          visibleColumns.nomUtilisateur ? cdr.username : null,
+          visibleColumns.trunk ? cdr.trunkcode : null,
           visibleColumns.Type ? cdr.type : null,
-          visibleColumns.BuyPrice ? cdr.buycost + " €" : null,
-          visibleColumns.SellPrice ? cdr.sessionbill + " €" : null,
-          visibleColumns.UniqueID ? cdr.uniqueid : null,
+          visibleColumns.prixAchat ? cdr.buycost + " €" : null,
+          visibleColumns.prixVente ? cdr.sessionbill + " €" : null,
+          visibleColumns.idUnique ? cdr.uniqueid : null,
           visibleColumns.Plan ? cdr.id_plan : null,
-          visibleColumns.Campaign ? cdr.id_campaign || "vide" : null,
-          visibleColumns.Server ? cdr.server_name : null
+          visibleColumns.campagne ? cdr.id_campaign || "vide" : null,
+          visibleColumns.serveur ? cdr.server_name : null
         ].filter(Boolean).join(",");
       })
       .join("\n");
@@ -169,7 +169,7 @@ const CDRTable = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", "cdr_report.csv");
+    link.setAttribute("download", "rapport_cdr.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -184,7 +184,7 @@ const CDRTable = () => {
               <div className="d-flex justify-content-between align-items-center">
                 <h4 className="mb-0">
                   <FaFilter className="me-2" />
-                  CDR Report
+                  Rapport CDR
                 </h4>
                 <div className="d-flex gap-2">
                   <Button 
@@ -193,7 +193,7 @@ const CDRTable = () => {
                     onClick={exportToCSV}
                   >
                     <FaFileExport className="me-2" />
-                    Export CSV
+                    Exporter en CSV
                   </Button>
                 </div>
               </div>
@@ -255,42 +255,42 @@ const CDRTable = () => {
                     <thead className="bg-light">
                       <tr>
                         {visibleColumns.Date && <th>Date</th>}
-                        {visibleColumns.SipUser && <th>Sip User</th>}
-                        {visibleColumns.CallerID && <th>Caller ID</th>}
-                        {visibleColumns.Number && <th>Number</th>}
+                        {visibleColumns.utilisateurSip && <th>Utilisateur Sip</th>}
+                        {visibleColumns.idAppelant && <th>ID Appelant</th>}
+                        {visibleColumns.numero && <th>Numéro</th>}
                         {visibleColumns.Destination && <th>Destination</th>}
-                        {visibleColumns.Duration && <th>Duration</th>}
-                        {visibleColumns.RealDuration && <th>Real Duration</th>}
-                        {visibleColumns.Username && <th>Username</th>}
-                        {visibleColumns.Trunk && <th>Trunk</th>}
+                        {visibleColumns.duree && <th>Durée</th>}
+                        {visibleColumns.realDuree && <th>Durée Réelle</th>}
+                        {visibleColumns.nomUtilisateur && <th>Nom d'utilisateur</th>}
+                        {visibleColumns.trunk && <th>trunk</th>}
                         {visibleColumns.Type && <th>Type</th>}
-                        {visibleColumns.BuyPrice && <th>Buy Price</th>}
-                        {visibleColumns.SellPrice && <th>Sell Price</th>}
-                        {visibleColumns.UniqueID && <th>Unique ID</th>}
+                        {visibleColumns.prixAchat && <th>Prix d'achat</th>}
+                        {visibleColumns.prixVente && <th>Prix de vente</th>}
+                        {visibleColumns.idUnique && <th>ID Unique</th>}
                         {visibleColumns.Plan && <th>Plan</th>}
-                        {visibleColumns.Campaign && <th>Campaign</th>}
-                        {visibleColumns.Server && <th>Server</th>}
+                        {visibleColumns.campagne && <th>Campagne</th>}
+                        {visibleColumns.serveur && <th>Serveur</th>}
                       </tr>
                     </thead>
                     <tbody>
                       {currentRecords.map((cdr) => (
                         <tr key={cdr.id}>
                           {visibleColumns.Date && <td>{new Date(cdr.starttime).toLocaleString()}</td>}
-                          {visibleColumns.SipUser && <td>{cdr.src}</td>}
-                          {visibleColumns.CallerID && <td>{cdr.callerid}</td>}
-                          {visibleColumns.Number && <td>{cdr.calledstation}</td>}
+                          {visibleColumns.utilisateurSip && <td>{cdr.src}</td>}
+                          {visibleColumns.idAppelant && <td>{cdr.callerid}</td>}
+                          {visibleColumns.numero && <td>{cdr.calledstation}</td>}
                           {visibleColumns.Destination && <td>{cdr.id_prefix}</td>}
-                          {visibleColumns.Duration && <td>{cdr.sessiontime} seconds</td>}
-                          {visibleColumns.RealDuration && <td>{cdr.real_sessiontime} seconds</td>}
-                          {visibleColumns.Username && <td>{cdr.username}</td>}
-                          {visibleColumns.Trunk && <td>{cdr.trunkcode}</td>}
+                          {visibleColumns.duree && <td>{cdr.sessiontime} secondes</td>}
+                          {visibleColumns.realDuree && <td>{cdr.real_sessiontime} secondes</td>}
+                          {visibleColumns.nomUtilisateur && <td>{cdr.username}</td>}
+                          {visibleColumns.trunk && <td>{cdr.trunkcode}</td>}
                           {visibleColumns.Type && <td>{cdr.type}</td>}
-                          {visibleColumns.BuyPrice && <td>{cdr.buycost} €</td>}
-                          {visibleColumns.SellPrice && <td>{cdr.sessionbill} €</td>}
-                          {visibleColumns.UniqueID && <td>{cdr.uniqueid}</td>}
+                          {visibleColumns.prixAchat && <td>{cdr.buycost} €</td>}
+                          {visibleColumns.prixVente && <td>{cdr.sessionbill} €</td>}
+                          {visibleColumns.idUnique && <td>{cdr.uniqueid}</td>}
                           {visibleColumns.Plan && <td>{cdr.id_plan}</td>}
-                          {visibleColumns.Campaign && <td>{cdr.id_campaign || "vide"}</td>}
-                          {visibleColumns.Server && <td>{cdr.server_name}</td>}
+                          {visibleColumns.campagne && <td>{cdr.id_campaign || "vide"}</td>}
+                          {visibleColumns.serveur && <td>{cdr.server_name}</td>}
                         </tr>
                       ))}
                     </tbody>
@@ -300,7 +300,7 @@ const CDRTable = () => {
 
               <div className="d-flex justify-content-between align-items-center mt-3">
                 <div className="text-muted">
-                  Showing {indexOfFirstRecord + 1} to {Math.min(indexOfLastRecord, filteredRecords.length)} of {filteredRecords.length} records
+                  Affichage de {indexOfFirstRecord + 1} à {Math.min(indexOfLastRecord, filteredRecords.length)} sur {filteredRecords.length} enregistrements
                 </div>
                 <Pagination>
                   <Pagination.Prev

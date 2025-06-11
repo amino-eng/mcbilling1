@@ -4,6 +4,29 @@ import { Line, Doughnut } from 'react-chartjs-2';
 
 import axios from 'axios';
 
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title
+} from 'chart.js';
+
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title
+);
+
 // Helper function to format duration
 const formatDuration = (seconds) => {
   const hours = Math.floor(seconds / 3600);
@@ -822,13 +845,13 @@ function Dashboard() {
         <Card.Body style={{position: 'relative', zIndex: 1}}>
           <div className="d-flex justify-content-between align-items-center">
             <div>
-              <h2 className="mb-0 fw-bold">Call Analytics Dashboard</h2>
-              <p className="text-muted mb-0">Welcome back! Here's your call activity overview</p>
+              <h2 className="mb-0 fw-bold">Tableau de Bord d'Analyse des Appels</h2>
+              <p className="text-muted mb-0">Bon retour ! Voici un aperçu de votre activité d'appels</p>
             </div>
             <div className="d-flex align-items-center">
               <div className="bg-light rounded-pill px-3 py-2 d-flex align-items-center">
                 <i className="bi bi-calendar3 text-primary me-2"></i>
-                <span>{new Date().toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}</span>
+                <span>{new Date().toLocaleDateString('fr-FR', {year: 'numeric', month: 'short', day: 'numeric'})}</span>
               </div>
             </div>
           </div>
@@ -846,7 +869,7 @@ function Dashboard() {
       {Object.values(loading).some(Boolean) && (
         <div className="d-flex justify-content-center mb-4">
           <Spinner animation="border" role="status">
-            <span className="visually-hidden">Loading...</span>
+            <span className="visually-hidden">Chargement...</span>
           </Spinner>
         </div>
       )}
@@ -867,8 +890,8 @@ function Dashboard() {
                   <i className="bi bi-telephone-fill text-primary fs-4"></i>
                 </div>
                 <div>
-                  <h5 className="card-title mb-0">Total Calls</h5>
-                  <p className="text-muted mb-0 small">All calls in the selected period</p>
+                  <h5 className="card-title mb-0">Total des Appels</h5>
+                  <p className="text-muted mb-0 small">Tous les appels dans la période sélectionnée</p>
                 </div>
               </div>
               <div className="mt-3">
@@ -894,15 +917,15 @@ function Dashboard() {
                   <i className="bi bi-check-circle-fill text-success fs-4"></i>
                 </div>
                 <div>
-                  <h5 className="card-title mb-0">Successful Calls</h5>
-                  <p className="text-muted mb-0 small">Completed without errors</p>
+                  <h5 className="card-title mb-0">Appels Réussis</h5>
+                  <p className="text-muted mb-0 small">Terminés sans erreurs</p>
                 </div>
               </div>
               <div className="mt-3">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <h2 className="text-success mb-0">{callStats.successfulCalls}</h2>
                   <span className="badge bg-success bg-opacity-10 text-success" style={dashboardStyles.badge}>
-                    {Math.round((callStats.successfulCalls / (callStats.totalCalls || 1)) * 100)}% success call
+                    {Math.round((callStats.successfulCalls / (callStats.totalCalls || 1)) * 100)}% d'appels réussis
                   </span>
                 </div>
                 <div className="progress" style={dashboardStyles.progressBar}>
@@ -926,15 +949,15 @@ function Dashboard() {
                   <i className="bi bi-x-circle-fill text-danger fs-4"></i>
                 </div>
                 <div>
-                  <h5 className="card-title mb-0">Failed Calls</h5>
-                  <p className="text-muted mb-0 small">Calls with errors</p>
+                  <h5 className="card-title mb-0">Appels Échoués</h5>
+                  <p className="text-muted mb-0 small">Appels avec erreurs</p>
                 </div>
               </div>
               <div className="mt-3">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <h2 className="text-danger mb-0">{callStats.failedCalls}</h2>
                   <span className="badge bg-danger bg-opacity-10 text-danger" style={dashboardStyles.badge}>
-                    {Math.round((callStats.failedCalls / (callStats.totalCalls || 1)) * 100)}% failure call
+                    {Math.round((callStats.failedCalls / (callStats.totalCalls || 1)) * 100)}% d'appels échoués
                   </span>
                 </div>
                 <div className="progress" style={dashboardStyles.progressBar}>
@@ -958,15 +981,15 @@ function Dashboard() {
                   <i className="bi bi-clock-fill text-info fs-4"></i>
                 </div>
                 <div>
-                  <h5 className="card-title mb-0">Total Duration</h5>
-                  <p className="text-muted mb-0 small">Time spent on calls</p>
+                  <h5 className="card-title mb-0">Durée Totale</h5>
+                  <p className="text-muted mb-0 small">Temps passé sur les appels</p>
                 </div>
               </div>
               <div className="mt-3">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <h2 className="text-info mb-0">{formatDuration(callStats.totalDuration)}</h2>
                   <span className="badge bg-info bg-opacity-10 text-info" style={dashboardStyles.badge}>
-                    Avg: {formatDuration(Math.round(callStats.totalDuration / (callStats.successfulCalls || 1)))}
+                    Moy: {formatDuration(Math.round(callStats.totalDuration / (callStats.successfulCalls || 1)))}
                   </span>
                 </div>
                 <div className="progress" style={dashboardStyles.progressBar}>
@@ -989,8 +1012,8 @@ function Dashboard() {
                   <i className="bi bi-pie-chart-fill text-primary"></i>
                 </div>
                 <div>
-                  <h5 className="card-title mb-0">Call Distribution</h5>
-                  <p className="text-muted small mb-0">Success vs. Failure call</p>
+                  <h5 className="card-title mb-0">Répartition des Appels</h5>
+                  <p className="text-muted small mb-0">Appels Réussis vs. Échoués</p>
                 </div>
               </div>
             </Card.Header>
@@ -1027,7 +1050,7 @@ function Dashboard() {
                   <div className="d-flex justify-content-center align-items-center h-100">
                     <div className="text-center text-muted">
                       <i className="bi bi-bar-chart-line fs-1 d-block mb-2 text-secondary"></i>
-                      No data available
+                      Aucune donnée disponible
                     </div>
                   </div>
                 )}
@@ -1047,8 +1070,8 @@ function Dashboard() {
                   <i className="bi bi-graph-up text-success"></i>
                 </div>
                 <div>
-                  <h5 className="card-title mb-0">Daily Call Trends</h5>
-                  <p className="text-muted small mb-0">Call volume by day</p>
+                  <h5 className="card-title mb-0">Tendances Journalières des Appels</h5>
+                  <p className="text-muted small mb-0">Volume d'appels par jour</p>
                 </div>
               </div>
             </Card.Header>
@@ -1075,7 +1098,7 @@ function Dashboard() {
                   <div className="d-flex justify-content-center align-items-center h-100">
                     <div className="text-center text-muted">
                       <i className="bi bi-graph-up fs-1 d-block mb-2 text-secondary"></i>
-                      No data available
+                      Aucune donnée disponible
                     </div>
                   </div>
                 )}
@@ -1095,8 +1118,8 @@ function Dashboard() {
                   <i className="bi bi-calendar3 text-info"></i>
                 </div>
                 <div>
-                  <h5 className="card-title mb-0">Monthly Statistics</h5>
-                  <p className="text-muted small mb-0">Call trends over months</p>
+                  <h5 className="card-title mb-0">Statistiques Mensuelles</h5>
+                  <p className="text-muted small mb-0">Tendances des appels par mois</p>
                 </div>
               </div>
             </Card.Header>
@@ -1123,7 +1146,7 @@ function Dashboard() {
                   <div className="d-flex justify-content-center align-items-center h-100">
                     <div className="text-center text-muted">
                       <i className="bi bi-calendar3 fs-1 d-block mb-2 text-secondary"></i>
-                      No data available
+                      Aucune donnée disponible
                     </div>
                   </div>
                 )}
@@ -1146,8 +1169,8 @@ function Dashboard() {
                 <i className="bi bi-activity text-secondary"></i>
               </div>
               <div>
-                <h5 className="card-title mb-0">Recent Activity</h5>
-                <p className="text-muted small mb-0">Latest call records</p>
+                <h5 className="card-title mb-0">Activité Récente</h5>
+                <p className="text-muted small mb-0">Derniers enregistrements d'appels</p>
               </div>
             </div>
           </div>
@@ -1225,7 +1248,7 @@ function Dashboard() {
                       <p className="mb-0 text-muted small">{activity.details}</p>
                       <div className="mt-1">
                         <Badge bg={activity.status === 'success' ? 'success' : (activity.status === 'warning' ? 'warning' : 'danger')} style={{opacity: 0.8, fontSize: '0.7rem'}}>
-                          {activity.status === 'success' ? 'SUCCESSFUL' : (activity.status === 'warning' ? 'WARNING' : 'FAILED')}
+                          {activity.status === 'success' ? 'RÉUSSI' : (activity.status === 'warning' ? 'AVERTISSEMENT' : 'ÉCHOUÉ')}
                         </Badge>
                         {activity.duration && (
                           <Badge bg={darkMode ? 'secondary' : 'light'} text={darkMode ? 'light' : 'dark'} className="ms-2" style={{fontSize: '0.7rem'}}>
@@ -1243,11 +1266,11 @@ function Dashboard() {
               <div style={{width: '70px', height: '70px', borderRadius: '50%', backgroundColor: darkMode ? 'rgba(108, 117, 125, 0.2)' : 'rgba(108, 117, 125, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem'}}>
                 <i className="bi bi-activity text-muted" style={{fontSize: '2rem'}}></i>
               </div>
-              <h6 className="mb-1">No Recent Activity</h6>
-              <p className="mb-3 text-muted small">Call activity will appear here</p>
+              <h6 className="mb-1">Aucune Activité Récente</h6>
+              <p className="mb-3 text-muted small">L'activité des appels apparaîtra ici</p>
               <Button variant="outline-primary" size="sm" onClick={refreshData}>
                 <i className="bi bi-arrow-clockwise me-2"></i>
-                Refresh Data
+                Actualiser les données
               </Button>
             </div>
           )}

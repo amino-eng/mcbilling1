@@ -61,12 +61,7 @@ function CallerIDHeader({ onAddClick, callerIds, isExporting }) {
                   animationDelay: `${i * 0.5}s`,
                 }}
               >
-                <FaPhoneAlt
-                  className="text-white opacity-25"
-                  style={{
-                    fontSize: `${Math.random() * 1.5 + 0.5}rem`,
-                  }}
-                />
+                <FaPhoneAlt className="text-white opacity-25" />
               </div>
             ))}
         </div>
@@ -84,7 +79,7 @@ function CallerIDHeader({ onAddClick, callerIds, isExporting }) {
         <div className="d-flex align-items-center gap-3">
           <Badge bg="primary" className="d-flex align-items-center p-2 ps-3 rounded-pill">
             <span className="me-2 fw-normal">
-              Total: <span className="fw-bold">{callerIds.length}</span>
+              Total : <span className="fw-bold">{callerIds.length}</span>
             </span>
             <span
               className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center"
@@ -103,11 +98,11 @@ function CallerIDHeader({ onAddClick, callerIds, isExporting }) {
             <div className="icon-container">
               <FaPlusCircle />
             </div>
-            <span>Ajouter</span>
+            <span>Ajouter un Caller ID</span>
           </Button>
           <CSVLink
             data={csvData}
-            filename={"callerids.csv"}
+            filename={"caller_ids.csv"}
             className="btn btn-success d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
             disabled={isExporting}
           >
@@ -856,7 +851,6 @@ export default function CallerIDPage() {
         }}
       />
 
-
       <div className="dashboard-main" style={{ marginLeft: "80px" }}>
         <Container fluid className="px-4 py-4">
           <Row className="justify-content-center">
@@ -904,7 +898,7 @@ export default function CallerIDPage() {
                           </Badge>
                           {searchTerm && (
                             <Badge bg="light" text="dark" className="shadow-sm">
-                              Filtrés de {callerIds.length} total
+                              Filtrés de {callerIds.length} au total
                             </Badge>
                           )}
                         </>

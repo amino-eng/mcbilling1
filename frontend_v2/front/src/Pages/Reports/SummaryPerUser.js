@@ -24,7 +24,7 @@ const SummaryPerUser = () => {
       .then((data) => {
         setData(data.data);
         setLoading(false);
-        setSuccessMessage('Data loaded successfully');
+        setSuccessMessage('Données chargées avec succès');
         setTimeout(() => setSuccessMessage(''), 3000);
       })
       .catch((error) => {
@@ -62,7 +62,7 @@ const SummaryPerUser = () => {
     
     const link = document.createElement('a');
     link.href = `data:text/csv;charset=utf-8,${encodeURIComponent(csvContent)}`;
-    link.download = 'user_summary.csv';
+    link.download = 'resume_utilisateur.csv';
     link.click();
   };
 
@@ -123,8 +123,8 @@ const SummaryPerUser = () => {
                   <FaUser className="text-primary fs-3" />
                 </div>
                 <div>
-                  <h2 className="fw-bold mb-0 text-white">User Call Summary</h2>
-                  <p className="text-white-50 mb-0 d-none d-md-block">Detailed call statistics per user</p>
+                  <h2 className="fw-bold mb-0 text-white">Résumé des appels par utilisateur</h2>
+                  <p className="text-white-50 mb-0 d-none d-md-block">Statistiques détaillées des appels par utilisateur</p>
                 </div>
               </div>
             </Card.Header>
@@ -146,7 +146,7 @@ const SummaryPerUser = () => {
                       </span>
                       <Form.Control
                         type="text"
-                        placeholder="Search by username..."
+                        placeholder="Rechercher par nom d'utilisateur..."
                         value={searchTerm}
                         onChange={(e) => {
                           setSearchTerm(e.target.value);
@@ -166,7 +166,7 @@ const SummaryPerUser = () => {
                     <div className="icon-container">
                       <FaDownload />
                     </div>
-                    <span>Export to CSV</span>
+                    <span>Exporter en CSV</span>
                   </Button>
                 </Col>
               </Row>
@@ -175,15 +175,15 @@ const SummaryPerUser = () => {
                 <Table striped bordered hover className="elegant-table">
                   <thead className="bg-light">
                     <tr>
-                      <th><FaUser className="me-2" /> Username</th>
-                      <th><FaClock className="me-2" /> Duration</th>
-                      <th><FaPhone className="me-2" /> Allocated Calls</th>
-                      <th><FaCheckCircle className="me-2" /> Answered</th>
-                      <th><FaTimesCircle className="me-2" /> Failed</th>
-                      <th><FaEuroSign className="me-2" /> Buy Price</th>
-                      <th><FaEuroSign className="me-2" /> Sell Price</th>
-                      <th>Markup</th>
-                      <th><FaPercentage className="me-2" /> ASR</th>
+                      <th><FaUser className="me-2" /> Nom d'utilisateur</th>
+                      <th><FaClock className="me-2" /> Durée</th>
+                      <th><FaPhone className="me-2" /> Appels alloués</th>
+                      <th><FaCheckCircle className="me-2" /> Répondus</th>
+                      <th><FaTimesCircle className="me-2" /> Échoués</th>
+                      <th><FaEuroSign className="me-2" /> Prix d'achat</th>
+                      <th><FaEuroSign className="me-2" /> Prix de vente</th>
+                      <th>Marge</th>
+                      <th><FaPercentage className="me-2" /> Taux de réponse</th>
                     </tr>
                   </thead>
                   <tbody>

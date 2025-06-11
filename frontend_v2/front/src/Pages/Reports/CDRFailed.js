@@ -50,8 +50,8 @@ function CDRHeader({ onExportClick, cdrCount, isExporting }) {
             <FaExclamationTriangle className="text-primary fs-3" />
           </div>
           <div>
-            <h2 className="fw-bold mb-0 text-white">Failed CDRs</h2>
-            <p className="text-white-50 mb-0 d-none d-md-block">Review failed call detail records</p>
+            <h2 className="fw-bold mb-0 text-white">CDR Échoués</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Examiner les enregistrements de détail des appels échoués</p>
           </div>
         </div>
       </div>
@@ -85,14 +85,14 @@ function CdrFailedTable() {
 
   const allColumns = [
     { label: "Date", key: "starttime" },
-    { label: "SIP User", key: "src" },
-    { label: "Number", key: "calledstation" },
+    { label: "Utilisateur SIP", key: "src" },
+    { label: "Numéro", key: "calledstation" },
     { label: "Destination", key: "callerid" }, 
-    { label: "Status", key: "terminatecauseid"},
-    { label: "Username", key: "username" },
+    { label: "Statut", key: "terminatecauseid"},
+    { label: "Nom d'utilisateur", key: "username" },
     { label: "Trunk", key: "trunkcode" },
-    { label: "SIP Code", key: "hangupcause" },
-    { label: "Server", key: "server" },
+    { label: "Code SIP", key: "hangupcause" },
+    { label: "Serveur", key: "server" },
   ];
 
   const [visibleColumns, setVisibleColumns] = useState(
@@ -116,8 +116,8 @@ function CdrFailedTable() {
       setCdrFailedData(data);
     } catch (error) {
       console.error("Error fetching data:", error);
-      setError("Unable to retrieve data.");
-      toast.error("Error fetching data!");
+      setError("Impossible de récupérer les données.");
+      toast.error("Erreur lors de la récupération des données !");
     } finally {
       setLoading(false);
     }
@@ -142,7 +142,7 @@ function CdrFailedTable() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "cdr_failed_data.csv");
+    link.setAttribute("download", "cdr_echoues_data.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -151,12 +151,12 @@ function CdrFailedTable() {
   const handleDelete = async () => {
     try {
       await axios.delete(`http://localhost:5000/api/admin/CdrFailed/delete/${confirmDeleteId}`);
-      toast.success("Record deleted successfully!");
+      toast.success("Enregistrement supprimé avec succès !");
       // Refresh the data from the server instead of just filtering
       await fetchCdrFailedData();
     } catch (error) {
       console.error("Error deleting record:", error);
-      toast.error(error.response?.data?.error || "Failed to delete record.");
+      toast.error(error.response?.data?.error || "Échec de la suppression de l'enregistrement.");
     } finally {
       setShowModal(false);
     }
@@ -260,7 +260,7 @@ function CdrFailedTable() {
                       </span>
                       <input
                         type="text"
-                        placeholder="Search CDRs..."
+                        placeholder="Rechercher des CDR..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="form-control"
@@ -279,7 +279,7 @@ function CdrFailedTable() {
                 {loading ? (
                   <div className="text-center py-5">
                     <Spinner animation="border" variant="primary" />
-                    <p className="mt-3 text-muted">Loading CDR data...</p>
+                    <p className="mt-3 text-muted">Chargement des données CDR...</p>
                   </div>
                 ) : (
                   <div className="table-responsive">
@@ -327,7 +327,7 @@ function CdrFailedTable() {
                           <tr>
                             <td colSpan={allColumns.length + 1} className="text-center py-5 text-muted">
                               <FaExclamationTriangle className="mb-2" />
-                              <p>No failed CDRs found</p>
+                              <p>Aucun CDR échoué trouvé</p>
                             </td>
                           </tr>
                         )}
@@ -348,18 +348,18 @@ function CdrFailedTable() {
         backdrop="static"
       >
         <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title>Confirm Deletion</Modal.Title>
+          <Modal.Title>Confirmer la Suppression</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>Are you sure you want to delete this failed CDR record?</p>
-          <p className="text-muted small">This action cannot be undone.</p>
+          <p>Êtes-vous sûr de vouloir supprimer ce CDR échoué ?</p>
+          <p className="text-muted small">Cette action ne peut pas être annulée.</p>
         </Modal.Body>
         <Modal.Footer className="border-0">
           <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancel
+            Annuler
           </Button>
           <Button variant="primary" onClick={handleDelete}>
-            Delete Record
+            Supprimer l'enregistrement
           </Button>
         </Modal.Footer>
       </Modal>

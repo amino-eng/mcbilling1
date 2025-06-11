@@ -22,6 +22,15 @@ import {
   FaSignOutAlt,
 } from "react-icons/fa"
 
+const columnDisplayNames = {
+  DID: "DID",
+  Username: "Nom d'utilisateur",
+  MonthPayed: "Mois Payé",
+  ReservationDate: "Date de Réservation",
+  ReleaseDate: "Date de Libération",
+  NextDueDate: "Prochaine Échéance"
+};
+
 // Constants
 const ITEMS_PER_PAGE = 5;
 
@@ -57,8 +66,8 @@ function DIDsUseHeader({ dids, onExportClick, onToggleColumnSelector, isExportin
             <FaCalendarAlt className="text-primary fs-3" />
           </div>
           <div>
-            <h2 className="fw-bold mb-0 text-white">DID Usage</h2>
-            <p className="text-white-50 mb-0 d-none d-md-block">Track and manage DID usage across your system</p>
+            <h2 className="fw-bold mb-0 text-white">Utilisation des DIDs</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Suivez et gérez l'utilisation des DIDs dans votre système</p>
           </div>
         </div>
       </div>
@@ -66,7 +75,7 @@ function DIDsUseHeader({ dids, onExportClick, onToggleColumnSelector, isExportin
         <div className="d-flex align-items-center gap-3">
           <Badge bg="primary" className="d-flex align-items-center p-2 ps-3 rounded-pill">
             <span className="me-2 fw-normal">
-              Total: <span className="fw-bold">{dids.length}</span>
+              Total : <span className="fw-bold">{dids.length}</span>
             </span>
             <span
               className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center"
@@ -86,7 +95,7 @@ function DIDsUseHeader({ dids, onExportClick, onToggleColumnSelector, isExportin
             <div className="icon-container">
               {isExporting ? <Spinner animation="border" size="sm" /> : <FaDownload />}
             </div>
-            <span>Export CSV</span>
+            <span>Exporter CSV</span>
           </Button>
           <Button
             variant="secondary"
@@ -96,7 +105,7 @@ function DIDsUseHeader({ dids, onExportClick, onToggleColumnSelector, isExportin
             <div className="icon-container">
               <FaEye />
             </div>
-            <span>Toggle Columns</span>
+            <span>Afficher/Masquer les colonnes</span>
           </Button>
         </div>
       </div>
@@ -110,7 +119,7 @@ function ColumnSelector({ visibleColumns, onColumnToggle }) {
     <Card className="mb-4 shadow-sm border-0 overflow-hidden">
       <Card.Header className="bg-light d-flex align-items-center">
         <FaCog className="text-primary me-2" />
-        <h5 className="mb-0 fw-semibold">Customize Visible Columns</h5>
+        <h5 className="mb-0 fw-semibold">Personnaliser les colonnes visibles</h5>
       </Card.Header>
       <Card.Body className="p-3">
         <Row>
@@ -119,7 +128,7 @@ function ColumnSelector({ visibleColumns, onColumnToggle }) {
               <Form.Check 
                 type="switch"
                 id={`column-${column}`}
-                label={column}
+                label={columnDisplayNames[column] || column}
                 checked={visibleColumns[column]}
                 onChange={() => onColumnToggle(column)}
                 className="user-select-none"
@@ -138,7 +147,7 @@ function DIDsUseTable({ dids, visibleColumns, formatDate, isLoading }) {
     return (
       <div className="text-center py-5">
         <Spinner animation="border" variant="primary" />
-        <p className="mt-3 text-muted">Loading DID usage data...</p>
+        <p className="mt-3 text-muted">Chargement des données d'utilisation des DID...</p>
       </div>
     )
   }
@@ -147,7 +156,7 @@ function DIDsUseTable({ dids, visibleColumns, formatDate, isLoading }) {
     return (
       <div className="text-center py-5 bg-light rounded">
         <FaPhoneAlt className="text-muted mb-3" size={40} />
-        <h5 className="text-muted">No DID usage data available</h5>
+        <h5 className="text-muted">Aucune donnée d'utilisation des DID disponible</h5>
       </div>
     )
   }
@@ -157,12 +166,12 @@ function DIDsUseTable({ dids, visibleColumns, formatDate, isLoading }) {
       <Table className="elegant-table align-middle mb-0">
         <thead className="bg-light">
           <tr>
-            {visibleColumns.DID && <th className="fw-semibold">DID</th>}
-            {visibleColumns.Username && <th className="fw-semibold">Username</th>}
-            {visibleColumns.MonthPayed && <th className="fw-semibold">Month Payed</th>}
-            {visibleColumns.ReservationDate && <th className="fw-semibold">Reservation Date</th>}
-            {visibleColumns.ReleaseDate && <th className="fw-semibold">Release Date</th>}
-            {visibleColumns.NextDueDate && <th className="fw-semibold">Next Due Date</th>}
+            {visibleColumns.DID && <th className="fw-semibold">{columnDisplayNames.DID || 'DID'}</th>}
+            {visibleColumns.Username && <th className="fw-semibold">{columnDisplayNames.Username || 'Username'}</th>}
+            {visibleColumns.MonthPayed && <th className="fw-semibold">{columnDisplayNames.MonthPayed || 'Month Payed'}</th>}
+            {visibleColumns.ReservationDate && <th className="fw-semibold">{columnDisplayNames.ReservationDate || 'Reservation Date'}</th>}
+            {visibleColumns.ReleaseDate && <th className="fw-semibold">{columnDisplayNames.ReleaseDate || 'Release Date'}</th>}
+            {visibleColumns.NextDueDate && <th className="fw-semibold">{columnDisplayNames.NextDueDate || 'Next Due Date'}</th>}
           </tr>
         </thead>
         <tbody>
@@ -265,26 +274,30 @@ const DIDsUse = () => {
             const result = response.data;
             if (result.didsUsers) {
                 setDids(result.didsUsers);
-                setSuccessMessage('DID usage data loaded successfully');
+                setSuccessMessage("Données d'utilisation des DID chargées avec succès");
             } else {
-                setErrorMessage('No DIDs found');
+                setErrorMessage("Aucun DID trouvé");
             }
         } catch (error) {
             console.error('Error fetching DIDs:', error);
-            setErrorMessage('Failed to fetch data: ' + (error.response?.data?.message || error.message));
+            setErrorMessage("Échec de la récupération des données : " + (error.response?.data?.message || error.message));
         } finally {
             setIsLoading(false);
         }
     };
 
     const formatDate = (dateString) => {
-        return dateString ? new Date(dateString).toISOString().slice(0, 19).replace('T', ' ') : '';
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        // Format to DD/MM/YYYY HH:MM:SS for French locale
+        return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + 
+               date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     };
 
     const handleCSVExport = () => {
         setIsExporting(true);
         try {
-            const headers = Object.keys(visibleColumns).filter(key => visibleColumns[key]);
+            const headers = Object.keys(visibleColumns).filter(key => visibleColumns[key]).map(key => columnDisplayNames[key] || key);
             const csvRows = [
                 headers.join(','), 
                 ...dids.map(did => headers.map(column => column === 'ReservationDate' || column === 'ReleaseDate' || column === 'NextDueDate' ? formatDate(did[column]) : did[column]).join(','))
@@ -295,14 +308,14 @@ const DIDsUse = () => {
 
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'dids_usage.csv';
+            a.download = 'utilisation_dids.csv';
             a.click();
             URL.revokeObjectURL(url);
             
-            setSuccessMessage('CSV exported successfully');
+            setSuccessMessage("CSV exporté avec succès");
         } catch (error) {
             console.error('Error exporting CSV:', error);
-            setErrorMessage('Failed to export CSV');
+            setErrorMessage("Échec de l'exportation CSV");
         } finally {
             setIsExporting(false);
         }
@@ -427,7 +440,7 @@ const DIDsUse = () => {
                                         <div className="text-muted small">
                                             {!isLoading && (
                                                 <Badge bg="light" text="dark" className="me-2 shadow-sm">
-                                                    <span className="fw-semibold">{currentDIDs.length}</span> of {dids.length} records
+                                                    <span className="fw-semibold">{currentDIDs.length}</span> sur {dids.length} enregistrements
                                                 </Badge>
                                             )}
                                         </div>

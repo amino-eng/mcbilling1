@@ -42,9 +42,9 @@ const Login = () => {
       if (err.response?.data?.error) {
         setError(err.response.data.error);
       } else if (err.message.includes('Network Error')) {
-        setError('Cannot connect to the server. Please check your network connection.');
+        setError('Impossible de se connecter au serveur. Veuillez vérifier votre connexion réseau.');
       } else {
-        setError('Login failed. Please try again.');
+        setError('Échec de la connexion. Veuillez réessayer.');
       }
     } finally {
       setLoading(false);
@@ -59,13 +59,13 @@ const Login = () => {
             <span className="logo-icon">MC</span>
           </div>
           <h1>MCBILLING</h1>
-          <p>Admin Dashboard</p>
+          <p>Tableau de bord d'administration</p>
         </div>
         
         <div className="login-form-container">
           <div className="login-header">
-            <h2>Welcome Back</h2>
-            <p>Please sign in to continue</p>
+            <h2>Bienvenue</h2>
+            <p>Veuillez vous connecter pour continuer</p>
           </div>
           
           {error && <div className="error-message">{error}</div>}
@@ -76,7 +76,7 @@ const Login = () => {
                 <FaUser className="input-icon" />
                 <input
                   type="text"
-                  placeholder="Username"
+                  placeholder="Nom d'utilisateur"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
@@ -89,7 +89,7 @@ const Login = () => {
                 <FaLock className="input-icon" />
                 <input
                   type="password"
-                  placeholder="Password"
+                  placeholder="Mot de passe"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -106,7 +106,7 @@ const Login = () => {
                 <span className="loading-spinner"></span>
               ) : (
                 <>
-                  <span>Sign In</span>
+                  <span>Se connecter</span>
                   <FaSignInAlt />
                 </>
               )}
@@ -115,7 +115,7 @@ const Login = () => {
         </div>
         
         <div className="login-footer">
-          <p>&copy; {year} MCBILLING. All rights reserved.</p>
+          <p>&copy; {year} MCBILLING. Tous droits réservés.</p>
         </div>
       </div>
     </div>

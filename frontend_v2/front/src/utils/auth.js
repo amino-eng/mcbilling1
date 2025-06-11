@@ -1,11 +1,11 @@
 import axios from 'axios';
 import { getApiEndpoint } from './apiConfig';
 
-// Function to make API calls
+// Fonction pour les appels API
 const makeApiCall = async (endpoint, options) => {
   try {
     const url = getApiEndpoint(endpoint);
-    console.log(`Making API call to: ${url}`, options);
+    console.log(`Appel API vers: ${url}`, options);
     
     // Create a complete request config
     const config = {
@@ -19,17 +19,17 @@ const makeApiCall = async (endpoint, options) => {
     };
     
     const response = await axios(config);
-    console.log(`API call to ${endpoint} succeeded:`, response.status);
+    console.log(`Appel API vers ${endpoint} réussi:`, response.status);
     return response;
   } catch (error) {
-    console.error(`API call to ${endpoint} failed:`, error);
+    console.error(`Appel API vers ${endpoint} échoué:`, error);
     throw error;
   }
 };
 
 // Login user
 export const login = async (username, password) => {
-  console.log('Login function called with:', { username, passwordLength: password?.length });
+  console.log('Fonction de connexion appelée avec:', { username, passwordLength: password?.length });
   
   try {
     // Make sure we're sending the credentials in the correct format
@@ -38,7 +38,7 @@ export const login = async (username, password) => {
       data: { username, password }
     });
     
-    console.log('Login response:', response.data);
+    console.log('Réponse de connexion:', response.data);
     
     if (response.data.token) {
       // Store user details in localStorage
@@ -52,31 +52,31 @@ export const login = async (username, password) => {
       // Dispatch an event to notify the app about the authentication change
       window.dispatchEvent(new Event('auth-change'));
     } else {
-      console.warn('Login succeeded but no token was returned');
+      console.warn('Connexion réussie mais aucun jeton n\'a été retourné');
     }
     
     return response.data;
   } catch (error) {
-    console.error('Login function error:', error.message);
+    console.error('Erreur de la fonction de connexion:', error.message);
     throw error;
   }
 };
 
 // Logout user
 export const logout = () => {
-  // Remove user details from localStorage
+  // Supprimer les détails de l\'utilisateur du localStorage
   localStorage.removeItem('isAuthenticated');
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   
-  // Remove authorization header
+  // Supprimer l\'en-tête d\'autorisation
   axios.defaults.headers.common['Authorization'] = '';
   
   // Dispatch an event to notify the app about the authentication change
   window.dispatchEvent(new Event('auth-change'));
 };
 
-// Set authorization header
+// Définir l\'en-tête d\'autorisation
 export const setAuthHeader = (token) => {
   if (token) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -85,18 +85,18 @@ export const setAuthHeader = (token) => {
   }
 };
 
-// Get current user
+// Obtenir l\'utilisateur actuel
 export const getCurrentUser = () => {
   const user = localStorage.getItem('user');
   return user ? JSON.parse(user) : null;
 };
 
-// Check if user is authenticated
+// Vérifier si l\'utilisateur est authentifié
 export const isAuthenticated = () => {
   return localStorage.getItem('isAuthenticated') === 'true';
 };
 
-// Initialize auth state from localStorage
+// Initialiser l\'état d\'authentification depuis le localStorage
 export const initAuth = () => {
   const token = localStorage.getItem('token');
   if (token) {

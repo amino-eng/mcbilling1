@@ -174,7 +174,7 @@ exports.add = (req, res) => {
             // Insert new DID destination into the database
             const insertQuery = `
                 INSERT INTO pkg_did_destination (id_did, id_user, voip_call, destination, priority, creationdate, secondusedreal)
-                VALUES (?, ?, ?, ?, ?,?,?)
+                VALUES (?, ?, ?, ?, ?, NOW(), 0)
             `;
 
             // Execute the query with the provided values

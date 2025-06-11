@@ -24,7 +24,7 @@ const App = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isChargement, setIsChargement] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [user, setUser] = useState([]);
   const [sip, setSip] = useState([]);
@@ -51,7 +51,7 @@ const App = () => {
         setSip(response.data.users);
       })
       .catch((err) => {
-        console.error('Error fetching sip user:', err);
+        console.error('Erreur de récupération de l\'utilisateur SIP :', err);
       });
   };
 
@@ -61,12 +61,12 @@ const App = () => {
         setUser(response.data.users);
       })
       .catch((err) => {
-        console.error('Error fetching user:', err);
+        console.error('Erreur de récupération de l\'utilisateur :', err);
       });
   };
 
   const fetchDIDs = async () => {
-    setIsLoading(true);
+    setIsChargement(true);
     try {
       const response = await fetch(apiUrl);
       const result = await response.json();
@@ -76,13 +76,13 @@ const App = () => {
         setMessage('');
         setErrorMessage('');
       } else {
-        setErrorMessage('No DIDs found');
+        setErrorMessage('Aucun DID trouvé');
       }
     } catch (error) {
-      console.error('Error fetching DIDs:', error);
-      setErrorMessage('Failed to fetch data');
+      console.error('Erreur de récupération des DIDs :', error);
+      setErrorMessage('Échec de la récupération des données');
     } finally {
-      setIsLoading(false);
+      setIsChargement(false);
     }
   };
 
@@ -92,7 +92,7 @@ const App = () => {
         setDidsList(response.data.dids);
       })
       .catch((err) => {
-        console.error('Error fetching DIDs list:', err);
+        console.error('Erreur de récupération de la liste des DIDs :', err);
       });
   };
 
@@ -115,20 +115,20 @@ const App = () => {
 
   const getCallTypeLabel = (callType) => {
     const callTypeMap = {
-      0: 'Call to PSTN',
+      0: 'Appel vers PSTN',
       1: 'SIP',
-      2: 'IVR',
-      3: 'CallingCard',
-      4: 'Direct Extension',
-      5: 'Cid Callback',
-      6: '0800 Callback',
-      7: 'Queue',
-      8: 'Sip Group',
-      9: 'Custom',
-      10: 'Context',
-      11: 'Multiples IPs',
+      2: 'SVI',
+      3: "Carte d'Appel",
+      4: 'Extension Directe',
+      5: 'Rappel CID',
+      6: 'Rappel 0800',
+      7: "File d'attente",
+      8: 'Groupe SIP',
+      9: 'Personnalisé',
+      10: 'Contexte',
+      11: 'IPs Multiples',
     };
-    return callTypeMap[callType] || 'Unknown';
+    return callTypeMap[callType] || 'Inconnu';
   };
 
   const formatTime = (seconds) => {
@@ -141,7 +141,7 @@ const App = () => {
   const handleCSVExport = () => {
     setIsExporting(true);
     try {
-      const headers = ['DID', 'Username', 'Call Type', 'Time Used', 'Priority', 'Creation Date'];
+      const headers = ['DID', "Nom d'utilisateur", "Type d'Appel", "Temps Utilisé", "Priorité", "Date de Création"];
       const csvRows = [
         headers.join(','),
         ...dids.map((did) => [
@@ -163,11 +163,11 @@ const App = () => {
       a.click();
       URL.revokeObjectURL(url);
       
-      setSuccessMessage('CSV exported successfully');
+      setSuccessMessage('CSV exporté avec succès');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
-      console.error('Error exporting CSV:', error);
-      setErrorMessage('Failed to export CSV');
+      console.error('Erreur d\'exportation CSV :', error);
+      setErrorMessage("Échec de l'exportation CSV");
       setTimeout(() => setErrorMessage(''), 3000);
     } finally {
       setIsExporting(false);
@@ -187,7 +187,7 @@ const App = () => {
           fetchDIDs();
         })
         .catch(err => {
-          setErrorMessage(`Erreur: ${err.response?.data?.message || 'Échec de la suppression'}`);
+          setErrorMessage(`Erreur : ${err.response?.data?.message || 'Échec de la suppression'}`);
         });
     }
   };
@@ -226,7 +226,7 @@ const App = () => {
         formattedData
       )
       .then((response) => {
-        setSuccessMessage('DID destination added successfully!');
+        setSuccessMessage('Destination DID ajoutée avec succès!');
         setErrorMessage('');
         setIsAdding(false);
         setNewDidData({
@@ -240,8 +240,8 @@ const App = () => {
         fetchDIDs();
       })
       .catch((err) => {
-        console.error('Error adding DID:', err);
-        setErrorMessage('Error adding DID: ' + err.message);
+        console.error('Erreur d\'ajout de la Destination DID :', err);
+        setErrorMessage('Erreur d\'ajout de la Destination DID : ' + err.message);
         setSuccessMessage('');
         setIsAdding(false);
       });
@@ -268,7 +268,7 @@ const App = () => {
       fetchDIDs();
       setEditingDid(null);
     } catch (err) {
-      console.error('Update error:', err.response?.data);
+      console.error('Erreur de mise à jour :', err.response?.data);
       setErrorMessage(err.response?.data?.error || 'Erreur lors de la modification');
     }
   };
@@ -383,8 +383,8 @@ const App = () => {
               <FaGlobe className="text-primary fs-3" />
             </div>
             <div>
-              <h2 className="fw-bold mb-0 text-white">DID Destinations</h2>
-              <p className="text-white-50 mb-0 d-none d-md-block">Manage your DID routing and destinations</p>
+              <h2 className="fw-bold mb-0 text-white">Destinations DID</h2>
+              <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos destinations DID et règles de routage</p>
             </div>
           </div>
         </div>
@@ -411,7 +411,7 @@ const App = () => {
               <div className="icon-container">
                 <FaPlusCircle />
               </div>
-              <span>Add Destination</span>
+              <span>Ajouter une Destination</span>
             </Button>
             <Button 
               variant="outline-primary" 
@@ -422,7 +422,7 @@ const App = () => {
               <div className="icon-container">
                 {isExporting ? <Spinner size="sm" /> : <FaDownload />}
               </div>
-              <span>Export</span>
+              <span>Exporter</span>
             </Button>
           </div>
         </div>
@@ -435,7 +435,7 @@ const App = () => {
       <div className="search-container shadow-sm rounded overflow-hidden">
         <InputGroup>
           <FormControl
-            placeholder="Search by DID, Username or Call Type"
+            placeholder="Rechercher DID, Nom d'utilisateur, Type d'appel..."
             value={searchTerm}
             onChange={onSearchChange}
             className="border-0 py-2"
@@ -452,12 +452,12 @@ const App = () => {
     return status === "Active" ? (
       <Badge bg="success" className="px-3 py-2 rounded-pill d-flex align-items-center gap-1">
         <FaCheckCircle size={10} />
-        <span>Active</span>
+        <span>Actif</span>
       </Badge>
     ) : (
       <Badge bg="secondary" className="px-3 py-2 rounded-pill d-flex align-items-center gap-1">
         <FaTimesCircle size={10} />
-        <span>Inactive</span>
+        <span>Inactif</span>
       </Badge>
     );
   };
@@ -468,11 +468,11 @@ const App = () => {
         <thead className="bg-light">
           <tr>
             <th className="py-3">DID</th>
-            <th className="py-3">Username</th>
-            <th className="py-3">Call Type</th>
-            <th className="py-3">Time Used</th>
-            <th className="py-3">Priority</th>
-            <th className="py-3">Creation Date</th>
+            <th className="py-3">Nom d'utilisateur/Utilisateur SIP</th>
+            <th className="py-3">Type d'Appel</th>
+            <th className="py-3">Temps Utilisé</th>
+            <th className="py-3">Priorité</th>
+            <th className="py-3">Date de Création</th>
             <th className="py-3 text-center">Actions</th>
           </tr>
         </thead>
@@ -482,7 +482,7 @@ const App = () => {
               <td colSpan="7" className="text-center py-5">
                 <div className="d-flex flex-column align-items-center gap-3">
                   <FaPhoneAlt size={30} className="text-muted" />
-                  <p className="mb-0 text-muted">No DID destinations found</p>
+                  <p className="mb-0 text-muted">Aucun DID trouvé</p>
                 </div>
               </td>
             </tr>
@@ -492,13 +492,13 @@ const App = () => {
                 <td className="fw-medium">{did.did}</td>
                 <td>{did.username || 'N/A'}</td>
                 <td>
-                  <Badge bg="info" className="text-dark bg-opacity-25 px-3 py-2 rounded-pill">
+                  <Badge key={`badge-${did.id}-calltype`} bg="info" className="text-dark bg-opacity-25 px-3 py-2 rounded-pill">
                     {getCallTypeLabel(did.Calltype)}
                   </Badge>
                 </td>
                 <td>{formatTime(did.TimeUsed)}</td>
                 <td>
-                  <Badge bg="primary" className="px-2 py-1 rounded-pill">
+                  <Badge key={`badge-${did.id}-priority`} bg="primary" className="px-2 py-1 rounded-pill">
                     {did.Priority}
                   </Badge>
                 </td>
@@ -533,8 +533,8 @@ const App = () => {
   const PaginationComponent = ({ pageCount, currentPage, onPageChange }) => {
     return (
       <ReactPaginate
-        previousLabel={"«"}
-        nextLabel={"»"}
+        previousLabel={'Précédent'}
+        nextLabel={'Suivant'}
         breakLabel={"..."}
         pageCount={pageCount}
         marginPagesDisplayed={2}
@@ -606,7 +606,7 @@ const App = () => {
                                 className="shadow-sm"
                                 required
                               >
-                                <option value="">Select DID</option>
+                                <option value="">Sélectionner un DID</option>
                                 {didsList.map((did) => (
                                   <option key={did.did} value={did.did}>
                                     {did.did}
@@ -616,7 +616,7 @@ const App = () => {
                             </Form.Group>
 
                             <Form.Group className="mb-3" controlId="formUsername">
-                              <Form.Label>Username</Form.Label>
+                              <Form.Label>Nom d'utilisateur</Form.Label>
                               <Form.Control
                                 as="select"
                                 name="username"
@@ -624,7 +624,7 @@ const App = () => {
                                 onChange={handleInputChange}
                                 className="shadow-sm"
                               >
-                                <option value="">Select Username</option>
+                                <option value="">Sélectionner un nom d'utilisateur</option>
                                 {user.map((user) => (
                                   <option key={user.id} value={user.username}>
                                     {user.username}
@@ -634,7 +634,7 @@ const App = () => {
                             </Form.Group>
 
                             <Form.Group className="mb-3" controlId="formCallType">
-                              <Form.Label>Call Type</Form.Label>
+                              <Form.Label>Type d'Appel</Form.Label>
                               <Form.Control
                                 as="select"
                                 name="destinationType"
@@ -643,24 +643,24 @@ const App = () => {
                                 className="shadow-sm"
                               >
                                 <option value="1">SIP</option>
-                                <option value="0">Call to PSTN</option>
-                                <option value="2">IVR</option>
-                                <option value="3">Calling Card</option>
-                                <option value="4">Direct Extension</option>
-                                <option value="5">Cid Callback</option>
-                                <option value="6">0800 Callback</option>
-                                <option value="7">Queue</option>
-                                <option value="8">Sip Group</option>
-                                <option value="9">Custom</option>
-                                <option value="10">Context</option>
-                                <option value="11">Multiples IPs</option>
+                                <option value="0">Appel vers PSTN</option>
+                                <option value="2">SVI</option>
+                                <option value="3">Carte d'Appel</option>
+                                <option value="4">Extension Directe</option>
+                                <option value="5">Rappel CID</option>
+                                <option value="6">Rappel 0800</option>
+                                <option value="7">File d'attente</option>
+                                <option value="8">Groupe SIP</option>
+                                <option value="9">Personnalisé</option>
+                                <option value="10">Contexte</option>
+                                <option value="11">IPs Multiples</option>
                               </Form.Control>
                             </Form.Group>
                           </Col>
                           
                           <Col md={6}>
                             <Form.Group className="mb-3" controlId="formStatus">
-                              <Form.Label>Status</Form.Label>
+                              <Form.Label>Statut</Form.Label>
                               <Form.Control
                                 as="select"
                                 name="status"
@@ -668,13 +668,13 @@ const App = () => {
                                 onChange={handleInputChange}
                                 className="shadow-sm"
                               >
-                                <option>Active</option>
-                                <option>Inactive</option>
+                                <option>Actif</option>
+                                <option>Inactif</option>
                               </Form.Control>
                             </Form.Group>
 
                             <Form.Group className="mb-3" controlId="formPriority">
-                              <Form.Label>Priority</Form.Label>
+                              <Form.Label>Priorité</Form.Label>
                               <Form.Control
                                 type="number"
                                 name="priority"
@@ -687,7 +687,7 @@ const App = () => {
                             </Form.Group>
 
                             <Form.Group className="mb-3" controlId="formSipUser">
-                              <Form.Label>SIP User</Form.Label>
+                              <Form.Label>Utilisateur SIP</Form.Label>
                               <Form.Control
                                 as="select"
                                 name="sipUser"
@@ -695,7 +695,7 @@ const App = () => {
                                 onChange={handleInputChange}
                                 className="shadow-sm"
                               >
-                                <option value="">Select SIP User</option>
+                                <option value="">Sélectionner un utilisateur SIP</option>
                                 {sip.map((sipUser) => (
                                   <option key={sipUser.id} value={sipUser.id}>
                                     {sipUser.name}
@@ -708,10 +708,10 @@ const App = () => {
                         
                         <div className="d-flex justify-content-end gap-2">
                           <Button variant="secondary" onClick={() => setIsAdding(false)}>
-                            Cancel
+                            Annuler
                           </Button>
                           <Button variant="primary" onClick={handleAddUser}>
-                            Add Destination
+                            Ajouter une Destination
                           </Button>
                         </div>
                       </Form>
@@ -722,7 +722,7 @@ const App = () => {
                 {editingDid && (
                   <Modal show={true} onHide={() => setEditingDid(null)} size="lg">
                     <Modal.Header closeButton>
-                      <Modal.Title>Modifier DID {editingDid.did}</Modal.Title>
+                      <Modal.Title>Modifier la Destination DID {editingDid.did}</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                       <Card className="shadow-sm">
@@ -738,13 +738,13 @@ const App = () => {
                               </Form.Group>
                               
                               <Form.Group className="mb-3">
-                                <Form.Label>Username</Form.Label>
+                                <Form.Label>Nom d'utilisateur</Form.Label>
                                 <Form.Control
                                   as="select"
                                   value={editingDid.username}
                                   onChange={(e) => setEditingDid({...editingDid, username: e.target.value})}
                                 >
-                                  <option value="">Select Username</option>
+                                  <option value="">Sélectionner un nom d'utilisateur</option>
                                   {user.map((u) => (
                                     <option key={u.id} value={u.username}>
                                       {u.username}
@@ -754,7 +754,7 @@ const App = () => {
                               </Form.Group>
                               
                               <Form.Group className="mb-3" controlId="formCallType">
-                              <Form.Label>Call Type</Form.Label>
+                              <Form.Label>Type d'Appel</Form.Label>
                               <Form.Control
                                 as="select"
                                 value={editingDid.destinationType}
@@ -762,17 +762,17 @@ const App = () => {
                                 className="shadow-sm"
                               >
                                 <option value="1">SIP</option>
-                                <option value="0">Call to PSTN</option>
-                                <option value="2">IVR</option>
-                                <option value="3">Calling Card</option>
-                                <option value="4">Direct Extension</option>
-                                <option value="5">Cid Callback</option>
-                                <option value="6">0800 Callback</option>
-                                <option value="7">Queue</option>
-                                <option value="8">Sip Group</option>
-                                <option value="9">Custom</option>
-                                <option value="10">Context</option>
-                                <option value="11">Multiples IPs</option>
+                                <option value="0">Appel vers PSTN</option>
+                                <option value="2">SVI</option>
+                                <option value="3">Carte d'Appel</option>
+                                <option value="4">Extension Directe</option>
+                                <option value="5">Rappel CID</option>
+                                <option value="6">Rappel 0800</option>
+                                <option value="7">File d'attente</option>
+                                <option value="8">Groupe SIP</option>
+                                <option value="9">Personnalisé</option>
+                                <option value="10">Contexte</option>
+                                <option value="11">IPs Multiples</option>
                               </Form.Control>
                             </Form.Group>
                             </Col>
@@ -790,7 +790,7 @@ const App = () => {
                               </Form.Group>
                               
                               <Form.Group className="mb-3" controlId="formSipUser">
-                              <Form.Label>SIP User</Form.Label>
+                              <Form.Label>Utilisateur SIP</Form.Label>
                               <Form.Control
                                 as="select"
                                 name="sipUser"
@@ -798,7 +798,7 @@ const App = () => {
                                 onChange={handleInputChange}
                                 className="shadow-sm"
                               >
-                                <option value="">Select SIP User</option>
+                                <option value="">Sélectionner un utilisateur SIP</option>
                                 {sip.map((sipUser) => (
                                   <option key={sipUser.id} value={sipUser.id}>
                                     {sipUser.name}
@@ -815,8 +815,8 @@ const App = () => {
                                   value={editingDid.status}
                                   onChange={(e) => setEditingDid({...editingDid, status: e.target.value})}
                                 >
-                                  <option value="Active">Active</option>
-                                  <option value="Inactive">Inactive</option>
+                                  <option value="Active">Actif</option>
+                                  <option value="Inactive">Inactif</option>
                                 </Form.Control>
                               </Form.Group>
                             </Col>
@@ -846,14 +846,14 @@ const App = () => {
 
                 <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
                   <div className="text-muted small">
-                    {!isLoading && (
+                    {!isChargement && (
                       <>
                         <Badge bg="light" text="dark" className="me-2 shadow-sm">
-                          <span className="fw-semibold">{currentDIDs.length}</span> of {filteredDids.length} DIDs
+                          Affichage de {offset + 1} à {Math.min(offset + ITEMS_PER_PAGE, currentDIDs.length + offset)} sur {filteredDids.length} entrées
                         </Badge>
                         {searchTerm && (
                           <Badge bg="light" text="dark" className="shadow-sm">
-                            Filtered from {dids.length} total
+                            Filtré à partir de {dids.length} au total
                           </Badge>
                         )}
                       </>

@@ -41,7 +41,7 @@ const SummaryPerDay = () => {
     Buy_Cost: true,
     Session_Bill: true,
     Lucro: true,
-    ASR: true,
+    ASR: true
   });
 
   const fetchData = async () => {
@@ -54,7 +54,7 @@ const SummaryPerDay = () => {
       setData(response.data.data);
     } catch (err) {
       console.error("Error fetching data:", err);
-      setError("Unable to fetch data. Please check if the server is running.");
+      setError("Impossible de récupérer les données. Vérifiez si le serveur est en cours d'exécution.");
     }
     setLoading(false);
   };
@@ -72,7 +72,7 @@ const SummaryPerDay = () => {
   const currentItems = filteredData.slice(offset, offset + ITEMS_PER_PAGE);
 
   const csvData = [
-    ["Day", "Session Time", "ALOC Calls", "Nb Call", "Nb Call Fail", "Buy Cost", "Session Bill", "Lucro", "ASR"],
+    ["Day", "Durée de session", "Appels ALOC", "Nb Appels", "Nb Appels Fail", "Coût d'achat", "Facture de session", "Bénéfice", "Taux de succès"],
     ...filteredData.map(item => [
       item.day,
       item.sessiontime,
@@ -110,8 +110,8 @@ const SummaryPerDay = () => {
                     <FaChartLine className="text-primary fs-3" />
                   </div>
                   <div>
-                    <h2 className="fw-bold mb-0 text-white">Daily Summary Report</h2>
-                    <p className="text-white-50 mb-0 d-none d-md-block">Summary of call data by day</p>
+                    <h2 className="fw-bold mb-0 text-white">Résumé quotidien</h2>
+                    <p className="text-white-50 mb-0 d-none d-md-block">Résumé des données d'appels par jour</p>
                   </div>
                 </div>
               </Card.Header>
@@ -127,18 +127,18 @@ const SummaryPerDay = () => {
                   <Col md={6} className="d-flex gap-3">
                     <CSVLink
                       data={csvData}
-                      filename="daily_summary.csv"
+                      filename="resume_quotidien.csv"
                       className="btn btn-success d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
                     >
                       <div className="icon-container">
                         <FaDownload />
                       </div>
-                      <span>Export</span>
+                      <span>Exporter</span>
                     </CSVLink>
 
                     <Dropdown>
                       <Dropdown.Toggle variant="secondary" className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect">
-                        <span>Toggle Columns</span>
+                        <span>Activer/désactiver les colonnes</span>
                       </Dropdown.Toggle>
                       <Dropdown.Menu className="p-3">
                         <div className="d-flex flex-wrap gap-3">
@@ -164,7 +164,7 @@ const SummaryPerDay = () => {
                       </span>
                       <input
                         type="text"
-                        placeholder="Search by Day"
+                        placeholder="Rechercher par jour"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="form-control border-start-0"
@@ -177,15 +177,15 @@ const SummaryPerDay = () => {
                   <Table striped bordered hover className="elegant-table">
                     <thead>
                       <tr className="table-primary">
-                        {visibleColumns.Day && <th>Day</th>}
-                        {visibleColumns.SessionTime && <th>Session Time</th>}
-                        {visibleColumns.ALOC_Calls && <th>ALOC Calls</th>}
-                        {visibleColumns.Nb_Call && <th>Nb Call</th>}
-                        {visibleColumns.Nb_Call_Fail && <th>Nb Call Fail</th>}
-                        {visibleColumns.Buy_Cost && <th>Buy Cost <FaEuroSign /></th>}
-                        {visibleColumns.Session_Bill && <th>Session Bill</th>}
-                        {visibleColumns.Lucro && <th>Lucro</th>}
-                        {visibleColumns.ASR && <th>ASR <FaPercent /></th>}
+                        {visibleColumns.Day && <th>Jour</th>}
+                        {visibleColumns.SessionTime && <th>Durée de session</th>}
+                        {visibleColumns.ALOC_Calls && <th>Appels ALOC</th>}
+                        {visibleColumns.Nb_Call && <th>Nb Appels</th>}
+                        {visibleColumns.Nb_Call_Fail && <th>Nb Appels Ratés</th>}
+                        {visibleColumns.Buy_Cost && <th>Coût d'achat <FaEuroSign /></th>}
+                        {visibleColumns.Session_Bill && <th>Facture de session</th>}
+                        {visibleColumns.Lucro && <th>Bénéfice</th>}
+                        {visibleColumns.ASR && <th>Taux de succès <FaPercent /></th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -212,7 +212,7 @@ const SummaryPerDay = () => {
                       ) : (
                         <tr>
                           <td colSpan={Object.keys(visibleColumns).filter(key => visibleColumns[key]).length} className="text-center">
-                            No data available
+                            Aucune donnée disponible
                           </td>
                         </tr>
                       )}

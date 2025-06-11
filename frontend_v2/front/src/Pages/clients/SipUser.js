@@ -100,7 +100,7 @@ const SIPUsers = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this record?")) {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer cet enregistrement ?")) {
       try {
         await axios.delete(`http://localhost:5000/api/admin/SIPUsers/delete/${id}`);
         fetchSIPUsers();
@@ -117,8 +117,8 @@ const SIPUsers = () => {
       setFormData({
         id_user: user.id_user || "",
         name: user.name || "",
-        accountcode: user.accountcode || "",
-        host: user.host || "",
+        accountcode: user.accountcode,
+        host: user.host,
         status: user.status || "",
         allow: user.allow || "",
         sippasswd: user.secret || "",
@@ -258,7 +258,7 @@ const SIPUsers = () => {
 
   const exportToCSV = () => {
     const csvRows = [];
-    const headers = ["ID", "Name", "Account Code", "Host", "Status"];
+    const headers = ["ID", "Nom", "Code de Compte", "Hôte", "Statut"];
     csvRows.push(headers.join(","));
     sipUsers.forEach((user) => {
       const row = [
@@ -306,9 +306,9 @@ const SIPUsers = () => {
   const renderForm = (isEdit = false) => (
     <Form onSubmit={isEdit ? handleUpdate : handleSubmit}>
       <Tabs defaultActiveKey="general" className="mb-3">
-        <Tab eventKey="general" title="General">
+        <Tab eventKey="general" title="Général">
           <Form.Group>
-            <Form.Label>Username</Form.Label>
+            <Form.Label>ID Utilisateur</Form.Label>
             <select
               className="form-select"
               value={isEdit ? formData.id_user : selectedUser}
@@ -316,22 +316,20 @@ const SIPUsers = () => {
                 isEdit ? setFormData({ ...formData, id_user: e.target.value }) : setSelectedUser(e.target.value)
               }
             >
-              <option value="">Select User</option>
+              <option value="">Sélectionnez l'utilisateur</option>
               {users?.map((user) => (
                 <option key={user.id} value={user.id}>
                   {user.accountcode}
                 </option>
               ))}
             </select>
-            {console.log(users)
-            }
           </Form.Group>
           <Form.Group>
-            <Form.Label>Name</Form.Label>
+            <Form.Label>Nom</Form.Label>
             <Form.Control type="text" name="name" value={formData.name} onChange={handleChange} />
           </Form.Group>
           <Form.Group controlId="formPassword">
-            <Form.Label>Password</Form.Label>
+            <Form.Label>Mot de passe</Form.Label>
             <div className="input-group">
               <Form.Control
                 type={showPassword ? "text" : "password"}
@@ -347,16 +345,16 @@ const SIPUsers = () => {
             {formData.password?.length > 0 &&
               (formData.password.length < 8 || formData.password.length > 12) && (
                 <Form.Text className="text-danger">
-                  Password must be between 8 and 12 characters long.
+                  Mot de passe doit être entre 8 et 12 caractères.
                 </Form.Text>
               )}
           </Form.Group>
           <Form.Group>
-            <Form.Label>SIP Password</Form.Label>
+            <Form.Label>SIP Mot de passe</Form.Label>
             <Form.Control type="text" name="sippasswd" value={formData.sippasswd} onChange={handleChange} />
           </Form.Group>
           <Form.Group>
-            <Form.Label>Caller ID</Form.Label>
+            <Form.Label>ID Appelant</Form.Label>
             <Form.Control type="text" name="callerid" value={formData.callerid} onChange={handleChange} />
           </Form.Group>
           <Form.Group>
@@ -364,10 +362,10 @@ const SIPUsers = () => {
             <Form.Control type="text" name="alias" value={formData.alias} onChange={handleChange} />
           </Form.Group>
           <Form.Group>
-            <Form.Label>Disable</Form.Label>
+            <Form.Label>Désactiver</Form.Label>
             <Form.Control as="select" name="disable" value={formData.disable} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="all">All</option>
+              <option value="no">Non</option>
+              <option value="all">Tout</option>
             </Form.Control>
           </Form.Group>
           <Form.Group>
@@ -403,11 +401,11 @@ const SIPUsers = () => {
             </div>
           </Form.Group>
           <Form.Group>
-            <Form.Label>Host</Form.Label>
+            <Form.Label>Hôte</Form.Label>
             <Form.Control type="text" name="host" value={formData.host} onChange={handleChange} required />
           </Form.Group>
           <Form.Group>
-            <Form.Label>SIP Group</Form.Label>
+            <Form.Label>Groupe SIP</Form.Label>
             <Form.Control
               type="text"
               name="sip_group"
@@ -417,21 +415,21 @@ const SIPUsers = () => {
             />
           </Form.Group>
           <Form.Group>
-            <Form.Label>Block Call Reg</Form.Label>
+            <Form.Label>Bloquer Enreg. Appel</Form.Label>
             <Form.Control as="select" name="block_call_reg" value={formData.block_call_reg} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
+              <option value="no">Non</option>
+              <option value="yes">Oui</option>
             </Form.Control>
           </Form.Group>
           <Form.Group>
-            <Form.Label>Record Call</Form.Label>
+            <Form.Label>Enregistrer Appel</Form.Label>
             <Form.Control as="select" name="record_call" value={formData.record_call} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
+              <option value="no">Non</option>
+              <option value="yes">Oui</option>
             </Form.Control>
           </Form.Group>
           <Form.Group>
-            <Form.Label>Tech Prefix</Form.Label>
+            <Form.Label>Préfixe Technique</Form.Label>
             <Form.Control
               type="text"
               name="techprefix"
@@ -453,23 +451,23 @@ const SIPUsers = () => {
             />
           </Form.Group>
           <Form.Group>
-            <Form.Label>Directmedia</Form.Label>
+            <Form.Label>Média Direct</Form.Label>
             <Form.Control as="select" name="directmedia" value={formData.directmedia} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
+              <option value="no">Non</option>
+              <option value="yes">Oui</option>
             </Form.Control>
           </Form.Group>
           <Form.Group>
-            <Form.Label>Qualify</Form.Label>
+            <Form.Label>Qualifier</Form.Label>
             <Form.Control as="select" name="qualify" value={formData.qualify} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
+              <option value="no">Non</option>
+              <option value="yes">Oui</option>
             </Form.Control>
           </Form.Group>
         </Tab>
         <Tab eventKey="additional" title="Additional">
           <Form.Group>
-            <Form.Label>Context</Form.Label>
+            <Form.Label>Contexte</Form.Label>
             <Form.Control type="text" name="context" value={formData.context} onChange={handleChange} />
           </Form.Group>
           <Form.Group>
@@ -481,16 +479,16 @@ const SIPUsers = () => {
             </Form.Control>
           </Form.Group>
           <Form.Group>
-            <Form.Label>Insecure</Form.Label>
+            <Form.Label>Non Sécurisé</Form.Label>
             <Form.Control as="select" name="insecure" value={formData.insecure} onChange={handleChange}>
-              <option value="no">No</option>
+              <option value="no">Non</option>
               <option value="invite">Invite</option>
               <option value="port">Port</option>
               <option value="both">Both</option>
             </Form.Control>
           </Form.Group>
           <Form.Group>
-            <Form.Label>Deny</Form.Label>
+            <Form.Label>Refuser</Form.Label>
             <Form.Control
               type="text"
               name="deny"
@@ -500,7 +498,7 @@ const SIPUsers = () => {
             />
           </Form.Group>
           <Form.Group>
-            <Form.Label>Permit</Form.Label>
+            <Form.Label>Permettre</Form.Label>
             <Form.Control
               type="text"
               name="permit"
@@ -518,21 +516,21 @@ const SIPUsers = () => {
             </Form.Control>
           </Form.Group>
           <Form.Group>
-            <Form.Label>Allowtransfer</Form.Label>
+            <Form.Label>Autoriser Transfert</Form.Label>
             <Form.Control as="select" name="allowtransfer" value={formData.allowtransfer} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
+              <option value="no">Non</option>
+              <option value="yes">Oui</option>
             </Form.Control>
           </Form.Group>
           <Form.Group>
-            <Form.Label>Fake Ring</Form.Label>
+            <Form.Label>Fausse Sonnerie</Form.Label>
             <Form.Control as="select" name="fakeRing" value={formData.fakeRing} onChange={handleChange}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
+              <option value="no">Non</option>
+              <option value="yes">Oui</option>
             </Form.Control>
           </Form.Group>
           <Form.Group>
-            <Form.Label>Call Limit</Form.Label>
+            <Form.Label>Limite d'Appel</Form.Label>
             <Form.Control type="number" name="callLimit" value={formData.callLimit} onChange={handleChange} />
           </Form.Group>
           <Form.Group>
@@ -540,13 +538,13 @@ const SIPUsers = () => {
             <Form.Control type="text" name="moh" value={formData.moh} onChange={handleChange} />
           </Form.Group>
           <Form.Group>
-            <Form.Label>Add Parameter</Form.Label>
+            <Form.Label>Paramètres Supplémentaires</Form.Label>
             <Form.Control type="text" name="addparameter" value={formData.addparameter} onChange={handleChange} />
           </Form.Group>
         </Tab>
         <Tab eventKey="forward" title="Forward">
           <Form.Group>
-            <Form.Label>Forward Type</Form.Label>
+            <Form.Label>Type de Renvoi</Form.Label>
             <Form.Control as="select" name="forwardType" value={formData.forwardType} onChange={handleChange}>
               <option value="undefined">Undefined</option>
               <option value="fax">Fax</option>
@@ -555,17 +553,17 @@ const SIPUsers = () => {
             </Form.Control>
           </Form.Group>
         </Tab>
-        <Tab eventKey="voicemail" title="Voicemail">
+        <Tab eventKey="voicemail" title="Messagerie Vocale">
           <Form.Group>
-            <Form.Label>Enable Voicemail</Form.Label>
+            <Form.Label>Activer la Messagerie Vocale</Form.Label>
             <Form.Control
               as="select"
               name="enableVoicemail"
               value={formData.enableVoicemail}
               onChange={handleChange}
             >
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
+              <option value="no">Non</option>
+              <option value="yes">Oui</option>
             </Form.Control>
           </Form.Group>
           <Form.Group>
@@ -573,7 +571,7 @@ const SIPUsers = () => {
             <Form.Control type="email" name="email" value={formData.email} onChange={handleChange} />
           </Form.Group>
           <Form.Group>
-            <Form.Label>Voicemail Password</Form.Label>
+            <Form.Label>Voicemail Mot de passe</Form.Label>
             <Form.Control
               type="password"
               name="voicemail_password"
@@ -585,10 +583,10 @@ const SIPUsers = () => {
       </Tabs>
       <div className="mt-3 text-center">
         <Button variant="secondary" onClick={() => (isEdit ? setShowEdit(false) : setShowAdd(false))}>
-          Close
+          Fermer
         </Button>
         <Button variant="primary" type="submit" className="ms-2">
-          {isEdit ? "Update" : "Submit"}
+          {isEdit ? "Mettre à jour" : "Soumettre"}
         </Button>
       </div>
     </Form>
@@ -605,11 +603,11 @@ const SIPUsers = () => {
   // Header Component
   const SIPUserHeader = () => {
     const csvData = [
-      ["Name", "Account Code", "Host", "Status"],
+      ["Nom", "Code de Compte", "Hôte", "Statut"],
       ...sipUsers.map((user) => [
         user.name,
-        user.accountcode || "",
-        user.host || "",
+        user.accountcode,
+        user.host,
         user.status === 1 ? "unregistered" : user.status === 0 ? "unmonitored" : "unknown",
       ]),
     ];
@@ -644,8 +642,8 @@ const SIPUsers = () => {
               <FaUserAlt className="text-primary fs-3" />
             </div>
             <div>
-              <h2 className="fw-bold mb-0 text-white">SIP Users Management</h2>
-              <p className="text-white-50 mb-0 d-none d-md-block">Manage your SIP users easily</p>
+              <h2 className="fw-bold mb-0 text-white">Gestion des Utilisateurs SIP</h2>
+              <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos utilisateurs SIP facilement</p>
             </div>
           </div>
         </div>
@@ -675,7 +673,7 @@ const SIPUsers = () => {
               <div className="icon-container">
                 <FaPlusCircle />
               </div>
-              <span>Add SIP User</span>
+              <span>Ajouter un utilisateur SIP</span>
             </Button>
             <CSVLink
               data={csvData}
@@ -687,7 +685,7 @@ const SIPUsers = () => {
               <div className="icon-container">
                 {isExporting ? <Spinner animation="border" size="sm" /> : <FaDownload />}
               </div>
-              <span>{isExporting ? "Exporting..." : "Export"}</span>
+              <span>{isExporting ? "Exportation en cours..." : "Exporter"}</span>
             </CSVLink>
           </div>
         </div>
@@ -701,7 +699,7 @@ const SIPUsers = () => {
       <div className="position-relative mb-4">
         <Form.Control
           type="text"
-          placeholder="Search by name..."
+          placeholder="Rechercher par nom..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="ps-4 shadow-sm border-0"
@@ -712,24 +710,24 @@ const SIPUsers = () => {
     );
   };
 
-  // Status Badge Component
+  // Statut Badge Component
   const StatusBadge = ({ status }) => {
     if (status === 1) {
       return (
         <Badge bg="warning" pill className="px-3 py-2">
-          <FaExclamationCircle className="me-1" /> Unregistered
+          <FaExclamationCircle className="me-1" /> Non enregistré
         </Badge>
       );
     } else if (status === 0) {
       return (
         <Badge bg="secondary" pill className="px-3 py-2">
-          <FaTimesCircle className="me-1" /> Unmonitored
+          <FaTimesCircle className="me-1" /> Non surveillé
         </Badge>
       );
     } else {
       return (
         <Badge bg="info" pill className="px-3 py-2">
-          <FaQuestionCircle className="me-1" /> Unknown
+          <FaQuestionCircle className="me-1" /> Inconnu
         </Badge>
       );
     }
@@ -750,8 +748,8 @@ const SIPUsers = () => {
             <FaEllipsisV className="btn-icon" />
           </Dropdown.Toggle>
           <Dropdown.Menu>
-            <Dropdown.Item onClick={onEdit}>Edit</Dropdown.Item>
-            <Dropdown.Item onClick={onDelete} className="text-danger">Delete</Dropdown.Item>
+            <Dropdown.Item onClick={onEdit}>Éditer</Dropdown.Item>
+            <Dropdown.Item onClick={onDelete} className="text-danger">Supprimer</Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown>
       </div>
@@ -767,8 +765,8 @@ const SIPUsers = () => {
             <FaUserAlt className="text-muted" style={{ fontSize: "2rem" }} />
           </div>
         </div>
-        <h5>No SIP Users Found</h5>
-        <p className="text-muted">Add a new SIP user or modify your search</p>
+        <h5>Aucun utilisateur SIP trouvé</h5>
+        <p className="text-muted">Ajoutez un nouvel utilisateur SIP ou modifiez votre recherche</p>
       </div>
     );
   };
@@ -782,8 +780,8 @@ const SIPUsers = () => {
     return (
       <div className="d-flex justify-content-center mt-4">
         <ReactPaginate
-          previousLabel={"Previous"}
-          nextLabel={"Next"}
+          previousLabel={"Précédent"}
+          nextLabel={"Suivant"}
           breakLabel={"..."}
           pageCount={pageCount}
           marginPagesDisplayed={2}
@@ -1063,10 +1061,10 @@ const SIPUsers = () => {
                         <Table hover className="mb-0 table-header-bold">
                           <thead className="bg-light text-dark">
                             <tr>
-                              <th className="py-3 px-4 fw-bold">Name</th>
-                              <th className="py-3 px-4 fw-bold">Account Code</th>
-                              <th className="py-3 px-4 fw-bold">Host</th>
-                              <th className="py-3 px-4 text-center fw-bold">Status</th>
+                              <th className="py-3 px-4 fw-bold">Nom</th>
+                              <th className="py-3 px-4 fw-bold">Code de Compte</th>
+                              <th className="py-3 px-4 fw-bold">Hôte</th>
+                              <th className="py-3 px-4 text-center fw-bold">Statut</th>
                               <th className="py-3 px-4 text-center fw-bold">Actions</th>
                             </tr>
                           </thead>
@@ -1075,7 +1073,7 @@ const SIPUsers = () => {
                               <tr>
                                 <td colSpan="5" className="text-center py-5">
                                   <Spinner animation="border" variant="primary" />
-                                  <p className="mt-3 text-muted">Loading data...</p>
+                                  <p className="mt-3 text-muted">Chargement des données...</p>
                                 </td>
                               </tr>
                             ) : currentUsers.length === 0 ? (
@@ -1088,16 +1086,32 @@ const SIPUsers = () => {
                               currentUsers.map((user) => (
                                 <tr key={user.id}>
                                   <td className="py-3 px-4">{user.name}</td>
-                                  <td className="py-3 px-4">{user.accountcode || <span className="text-muted fst-italic">Not specified</span>}</td>
+                                  <td className="py-3 px-4">{user.accountcode || <span className="text-muted fst-italic">Non spécifié</span>}</td>
                                   <td className="py-3 px-4">{user.host}</td>
                                   <td className="py-3 px-4 text-center">
                                     <StatusBadge status={user.status} />
                                   </td>
                                   <td className="py-3 px-4 text-center">
-                                    <ActionButtons 
-                                      onEdit={() => handleEdit(user)} 
-                                      onDelete={() => handleDelete(user.id)} 
-                                    />
+                                    <div className="d-flex gap-2 justify-content-center">
+                                      <Button
+                                        variant="outline-primary"
+                                        size="sm"
+                                        onClick={() => handleEdit(user)}
+                                        className="action-btn btn-hover-effect"
+                                        title="Modifier"
+                                      >
+                                        <FaEdit className="btn-icon" />
+                                      </Button>
+                                      <Button
+                                        variant="outline-danger"
+                                        size="sm"
+                                        onClick={() => handleDelete(user.id)}
+                                        className="action-btn btn-hover-effect"
+                                        title="Supprimer"
+                                      >
+                                        <FaTrashAlt className="btn-icon" />
+                                      </Button>
+                                    </div>
                                   </td>
                                 </tr>
                               ))
@@ -1113,11 +1127,11 @@ const SIPUsers = () => {
                       {!isLoading && (
                         <>
                           <Badge bg="light" text="dark" className="me-2 shadow-sm">
-                            <span className="fw-semibold">{currentUsers.length}</span> of {filteredUsers.length} SIP Users
+                            <span className="fw-semibold">{currentUsers.length}</span> sur {filteredUsers.length} Utilisateurs SIP
                           </Badge>
                           {searchTerm && (
                             <Badge bg="light" text="dark" className="shadow-sm">
-                              Filtered from {sipUsers.length} total
+                              Filtré parmi {sipUsers.length} au total
                             </Badge>
                           )}
                         </>
@@ -1132,24 +1146,24 @@ const SIPUsers = () => {
         </Container>
       </div>
 
-      {/* Add SIP User Modal */}
+      {/* Ajouter un utilisateur SIP Modal */}
       <Modal show={showAdd} onHide={() => setShowAdd(false)} size="lg" centered className="sip-user-modal">
         <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title className="fw-bold">Add SIP User</Modal.Title>
+          <Modal.Title className="fw-bold">Ajouter un utilisateur SIP</Modal.Title>
         </Modal.Header>
         <Modal.Body className="pt-0">{renderForm(false)}</Modal.Body>
       </Modal>
       
-      {/* Edit SIP User Modal */}
+      {/* Modifier l'utilisateur SIP Modal */}
       <Modal show={showEdit} onHide={() => setShowEdit(false)} size="lg" centered className="sip-user-modal">
         <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title className="fw-bold">Edit SIP User</Modal.Title>
+          <Modal.Title className="fw-bold">Modifier l'utilisateur SIP</Modal.Title>
         </Modal.Header>
         <Modal.Body className="pt-0">
           {isLoading ? (
             <div className="text-center py-5">
               <Spinner animation="border" variant="primary" />
-              <p className="mt-3 text-muted">Loading user data...</p>
+              <p className="mt-3 text-muted">Chargement des données de l'utilisateur...</p>
             </div>
           ) : (
             renderForm(true)

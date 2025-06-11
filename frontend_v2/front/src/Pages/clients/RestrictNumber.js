@@ -215,8 +215,8 @@ function RestricNumber() {
               <FaBan className="text-primary fs-3" />
             </div>
             <div>
-              <h2 className="fw-bold mb-0 text-white">Gestion des Restrictions</h2>
-              <p className="text-white-50 mb-0 d-none d-md-block">Gérez les numéros restreints facilement</p>
+              <h2 className="fw-bold mb-0 text-white">Gestion des Restrictions de Numéros</h2>
+              <p className="text-white-50 mb-0 d-none d-md-block">Gérez facilement vos restrictions de numéros</p>
             </div>
           </div>
         </div>
@@ -318,8 +318,8 @@ function RestricNumber() {
             <FaBan className="text-muted" style={{ fontSize: "2rem" }} />
           </div>
         </div>
-        <h5>Aucune restriction trouvée</h5>
-        <p className="text-muted">Ajoutez une nouvelle restriction ou modifiez votre recherche</p>
+        <h5>Aucune restriction trouvée.</h5>
+        <p className="text-muted mb-3">Il n'y a actuellement aucune restriction configurée.</p>
       </div>
     );
   };
@@ -341,7 +341,7 @@ function RestricNumber() {
                     value={selectedUser}
                     onChange={(e) => setSelectedUser(e.target.value)}
                   >
-                    <option value="">Sélectionner un utilisateur</option>
+                    <option value="">Sélectionnez un utilisateur</option>
                     {userRestrict.map((e, i) => (
                       <option key={i} value={e.id}>{e.username}</option>
                     ))}
@@ -350,10 +350,10 @@ function RestricNumber() {
               </Col>
               <Col md={6} className="mb-3">
                 <Form.Group>
-                  <Form.Label>Numéro</Form.Label>
+                  <Form.Label>Numéro de téléphone</Form.Label>
                   <Form.Control
                     type="text"
-                    placeholder="Numéro"
+                    placeholder="Entrez le numéro de téléphone"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9+]/g, ''))}
                   />
@@ -361,7 +361,7 @@ function RestricNumber() {
               </Col>
               <Col md={6} className="mb-3">
                 <Form.Group>
-                  <Form.Label>Direction</Form.Label>
+                  <Form.Label>Type de restriction</Form.Label>
                   <Form.Select
                     value={restrictionType}
                     onChange={(e) => setRestrictionType(e.target.value)}

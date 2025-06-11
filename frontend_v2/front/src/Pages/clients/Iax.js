@@ -236,7 +236,8 @@ const IaxTable = () => {
         codecs: ['g729', 'alaw', 'gsm', 'ulaw']
     });
     const [searchTerm, setSearchTerm] = useState('');
-    const [searchField, setSearchField] = useState('username');
+    const [searchField, setSearchField] = useState('all');
+    const [filteredData, setFilteredData] = useState([]);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
     const [deleteItemId, setDeleteItemId] = useState(null);
@@ -245,6 +246,31 @@ const IaxTable = () => {
     const [loading, setLoading] = useState(false);
     const [totalPages, setTotalPages] = useState(0);
     const [showPassword, setShowPassword] = useState(false);
+
+    // Filtrer les données selon le terme de recherche et le champ sélectionné
+    useEffect(() => {
+        const performSearch = (term, field) => {
+            if (!term) {
+                return data;
+            }
+            
+            const lowerTerm = term.toLowerCase();
+            return data.filter(item => {
+                if (field === 'all') {
+                    return Object.values(item).some(value => 
+                        typeof value === 'string' && value.toLowerCase().includes(lowerTerm)
+                    );
+                } else {
+                    return typeof item[field] === 'string' && 
+                           item[field].toLowerCase().includes(lowerTerm);
+                }
+            });
+        };
+
+        const filtered = performSearch(searchTerm, searchField);
+        setFilteredData(filtered);
+        setTotalPages(Math.ceil(filtered.length / itemsPerPage));
+    }, [searchTerm, searchField, data, itemsPerPage]);
 
     const fetchIax = async () => {
         try {
@@ -337,19 +363,23 @@ const IaxTable = () => {
             console.log('Processed IAX data:', processedData);
             console.log('Processed data with usernames:', processedData);
             setData(processedData);
-            setError(null);
-        } catch (error) {
-            console.error('Error fetching IAX data:', error);
-            setError('Failed to fetch IAX data');
+            return processedData;
+        } catch (err) {
+            console.error('Error fetching data:', err);
+            setError('Failed to fetch data');
+            return [];
         } finally {
             setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchIax(); 
-        fetchData(); 
-    }, []);
+        fetchData().then(data => {
+            setData(data);
+            setFilteredData(data);
+            setTotalPages(Math.ceil(data.length / itemsPerPage));
+        });
+    }, [itemsPerPage]); // Empty dependency array means this runs once on mount
 
     const filterData = (data, searchTerm, searchField) => {
         try {
@@ -371,7 +401,6 @@ const IaxTable = () => {
         }
     };
 
-    const filteredData = filterData(data, searchTerm, searchField);
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
@@ -751,7 +780,6 @@ const IaxTable = () => {
                                             <tbody>
                                                 {currentItems.map((item, index) => (
                                                     <tr key={index} className="align-middle">
-
                                                         {!hiddenColumns.includes('Nom d\'utilisateur') && <td>{item.display_username}</td>}
                                                         {!hiddenColumns.includes('IAX User') && <td>{item.user_name}</td>}
                                                         {!hiddenColumns.includes('IAX Pass') && <td>••••••••</td>}

@@ -115,13 +115,13 @@ function Queues() {
       .then((response) => {
         setQueues([...queues, response.data]);
         fetchQueues(); // Refresh the queue list
-        showAlert('Queue added successfully!');
+        showAlert('File d\'attente ajoutée avec succès !');
         setShowModal(false);
       })
       .catch((error) => {
         console.error('Full error adding queue:', error);
         console.error('Error response data:', error.response?.data);
-        showAlert('Failed to add queue', 'danger');
+        showAlert('Échec de l\'ajout de la file d\'attente', 'danger');
       });
   };
 
@@ -164,12 +164,12 @@ function Queues() {
         console.log('Update response:', response.data);
         fetchQueues();
         setShowUpdateModal(false);
-        showAlert('Queue updated successfully!');
+        showAlert('File d\'attente mise à jour avec succès !');
       })
       .catch((error) => {
         console.error('Error updating queue:', error);
         console.error('Error details:', error.response?.data);
-        showAlert(`Failed to update queue: ${error.response?.data?.error || error.message}`, 'danger');
+        showAlert(`Échec de la mise à jour de la file d\'attente : ${error.response?.data?.error || error.message}`, 'danger');
       });
   };
 
@@ -178,7 +178,7 @@ function Queues() {
     
     if (!queueId) {
       console.error('Cannot delete queue: No queue ID provided');
-      showAlert('Cannot delete queue: Missing queue ID', 'danger');
+      showAlert('Impossible de supprimer la file d\'attente : ID de file d\'attente manquant', 'danger');
       return;
     }
     
@@ -187,12 +187,12 @@ function Queues() {
         console.log('Delete response:', response.data);
         setQueues(queues.filter((queue) => queue.id !== queueId));
         setShowDeleteModal(false);
-        showAlert('Queue deleted successfully!');
+        showAlert('File d\'attente supprimée avec succès !');
       })
       .catch((error) => {
         console.error('Error deleting queue:', error);
         console.error('Error details:', error.response?.data);
-        showAlert(`Failed to delete queue: ${error.response?.data?.message || error.message}`, 'danger');
+        showAlert(`Échec de la suppression de la file d\'attente : ${error.response?.data?.message || error.message}`, 'danger');
       });
   };
 
@@ -256,14 +256,14 @@ function Queues() {
   // Header Component
   function QueuesHeader({ onAddClick, queues, isExporting = false }) {
     const csvData = [
-      ["Queue Name", "Username", "Language", "Strategy", "Wait Time", "Ring In Use"],
+      ["Nom File d'attente", "Nom d'utilisateur", "Langue", "Stratégie", "Temps d'attente", "Sonnerie en cours"],
       ...queues.map((queue) => [
         queue.name || "",
         queue.username || "",
         queue.language || "",
         queue.strategy || "",
         queue.max_wait_time || "0",
-        queue.ringinuse === 1 ? "Yes" : "No",
+        queue.ringinuse === 1 ? "Oui" : "Non",
       ]),
     ]
 
@@ -297,8 +297,8 @@ function Queues() {
               <FaUsers className="text-primary fs-3" />
             </div>
             <div>
-              <h2 className="fw-bold mb-0 text-white">Manage Queues</h2>
-              <p className="text-white-50 mb-0 d-none d-md-block">Configure and manage your call queues</p>
+              <h2 className="fw-bold mb-0 text-white">Gérer les Files d'attente</h2>
+              <p className="text-white-50 mb-0 d-none d-md-block">Configurez et gérez vos files d'attente d'appels</p>
             </div>
           </div>
         </div>
@@ -306,7 +306,7 @@ function Queues() {
           <div className="d-flex align-items-center gap-3">
             <Badge bg="primary" className="d-flex align-items-center p-2 ps-3 rounded-pill">
               <span className="me-2 fw-normal">
-                Total: <span className="fw-bold">{queues.length}</span>
+                Total : <span className="fw-bold">{queues.length}</span>
               </span>
               <span
                 className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center"
@@ -317,11 +317,11 @@ function Queues() {
             </Badge>
             <Dropdown>
               <Dropdown.Toggle variant="light" id="dropdown-sort" className="shadow-sm border">
-                <FaCog className="me-2" size={14} /> Sort By
+                <FaCog className="me-2" size={14} /> Trier par
               </Dropdown.Toggle>
               <Dropdown.Menu>
-                <Dropdown.Item onClick={() => fetchQueues('name')}>Queue Name</Dropdown.Item>
-                <Dropdown.Item onClick={() => fetchQueues('id_user')}>Username</Dropdown.Item>
+                <Dropdown.Item onClick={() => fetchQueues('name')}>Nom de la file d'attente</Dropdown.Item>
+                <Dropdown.Item onClick={() => fetchQueues('id_user')}>Nom d'utilisateur</Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
           </div>
@@ -334,18 +334,18 @@ function Queues() {
               <div className="icon-container">
                 <FaPlusCircle />
               </div>
-              <span>Add Queue</span>
+              <span>Ajouter File d'attente</span>
             </Button>
             <CSVLink
               data={csvData}
-              filename={"queues.csv"}
+              filename={"files_attente.csv"}
               className="btn btn-success d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
               disabled={isExporting}
             >
               <div className="icon-container">
                 {isExporting ? <Spinner animation="border" size="sm" /> : <FaDownload />}
               </div>
-              <span>Export</span>
+              <span>Exporter</span>
             </CSVLink>
           </div>
         </div>
@@ -362,7 +362,7 @@ function Queues() {
         </div>
         <Form.Control
           type="text"
-          placeholder="Search by username..."
+          placeholder="Rechercher par nom d'utilisateur..."
           value={searchTerm}
           onChange={onSearchChange}
           className="ps-5 py-2 border-0 shadow-sm rounded"
@@ -376,12 +376,12 @@ function Queues() {
     return status ? (
       <Badge bg="success" className="d-flex align-items-center gap-1 px-2 py-1">
         <FaCheckCircle size={10} />
-        <span>Active</span>
+        <span>Actif</span>
       </Badge>
     ) : (
       <Badge bg="secondary" className="d-flex align-items-center gap-1 px-2 py-1">
         <FaTimesCircle size={10} />
-        <span>Inactive</span>
+        <span>Inactif</span>
       </Badge>
     )
   }
@@ -392,11 +392,11 @@ function Queues() {
       <div className="d-flex gap-2 action-btn">
         <Button variant="outline-primary" size="sm" onClick={onEdit} className="d-flex align-items-center gap-1 p-1 px-2">
           <FaEdit className="btn-icon" />
-          <span className="d-none d-md-inline">Edit</span>
+          <span className="d-none d-md-inline">Modifier</span>
         </Button>
         <Button variant="outline-danger" size="sm" onClick={onDelete} className="d-flex align-items-center gap-1 p-1 px-2">
           <FaTrashAlt className="btn-icon" />
-          <span className="d-none d-md-inline">Delete</span>
+          <span className="d-none d-md-inline">Supprimer</span>
         </Button>
       </div>
     )
@@ -409,8 +409,8 @@ function Queues() {
         <div className="mb-3">
           <FaHeadset size={48} className="text-muted" />
         </div>
-        <h5>No Queues Found</h5>
-        <p className="text-muted">Add a new queue to get started or try a different search term.</p>
+        <h5>Aucune File d'attente trouvée</h5>
+        <p className="text-muted">Ajoutez une nouvelle file d'attente pour commencer ou essayez un autre terme de recherche.</p>
       </div>
     )
   }
@@ -447,7 +447,7 @@ function Queues() {
       return (
         <div className="text-center py-5">
           <Spinner animation="border" variant="primary" />
-          <p className="mt-3 text-muted">Loading queues...</p>
+          <p className="mt-3 text-muted">Chargement des files d'attente...</p>
         </div>
       )
     }
@@ -461,13 +461,13 @@ function Queues() {
         <Table hover className="align-middle mb-0 elegant-table">
           <thead className="bg-light">
             <tr>
-              <th className="fw-semibold">Queue Name</th>
-              <th className="fw-semibold">Username</th>
-              <th className="fw-semibold">Language</th>
-              <th className="fw-semibold">Strategy</th>
-              <th className="fw-semibold">Talk Time</th>
-              <th className="fw-semibold">Total Calls</th>
-              <th className="fw-semibold">Answered</th>
+              <th className="fw-semibold">Nom File d'attente</th>
+              <th className="fw-semibold">Nom d'utilisateur</th>
+              <th className="fw-semibold">Langue</th>
+              <th className="fw-semibold">Stratégie</th>
+              <th className="fw-semibold">Temps de conversation</th>
+              <th className="fw-semibold">Appels Totaux</th>
+              <th className="fw-semibold">Répondus</th>
               <th className="fw-semibold text-end">Actions</th>
             </tr>
           </thead>
@@ -545,9 +545,9 @@ function Queues() {
         <Row className="justify-content-center">
           <Col xs={12} lg={11}>
             <Card className="shadow border-0 overflow-hidden main-card">
-              <QueuesHeader 
-                onAddClick={handleShow} 
-                queues={queues} 
+              <QueuesHeader
+                onAddClick={handleShow}
+                queues={queues}
               />
               <Card.Body className="p-4" style={{ animation: "fadeIn 0.5s ease-in-out" }}>
                 {alert.show && (
@@ -567,7 +567,6 @@ function Queues() {
                   queues={currentItems}
                   onEdit={handleEdit}
                   onDelete={(queue) => {
-                    // Use the queue's id instead of id_user for deletion
                     setQueueToDelete(queue.id);
                     setShowDeleteModal(true);
                   }}
@@ -576,11 +575,11 @@ function Queues() {
                 <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
                   <div className="text-muted small">
                     <Badge bg="light" text="dark" className="me-2 shadow-sm">
-                      <span className="fw-semibold">{currentItems.length}</span> of {filteredQueues.length} Queues
+                      <span className="fw-semibold">{currentItems.length}</span> sur {filteredQueues.length} Files d'attente
                     </Badge>
                     {searchTerm && (
                       <Badge bg="light" text="dark" className="shadow-sm">
-                        Filtered from {queues.length} total
+                        Filtrées sur {queues.length} au total
                       </Badge>
                     )}
                   </div>
@@ -600,13 +599,13 @@ function Queues() {
         <Modal.Header closeButton className="bg-primary text-white">
           <Modal.Title className="d-flex align-items-center">
             <FaHeadset className="me-2" />
-            Add New Queue
+            Ajouter Nouvelle File d'attente
           </Modal.Title>
         </Modal.Header>
         <Modal.Body className="p-4">
           <Form onSubmit={handleSubmit} className="queue-form">
             <Form.Group controlId="formQueueName" className="mb-3">
-              <Form.Label>Username</Form.Label>
+              <Form.Label>Nom d'utilisateur</Form.Label>
               <Form.Control
                 as="select"
                 name="id_user"
@@ -614,7 +613,7 @@ function Queues() {
                 onChange={handleChange}
                 required
               >
-                <option value="">Select Username</option>
+                <option value="">Sélectionner un nom d'utilisateur</option>
                 {usernames.map((user) => (
                   <option key={user.id} value={user.id}>
                     {user.username}
@@ -624,7 +623,7 @@ function Queues() {
             </Form.Group>
 
             <Form.Group controlId="formUserId" className="mb-3">
-              <Form.Label>Name</Form.Label>
+              <Form.Label>Nom</Form.Label>
               <Form.Control
                 type="text"
                 name="name"
@@ -635,47 +634,47 @@ function Queues() {
             </Form.Group>
 
             <Form.Group controlId="formLanguage" className="mb-3">
-              <Form.Label>Language</Form.Label>
+              <Form.Label>Langue</Form.Label>
               <Form.Control
                 as="select"
                 name="language"
                 value={newQueue.language}
                 onChange={handleChange}
               >
-                <option value="En">English</option>
-                <option value="Fr">French</option>
-                <option value="Sp">Spanish</option>
-                <option value="Rus">Russian</option>
-                <option value="Port">Portuguese</option>
-                <option value="It">Italian</option>
-                <option value="Ger">German</option>
-                <option value="Ch">Chinese</option>
-                <option value="Jap">Japanese</option>
+                <option value="En">Anglais</option>
+                <option value="Fr">Français</option>
+                <option value="Sp">Espagnol</option>
+                <option value="Rus">Russe</option>
+                <option value="Port">Portugais</option>
+                <option value="It">Italien</option>
+                <option value="Ger">Allemand</option>
+                <option value="Ch">Chinois</option>
+                <option value="Jap">Japonais</option>
               </Form.Control>
             </Form.Group>
 
             <Form.Group controlId="formStrategy" className="mb-3">
-              <Form.Label>Strategy</Form.Label>
+              <Form.Label>Stratégie</Form.Label>
               <Form.Control
                 as="select"
                 name="strategy"
                 value={newQueue.strategy}
                 onChange={handleChange}
               >
-                <option value="Ringall">Ringall - Ring all available channels until one answers</option>
-                <option value="LeastRecent">LeastRecent - Round robin with memory</option>
-                <option value="FewestCalls">FewestCalls - Ring interface with fewest calls</option>
-                <option value="Random">Random - Ring a random interface</option>
-                <option value="RoundRobin">RoundRobin - Ring interfaces in order</option>
-                <option value="Wrap">Wrap - Rings interfaces in the order they were listed</option>
+                <option value="Ringall">Ringall - Sonner toutes les interfaces disponibles jusqu'à ce qu'une réponde</option>
+                <option value="LeastRecent">LeastRecent - Round robin avec mémoire</option>
+                <option value="FewestCalls">FewestCalls - Sonner l'interface avec le moins d'appels</option>
+                <option value="Random">Random - Sonner une interface aléatoire</option>
+                <option value="RoundRobin">RoundRobin - Sonner les interfaces dans l'ordre</option>
+                <option value="Wrap">Wrap - Sonner les interfaces dans l'ordre où elles ont été listées</option>
               </Form.Control>
             </Form.Group>
 
             <Form.Group controlId="formRingTime" className="mb-3">
-              <Form.Label>Ring Time</Form.Label>
+              <Form.Label>Temps de sonnerie</Form.Label>
               <Form.Control
                 type="number"
-                placeholder="Enter Ring Time"
+                placeholder="Entrer le temps de sonnerie"
                 name="ringinuse"
                 value={newQueue.ringinuse}
                 onChange={handleChange}
@@ -683,7 +682,7 @@ function Queues() {
             </Form.Group>
 
             <Form.Group controlId="formMOH" className="mb-3">
-              <Form.Label>Time for another agent</Form.Label>
+              <Form.Label>Temps pour un autre agent</Form.Label>
               <Form.Control
                 type="number"
                 placeholder="1"
@@ -694,7 +693,7 @@ function Queues() {
             </Form.Group>
 
             <Form.Group controlId="formctimecall" className="mb-3">
-              <Form.Label>Time for another call</Form.Label>
+              <Form.Label>Temps pour un autre appel</Form.Label>
               <Form.Control
                 type="number"
                 placeholder="1"
@@ -705,10 +704,10 @@ function Queues() {
             </Form.Group>
 
             <Form.Group controlId="formweight" className="mb-3">
-              <Form.Label>Weight</Form.Label>
+              <Form.Label>Poids</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Weight"
+                placeholder="Poids"
                 name="weight"
                 value={newQueue.weight}
                 onChange={handleChange}
@@ -716,10 +715,10 @@ function Queues() {
             </Form.Group>
 
             <Form.Group controlId="formFrequency" className="mb-3">
-              <Form.Label>Frequency</Form.Label>
+              <Form.Label>Fréquence</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Frequency"
+                placeholder="Fréquence"
                 name="Frequency"
                 value={newQueue.Frequency}
                 onChange={handleChange}
@@ -727,75 +726,75 @@ function Queues() {
             </Form.Group>
 
             <Form.Group controlId="formAnnounce" className="mb-3">
-              <Form.Label>Announce Position</Form.Label>
+              <Form.Label>Annoncer la position</Form.Label>
               <Form.Control
                 as="select"
                 name="announce"
                 value={newQueue.announce}
                 onChange={handleChange}
               >
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
+                <option value="Yes">Oui</option>
+                <option value="No">Non</option>
               </Form.Control>
             </Form.Group>
 
             <Form.Group controlId="formAnnounceHoldtime" className="mb-3">
-              <Form.Label>Announce Holdtime</Form.Label>
+              <Form.Label>Annoncer le temps d'attente</Form.Label>
               <Form.Control
                 as="select"
                 name="announce_holdtime"
                 value={newQueue.announce_holdtime}
                 onChange={handleChange}
               >
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
+                <option value="Yes">Oui</option>
+                <option value="No">Non</option>
               </Form.Control>
             </Form.Group>
 
             <Form.Group controlId="formAnnounceFrequency" className="mb-3">
-              <Form.Label>Announce Frequency</Form.Label>
+              <Form.Label>Annoncer la fréquence</Form.Label>
               <Form.Control
                 as="select"
                 name="announceFrequency"
                 value={newQueue.announceFrequency}
                 onChange={handleChange}
               >
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
+                <option value="Yes">Oui</option>
+                <option value="No">Non</option>
               </Form.Control>
             </Form.Group>
 
             <Form.Group controlId="formJoin" className="mb-3">
-              <Form.Label>Join Empty</Form.Label>
+              <Form.Label>Rejoindre une file d'attente vide</Form.Label>
               <Form.Control
                 as="select"
                 name="join"
                 value={newQueue.join}
                 onChange={handleChange}
               >
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
+                <option value="Yes">Oui</option>
+                <option value="No">Non</option>
               </Form.Control>
             </Form.Group>
 
             <Form.Group controlId="formLeave" className="mb-3">
-              <Form.Label>Leave When Empty</Form.Label>
+              <Form.Label>Quitter une file d'attente vide</Form.Label>
               <Form.Control
                 as="select"
                 name="leavewhenempty"
                 value={newQueue.leavewhenempty}
                 onChange={handleChange}
               >
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
+                <option value="Yes">Oui</option>
+                <option value="No">Non</option>
               </Form.Control>
             </Form.Group>
 
             <Form.Group controlId="formMaxWaitTime" className="mb-3">
-              <Form.Label>Max Wait Time</Form.Label>
+              <Form.Label>Temps d'attente maximum</Form.Label>
               <Form.Control
                 type="number"
-                placeholder="Enter Max Wait Time"
+                placeholder="Entrer le temps d'attente maximum"
                 name="max_wait_time"
                 value={newQueue.max_wait_time}
                 onChange={handleChange}
@@ -803,10 +802,10 @@ function Queues() {
             </Form.Group>
 
             <Form.Group controlId="formMaxWaitTimeAction" className="mb-3">
-              <Form.Label>Max Wait Time Action</Form.Label>
+              <Form.Label>Action après le temps d'attente maximum</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Max Wait Time Action"
+                placeholder="Action après le temps d'attente maximum"
                 name="maxwait"
                 value={newQueue.maxwait}
                 onChange={handleChange}
@@ -814,24 +813,24 @@ function Queues() {
             </Form.Group>
 
             <Form.Group controlId="formRingOrMOH" className="mb-3">
-              <Form.Label>Ring or Playing MOH</Form.Label>
+              <Form.Label>Sonner ou jouer de la musique d'attente</Form.Label>
               <Form.Control
                 as="select"
                 name="ring_or_moh"
                 value={newQueue.ring_or_moh}
                 onChange={handleChange}
               >
-                <option value="moh">MOH</option>
-                <option value="ring">Ring</option>
+                <option value="moh">Musique d'attente</option>
+                <option value="ring">Sonner</option>
               </Form.Control>
             </Form.Group>
 
             <div className="d-flex justify-content-end">
               <Button variant="secondary" onClick={handleClose} className="me-2">
-                Cancel
+                Annuler
               </Button>
               <Button variant="primary" type="submit">
-                Add Queue
+                Ajouter File d'attente
               </Button>
             </div>
           </Form>
@@ -843,13 +842,13 @@ function Queues() {
         <Modal.Header closeButton className="bg-primary text-white">
           <Modal.Title className="d-flex align-items-center">
             <FaEdit className="me-2" />
-            Update Queue
+            Mettre à jour File d'attente
           </Modal.Title>
         </Modal.Header>
         <Modal.Body className="p-4">
           <Form onSubmit={handleUpdateSubmit} className="queue-form">
             <Form.Group controlId="formQueueName" className="mb-3">
-              <Form.Label>Username</Form.Label>
+              <Form.Label>Nom d'utilisateur</Form.Label>
               <Form.Control
                 as="select"
                 name="id_user"
@@ -857,7 +856,7 @@ function Queues() {
                 onChange={handleChange}
                 required
               >
-                <option value="">Select Username</option>
+                <option value="">Sélectionner un nom d'utilisateur</option>
                 {usernames.map((user) => (
                   <option key={user.id} value={user.id}>
                     {user.username}
@@ -867,7 +866,7 @@ function Queues() {
             </Form.Group>
 
             <Form.Group controlId="formUserId" className="mb-3">
-              <Form.Label>Name</Form.Label>
+              <Form.Label>Nom</Form.Label>
               <Form.Control
                 type="text"
                 name="name"
@@ -878,47 +877,47 @@ function Queues() {
             </Form.Group>
 
             <Form.Group controlId="formLanguage" className="mb-3">
-              <Form.Label>Language</Form.Label>
+              <Form.Label>Langue</Form.Label>
               <Form.Control
                 as="select"
                 name="language"
                 value={newQueue.language}
                 onChange={handleChange}
               >
-                <option value="En">English</option>
-                <option value="Fr">French</option>
-                <option value="Sp">Spanish</option>
-                <option value="Rus">Russian</option>
-                <option value="Port">Portuguese</option>
-                <option value="It">Italian</option>
-                <option value="Ger">German</option>
-                <option value="Ch">Chinese</option>
-                <option value="Jap">Japanese</option>
+                <option value="En">Anglais</option>
+                <option value="Fr">Français</option>
+                <option value="Sp">Espagnol</option>
+                <option value="Rus">Russe</option>
+                <option value="Port">Portugais</option>
+                <option value="It">Italien</option>
+                <option value="Ger">Allemand</option>
+                <option value="Ch">Chinois</option>
+                <option value="Jap">Japonais</option>
               </Form.Control>
             </Form.Group>
 
             <Form.Group controlId="formStrategy" className="mb-3">
-              <Form.Label>Strategy</Form.Label>
+              <Form.Label>Stratégie</Form.Label>
               <Form.Control
                 as="select"
                 name="strategy"
                 value={newQueue.strategy}
                 onChange={handleChange}
               >
-                <option value="Ringall">Ringall - Ring all available channels until one answers</option>
-                <option value="LeastRecent">LeastRecent - Round robin with memory</option>
-                <option value="FewestCalls">FewestCalls - Ring interface with fewest calls</option>
-                <option value="Random">Random - Ring a random interface</option>
-                <option value="RoundRobin">RoundRobin - Ring interfaces in order</option>
-                <option value="Wrap">Wrap - Rings interfaces in the order they were listed</option>
+                <option value="Ringall">Ringall - Sonner toutes les interfaces disponibles jusqu'à ce qu'une réponde</option>
+                <option value="LeastRecent">LeastRecent - Round robin avec mémoire</option>
+                <option value="FewestCalls">FewestCalls - Sonner l'interface avec le moins d'appels</option>
+                <option value="Random">Random - Sonner une interface aléatoire</option>
+                <option value="RoundRobin">RoundRobin - Sonner les interfaces dans l'ordre</option>
+                <option value="Wrap">Wrap - Sonner les interfaces dans l'ordre où elles ont été listées</option>
               </Form.Control>
             </Form.Group>
 
             <Form.Group controlId="formRingTime" className="mb-3">
-              <Form.Label>Ring Time</Form.Label>
+              <Form.Label>Temps de sonnerie</Form.Label>
               <Form.Control
                 type="number"
-                placeholder="Enter Ring Time"
+                placeholder="Entrer le temps de sonnerie"
                 name="ringinuse"
                 value={newQueue.ringinuse}
                 onChange={handleChange}
@@ -926,7 +925,7 @@ function Queues() {
             </Form.Group>
 
             <Form.Group controlId="formMOH" className="mb-3">
-              <Form.Label>Time for another agent</Form.Label>
+              <Form.Label>Temps pour un autre agent</Form.Label>
               <Form.Control
                 type="number"
                 placeholder="1"
@@ -937,7 +936,7 @@ function Queues() {
             </Form.Group>
 
             <Form.Group controlId="formctimecall" className="mb-3">
-              <Form.Label>Time for another call</Form.Label>
+              <Form.Label>Temps pour un autre appel</Form.Label>
               <Form.Control
                 type="number"
                 placeholder="1"
@@ -948,10 +947,10 @@ function Queues() {
             </Form.Group>
 
             <Form.Group controlId="formweight" className="mb-3">
-              <Form.Label>Weight</Form.Label>
+              <Form.Label>Poids</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Weight"
+                placeholder="Poids"
                 name="weight"
                 value={newQueue.weight}
                 onChange={handleChange}
@@ -959,10 +958,10 @@ function Queues() {
             </Form.Group>
 
             <Form.Group controlId="formFrequency" className="mb-3">
-              <Form.Label>Frequency</Form.Label>
+              <Form.Label>Fréquence</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Frequency"
+                placeholder="Fréquence"
                 name="Frequency"
                 value={newQueue.Frequency}
                 onChange={handleChange}
@@ -970,75 +969,75 @@ function Queues() {
             </Form.Group>
 
             <Form.Group controlId="formAnnounce" className="mb-3">
-              <Form.Label>Announce Position</Form.Label>
+              <Form.Label>Annoncer la position</Form.Label>
               <Form.Control
                 as="select"
                 name="announce"
                 value={newQueue.announce}
                 onChange={handleChange}
               >
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
+                <option value="Yes">Oui</option>
+                <option value="No">Non</option>
               </Form.Control>
             </Form.Group>
 
             <Form.Group controlId="formAnnounceHoldtime" className="mb-3">
-              <Form.Label>Announce Holdtime</Form.Label>
+              <Form.Label>Annoncer le temps d'attente</Form.Label>
               <Form.Control
                 as="select"
                 name="announce_holdtime"
                 value={newQueue.announce_holdtime}
                 onChange={handleChange}
               >
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
+                <option value="Yes">Oui</option>
+                <option value="No">Non</option>
               </Form.Control>
             </Form.Group>
 
             <Form.Group controlId="formAnnounceFrequency" className="mb-3">
-              <Form.Label>Announce Frequency</Form.Label>
+              <Form.Label>Annoncer la fréquence</Form.Label>
               <Form.Control
                 as="select"
                 name="announceFrequency"
                 value={newQueue.announceFrequency}
                 onChange={handleChange}
               >
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
+                <option value="Yes">Oui</option>
+                <option value="No">Non</option>
               </Form.Control>
             </Form.Group>
 
             <Form.Group controlId="formJoin" className="mb-3">
-              <Form.Label>Join Empty</Form.Label>
+              <Form.Label>Rejoindre une file d'attente vide</Form.Label>
               <Form.Control
                 as="select"
                 name="join"
                 value={newQueue.join}
                 onChange={handleChange}
               >
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
+                <option value="Yes">Oui</option>
+                <option value="No">Non</option>
               </Form.Control>
             </Form.Group>
 
             <Form.Group controlId="formLeave" className="mb-3">
-              <Form.Label>Leave When Empty</Form.Label>
+              <Form.Label>Quitter une file d'attente vide</Form.Label>
               <Form.Control
                 as="select"
                 name="leavewhenempty"
                 value={newQueue.leavewhenempty}
                 onChange={handleChange}
               >
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
+                <option value="Yes">Oui</option>
+                <option value="No">Non</option>
               </Form.Control>
             </Form.Group>
 
             <Form.Group controlId="formMaxWaitTime" className="mb-3">
-              <Form.Label>Max Wait Time</Form.Label>
+              <Form.Label>Temps d'attente maximum</Form.Label>
               <Form.Control
                 type="number"
-                placeholder="Enter Max Wait Time"
+                placeholder="Entrer le temps d'attente maximum"
                 name="max_wait_time"
                 value={newQueue.max_wait_time}
                 onChange={handleChange}
@@ -1046,10 +1045,10 @@ function Queues() {
             </Form.Group>
 
             <Form.Group controlId="formMaxWaitTimeAction" className="mb-3">
-              <Form.Label>Max Wait Time Action</Form.Label>
+              <Form.Label>Action après le temps d'attente maximum</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Max Wait Time Action"
+                placeholder="Action après le temps d'attente maximum"
                 name="maxwait"
                 value={newQueue.maxwait}
                 onChange={handleChange}
@@ -1057,24 +1056,24 @@ function Queues() {
             </Form.Group>
 
             <Form.Group controlId="formRingOrMOH" className="mb-3">
-              <Form.Label>Ring or Playing MOH</Form.Label>
+              <Form.Label>Sonner ou jouer de la musique d'attente</Form.Label>
               <Form.Control
                 as="select"
                 name="ring_or_moh"
                 value={newQueue.ring_or_moh}
                 onChange={handleChange}
               >
-                <option value="moh">MOH</option>
-                <option value="ring">Ring</option>
+                <option value="moh">Musique d'attente</option>
+                <option value="ring">Sonner</option>
               </Form.Control>
             </Form.Group>
 
             <div className="d-flex justify-content-end">
               <Button variant="secondary" onClick={() => setShowUpdateModal(false)} className="me-2">
-                Cancel
+                Annuler
               </Button>
               <Button variant="primary" type="submit">
-                Update Queue
+                Mettre à jour File d'attente
               </Button>
             </div>
           </Form>
@@ -1086,20 +1085,20 @@ function Queues() {
         <Modal.Header closeButton className="bg-danger text-white">
           <Modal.Title className="d-flex align-items-center">
             <FaTrashAlt className="me-2" />
-            Confirm Deletion
+            Supprimer File d'attente
           </Modal.Title>
         </Modal.Header>
         <Modal.Body className="p-4">
           <Alert variant="danger" className="d-flex align-items-center shadow-sm">
             <FaTimesCircle className="me-2" size={18} />
             <div>
-              <strong>Warning!</strong> Are you sure you want to delete this queue? This action cannot be undone.
+              <strong>Attention !</strong> Êtes-vous sûr de vouloir supprimer cette file d'attente ? Cette action est irréversible.
             </div>
           </Alert>
         </Modal.Body>
         <Modal.Footer className="border-0 pt-0">
           <Button variant="outline-secondary" onClick={() => setShowDeleteModal(false)} className="d-flex align-items-center gap-2">
-            <span>Cancel</span>
+            Annuler
           </Button>
           <Button variant="danger" onClick={() => {
             deleteQueue(queueToDelete);

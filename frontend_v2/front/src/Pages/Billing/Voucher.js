@@ -555,8 +555,8 @@ function VoucherPage() {
         // Utilisons setSuccessMessage au lieu de alert pour une meilleure expérience utilisateur
         setSuccessMessage(isEditing ? `Voucher modifié avec succès (ID: ${modalData.id})` : `Voucher créé avec succès (ID: ${res.data.id})`);
         setShowModal(false);
-        setIsEditing(false); // Réinitialisons le mode d'édition
-        await fetchData(); // Rafraîchir la liste après ajout/modification
+        setIsEditing(false); 
+        await fetchData(); 
         setModalData({
           credit: '',
           plan: '',
@@ -601,7 +601,6 @@ function VoucherPage() {
   const handleDelete = async (id) => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer ce voucher?")) {
       try {
-        // Ajoutons un timeout et des headers explicites
         const response = await axios.delete(
           `http://localhost:5000/api/admin/voucher/supprimer/${id}`,
           {
@@ -613,7 +612,6 @@ function VoucherPage() {
         // Vérifions la réponse
         if (response.data && response.data.success) {
           setSuccessMessage("Voucher supprimé avec succès!");
-          // Rafraîchissons les données après la suppression
           await fetchData();
         } else {
           throw new Error(response.data?.error || "Erreur lors de la suppression");

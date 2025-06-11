@@ -41,9 +41,9 @@ function SummaryHeader({ onExportClick, records, isExporting }) {
             <FaChartBar className="text-primary fs-3" />
           </div>
           <div>
-            <h2 className="fw-bold mb-0 text-white">Daily User Summary</h2>
+            <h2 className="fw-bold mb-0 text-white">Résumé quotidien des utilisateurs</h2>
             <p className="text-white-50 mb-0 d-none d-md-block">
-              Summary of user activities by day
+              Résumé des activités des utilisateurs par jour
             </p>
           </div>
         </div>
@@ -70,7 +70,7 @@ function SearchBar({ searchTerm, onSearchChange }) {
     <div className="position-relative">
       <Form.Control
         type="text"
-        placeholder="Search by day or username..."
+        placeholder="Rechercher par jour ou nom d'utilisateur..."
         value={searchTerm}
         onChange={onSearchChange}
         className="ps-5"
@@ -86,16 +86,16 @@ function SummaryTable({ records, visibleColumns, isLoading }) {
       <Table className="elegant-table">
         <thead>
           <tr>
-            {visibleColumns.day && <th>Day</th>}
-            {visibleColumns.username && <th>Username</th>}
-            {visibleColumns.sessiontime && <th>Duration</th>}
+            {visibleColumns.day && <th>Jour</th>}
+            {visibleColumns.username && <th>Nom d'utilisateur</th>}
+            {visibleColumns.sessiontime && <th>Durée</th>}
             {visibleColumns.aloc_all_calls && <th>ALOC</th>}
-            {visibleColumns.nbcall && <th>Answered</th>}
-            {visibleColumns.nbcall_fail && <th>Failed</th>}
-            {visibleColumns.buycost && <th>Buy Price</th>}
-            {visibleColumns.sessionbill && <th>Sell Price</th>}
-            {visibleColumns.lucro && <th>Markup</th>}
-            {visibleColumns.asr && <th>ASR</th>}
+            {visibleColumns.nbcall && <th>Appels répondu</th>}
+            {visibleColumns.nbcall_fail && <th>Appels échoué</th>}
+            {visibleColumns.buycost && <th>Prix d'achat</th>}
+            {visibleColumns.sessionbill && <th>Prix de vente</th>}
+            {visibleColumns.lucro && <th>Marge</th>}
+            {visibleColumns.asr && <th>Taux de réponse</th>}
           </tr>
         </thead>
         <tbody>
@@ -123,7 +123,7 @@ function SummaryTable({ records, visibleColumns, isLoading }) {
           ) : (
             <tr>
               <td colSpan={Object.values(visibleColumns).filter(Boolean).length} className="text-center">
-                No records found
+                Aucun enregistrement trouvé
               </td>
             </tr>
           )}
@@ -146,7 +146,18 @@ function ColumnSelector({ visibleColumns, toggleColumn }) {
               key={column}
               type="switch"
               id={`toggle-${column}`}
-              label={column}
+              label={
+          column === 'day' ? 'Jour' :
+          column === 'username' ? 'Nom d\'utilisateur' :
+          column === 'sessiontime' ? 'Durée' :
+          column === 'aloc_all_calls' ? 'ALOC' :
+          column === 'nbcall' ? 'Appels répondu' :
+          column === 'nbcall_fail' ? 'Appels échoué' :
+          column === 'buycost' ? 'Prix d\'achat' :
+          column === 'sessionbill' ? 'Prix de vente' :
+          column === 'lucro' ? 'Marge' :
+          column === 'asr' ? 'ASR' : column
+        }
               checked={visibleColumns[column]}
               onChange={() => toggleColumn(column)}
               className="mb-2"
@@ -161,8 +172,8 @@ function ColumnSelector({ visibleColumns, toggleColumn }) {
 function PaginationSection({ pageCount, onPageChange, currentPage }) {
   return (
     <ReactPaginate
-      previousLabel={'Previous'}
-      nextLabel={'Next'}
+      previousLabel={'Précédent'}
+      nextLabel={'Suivant'}
       breakLabel={'...'}
       breakClassName={'page-item'}
       breakLinkClassName={'page-link'}
@@ -215,7 +226,7 @@ const SummaryDayUser = () => {
       setFilteredRecords(response.data);
       setIsLoading(false);
     } catch (err) {
-      setError("Error fetching records");
+      setError("Erreur lors de la récupération des enregistrements");
       setIsLoading(false);
       setTimeout(() => setError(null), 5000);
     }
@@ -242,7 +253,7 @@ const SummaryDayUser = () => {
   const exportToCSV = () => {
     setIsExporting(true);
     const csvData = [
-      ["Day", "Username", "Duration", "ALOC", "Answered", "Failed", "Buy Price", "Sell Price", "Markup", "ASR"],
+      ["Jour", "Nom d'utilisateur", "Durée", "ALOC", "Répondus", "Échoués", "Prix d'achat", "Prix de vente", "Marge", "Taux de réponse"],
       ...filteredRecords.map(record => [
         record.day,
         record.username,
@@ -259,9 +270,9 @@ const SummaryDayUser = () => {
 
     const csvFile = csvData.join('\n');
     const blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
-    saveAs(blob, 'daily_user_summary.csv');
+    saveAs(blob, 'resume_quotidien_utilisateurs.csv');
     setIsExporting(false);
-    setSuccess("Export completed successfully");
+    setSuccess("Exportation terminée avec succès");
     setTimeout(() => setSuccess(null), 5000);
   };
 
@@ -326,7 +337,7 @@ const SummaryDayUser = () => {
                   <div className="text-muted small">
                     {!isLoading && (
                       <Badge bg="light" text="dark" className="shadow-sm">
-                        Showing {pagedRecords.length} of {filteredRecords.length} records
+                        Affichage de {pagedRecords.length} sur {filteredRecords.length} enregistrements
                       </Badge>
                     )}
                   </div>

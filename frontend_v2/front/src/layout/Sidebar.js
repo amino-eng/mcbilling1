@@ -7,66 +7,57 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 const menuItems = {
   DIDs: [
     { path: "/DIDs", icon: "bi-telephone", label: "DIDs" },
-    { path: "/DIDs/DIDDestination", icon: "bi-signpost", label: "DID Destination" },
-    { path: "/DIDs/DIDsUse", icon: "bi-person", label: "DIDs Use" },
-    { path: "/DIDs/IVRs", icon: "bi-sliders", label: "IVRs" },
-    { path: "/DIDs/Queues", icon: "bi-speedometer2", label: "Queues" },
-    { path: "/DIDs/QueuesMembres", icon: "bi-people", label: "Queues Membres" },
-    // { path: "/DIDs/QueuesDashboard", icon: "bi-speedometer2", label: "Queues Dashboard" },
-    // { path: "/DIDs/DIDHistory", icon: "bi-clock-history", label: "DID History" }
+    { path: "/DIDs/DIDDestination", icon: "bi-signpost", label: "Destination DID" },
+    { path: "/DIDs/DIDsUse", icon: "bi-person", label: "Utilisation DID" },
+    { path: "/DIDs/IVRs", icon: "bi-sliders", label: "IVR" },
+    { path: "/DIDs/Queues", icon: "bi-speedometer2", label: "Files d'attente" },
+    { path: "/DIDs/QueuesMembres", icon: "bi-people", label: "Membres des files" },
   ],
   clients: [
-    { path: "/clients/caller-id", icon: "bi-phone", label: "Caller ID" },
-    { path: "/clients/Users", icon: "bi-people", label: "Users" },
+    { path: "/clients/caller-id", icon: "bi-phone", label: "ID Appelant" },
+    { path: "/clients/Users", icon: "bi-people", label: "Utilisateurs" },
     { path: "/clients/Iax", icon: "bi-building", label: "Iax" },
-    { path: "/clients/SipUser", icon: "bi-telephone-forward", label: "SIP Users" },
-    { path: "/clients/RestrictNumber", icon: "bi-ban", label: "RestricNumber" }
+    { path: "/clients/SipUser", icon: "bi-telephone-forward", label: "Utilisateurs SIP" },
+    { path: "/clients/RestrictNumber", icon: "bi-ban", label: "Restriction de numéros" }
   ],
   Billing: [
-    { path: "/Billing/Refills", icon: "bi-cash-stack", label: "Refills" },
-    { path: "/Billing/PaymentMethods", icon: "bi-credit-card", label: "Payment Methods" },
-    { path: "/Billing/Voucher", icon: "bi-ticket-perforated", label: "Voucher" },
-    { path: "/Billing/RefillProviders", icon: "bi-shop", label: "Refill Providers" }
+    { path: "/Billing/Refills", icon: "bi-cash-stack", label: "Rechargements" },
+    { path: "/Billing/PaymentMethods", icon: "bi-credit-card", label: "Méthodes de paiement" },
+    { path: "/Billing/Voucher", icon: "bi-ticket-perforated", label: "Bon de commande" },
+    { path: "/Billing/RefillProviders", icon: "bi-shop", label: "Fournisseurs de rechargement" }
   ],
   Rates: [
     { path: "/Rates/Plans", icon: "bi-list-ul", label: "Plans" },
-    { path: "/Rates/Tariffs", icon: "bi-currency-exchange", label: "Tariffs" },
-    { path: "/Rates/Prefixes", icon: "bi-123", label: "Prefixes" },
-    { path: "/Rates/UserCustomRates", icon: "bi-person-gear", label: "User Custom Rates" },
+    { path: "/Rates/Tariffs", icon: "bi-currency-exchange", label: "Tarifs" },
+    { path: "/Rates/Prefixes", icon: "bi-123", label: "Préfixes" },
+    { path: "/Rates/UserCustomRates", icon: "bi-person-gear", label: "Tarifs personnalisés" },
   ],
   reports: [
     { path: "/reports/CDR", icon: "bi-file-earmark-text", label: "CDR" },
-    { path: "/reports/CDRFailed", icon: "bi-x-circle", label: "CDR Failed" },
-    { path: "/reports/summary-day", icon: "bi-calendar-day", label: "Summary Per Day" },
-    { path: "/reports/summary-month", icon: "bi-calendar-month", label: "Summary Per Month" },
-    // { path: "/reports/destination", icon: "bi-geo-alt", label: "Reports / Destination" },
-    // { path: "/reports/inbound", icon: "bi-arrow-down-circle", label: "Inbound Reports" },
-    { path: "/reports/SummarymonthUser", icon: "bi-calendar-month", label: "Summary Month User" },
-    { path: "/reports/summaryperuser", icon: "bi-person-lines-fill", label: "Summary Per User" },
-    // { path: "/reports/summarypertrunk", icon: "bi-diagram-3", label: "Summary Per Trunk" },
-    // { path: "/reports/SummaryMonthTrunk", icon: "bi-calendar3", label: "Summary Month Trunk" },
-    // { path: "/reports/SummaryDayTrunk", icon: "bi-calendar3-week", label: "Summary Day Trunk" },
-    // { path: "/reports/CallArchive", icon: "bi-archive", label: "Call Archive" },
-    { path: "/reports/SummaryDayUser", icon: "bi-calendar3-week", label: "Summary Day User" }
+    { path: "/reports/CDRFailed", icon: "bi-x-circle", label: "CDR Échoués" },
+    { path: "/reports/summary-day", icon: "bi-calendar-day", label: "Résumé par jour" },
+    { path: "/reports/summary-month", icon: "bi-calendar-month", label: "Résumé par mois" },
+    { path: "/reports/SummarymonthUser", icon: "bi-calendar-month", label: "Résumé mensuel par utilisateur" },
+    { path: "/reports/summaryperuser", icon: "bi-person-lines-fill", label: "Résumé par utilisateur" },
+    { path: "/reports/SummaryDayUser", icon: "bi-calendar3-week", label: "Résumé quotidien par utilisateur" }
   ],
   Routes: [
-    { path: "/Routes/Providers", icon: "bi-building", label: "Providers" },
+    { path: "/Routes/Providers", icon: "bi-building", label: "Fournisseurs" },
     { path: "/Routes/Trunks", icon: "bi-diagram-3", label: "Trunks" },
-    { path: "/Routes/TrunkGroups", icon: "bi-diagram-3-fill", label: "Trunk Groups" },
-    { path: "/Routes/ProviderRates", icon: "bi-cash-stack", label: "Provider Rates" },
-    { path: "/Routes/Servers", icon: "bi-hdd-network", label: "Servers" },
-    // { path: "/Routes/TrunkErrors", icon: "bi-exclamation-triangle", label: "Trunk Errors" }
+    { path: "/Routes/TrunkGroups", icon: "bi-diagram-3-fill", label: "Groupes de trunk" },
+    { path: "/Routes/ProviderRates", icon: "bi-cash-stack", label: "Tarifs fournisseurs" },
+    { path: "/Routes/Servers", icon: "bi-hdd-network", label: "Serveurs" },
   ]
 };
 
 // Menu category icons and labels
 const menuCategories = {
-  dashboard: { icon: "bi-speedometer2", label: "Dashboard", path: "/" },
+  dashboard: { icon: "bi-speedometer2", label: "Tableau de bord", path: "/" },
   DIDs: { icon: "bi-telephone-inbound", label: "DIDs" },
   clients: { icon: "bi-people-fill", label: "Clients" },
-  Billing: { icon: "bi-wallet2", label: "Billing" },
-  Rates: { icon: "bi-cash-coin", label: "Rates" },
-  reports: { icon: "bi-graph-up-arrow", label: "Reports" },
+  Billing: { icon: "bi-wallet2", label: "Facturation" },
+  Rates: { icon: "bi-cash-coin", label: "Tarification" },
+  reports: { icon: "bi-graph-up-arrow", label: "Rapports" },
   Routes: { icon: "bi-signpost-split", label: "Routes" }
 };
 
@@ -251,11 +242,7 @@ const Sidebar = () => {
     }}>
       {/* Sidebar Header */}
       <div className="d-flex align-items-center justify-content-between p-3" style={{ background: '#3b82f6' }}>
-        {/* <div className="d-flex align-items-center">
-          <div className="rounded-circle p-2 d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px', background: 'rgba(255, 255, 255, 0.2)' }}>
-            <i className="bi bi-headset fs-4 text-white"></i>
-          </div>
-        </div> */}
+      
         <button 
           className="btn btn-sm text-white" 
           type="button" 

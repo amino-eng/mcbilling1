@@ -1,5 +1,4 @@
 "use client"
-
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Table, Spinner, Alert, Button, Modal, Form, Card, Container, Row, Col, Badge, Dropdown } from "react-bootstrap";
@@ -19,6 +18,9 @@ import {
   FaFilter,
   FaHeadset
 } from "react-icons/fa";
+
+// Configure axios base URL
+axios.defaults.baseURL = 'http://localhost:5000';
 
 // Constants
 const ITEMS_PER_PAGE = 10;
@@ -55,8 +57,8 @@ function QueueMembersHeader({ onAddClick, members, onExportClick, isExporting })
             <FaUsers className="text-primary fs-3" />
           </div>
           <div>
-            <h2 className="fw-bold mb-0 text-white">Queue Members</h2>
-            <p className="text-white-50 mb-0 d-none d-md-block">Manage your call queue members</p>
+            <h2 className="fw-bold mb-0 text-white">Membres de la File d'attente</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Gérez les membres de votre file d'attente d'appels</p>
           </div>
         </div>
       </div>
@@ -64,7 +66,7 @@ function QueueMembersHeader({ onAddClick, members, onExportClick, isExporting })
         <div className="d-flex align-items-center gap-3">
           <Badge bg="primary" className="d-flex align-items-center p-2 ps-3 rounded-pill">
             <span className="me-2 fw-normal">
-              Total: <span className="fw-bold">{members.length}</span>
+              Total : <span className="fw-bold">{members.length}</span>
             </span>
             <span
               className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center"
@@ -83,7 +85,7 @@ function QueueMembersHeader({ onAddClick, members, onExportClick, isExporting })
             <div className="icon-container">
               <FaPlusCircle />
             </div>
-            <span>Add Member</span>
+            <span>Ajouter Membre</span>
           </Button>
           <Button
             variant="success"
@@ -94,7 +96,7 @@ function QueueMembersHeader({ onAddClick, members, onExportClick, isExporting })
             <div className="icon-container">
               {isExporting ? <Spinner animation="border" size="sm" /> : <FaDownload />}
             </div>
-            <span>Export</span>
+            <span>Exporter</span>
           </Button>
         </div>
       </div>
@@ -108,7 +110,7 @@ function SearchBar({ searchTerm, onSearchChange }) {
     <div className="position-relative">
       <Form.Control
         type="text"
-        placeholder="Search queue members..."
+        placeholder="Rechercher des membres de la file d'attente..."
         value={searchTerm}
         onChange={onSearchChange}
         className="ps-4 shadow-sm rounded-pill"
@@ -123,7 +125,7 @@ function StatusBadge({ paused }) {
   return paused === 0 ? (
     <Badge bg="success" className="d-inline-flex align-items-center gap-1 px-2 py-1">
       <FaCheckCircle size={10} />
-      <span>Active</span>
+      <span>Actif</span>
     </Badge>
   ) : (
     <Badge bg="warning" text="dark" className="d-inline-flex align-items-center gap-1 px-2 py-1">
@@ -164,8 +166,8 @@ function EmptyState() {
       <div className="mb-3">
         <FaUsers size={48} className="text-muted" />
       </div>
-      <h5>No Queue Members Found</h5>
-      <p className="text-muted">Try adjusting your search or add a new queue member.</p>
+      <h5>Aucun Membre de File d'attente Trouvé</h5>
+      <p className="text-muted">Essayez d'ajuster votre recherche ou ajoutez votre premier membre à la file d'attente pour commencer.</p>
     </div>
   );
 }
@@ -176,7 +178,7 @@ function MembersTable({ members, onDelete, isLoading, onModify }) {
     return (
       <div className="text-center py-5">
         <Spinner animation="border" variant="primary" />
-        <p className="mt-2">Loading queue members...</p>
+        <p className="mt-2">Chargement des membres de la file d'attente...</p>
       </div>
     );
   }
@@ -189,10 +191,10 @@ function MembersTable({ members, onDelete, isLoading, onModify }) {
     <Table striped bordered hover responsive className="mb-0">
       <thead className="table-light">
         <tr>
-          <th>Queue</th>
+          <th>File d'attente</th>
           <th>Interface</th>
-          <th>User</th>
-          <th>Status</th>
+          <th>Utilisateur</th>
+          <th>Statut</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -222,8 +224,8 @@ function MembersTable({ members, onDelete, isLoading, onModify }) {
 function PaginationSection({ pageCount, onPageChange, currentPage }) {
   return (
     <ReactPaginate
-      previousLabel={"Previous"}
-      nextLabel={"Next"}
+      previousLabel={"Précédent"}
+      nextLabel={"Suivant"}
       breakLabel={"..."}
       pageCount={pageCount}
       marginPagesDisplayed={2}
@@ -270,7 +272,7 @@ const QueueMembersTable = () => {
         setQueue(response.data.queues);
       } catch (error) {
         console.error('Error fetching queues:', error);
-        setError("Failed to fetch queues");
+        setError("Échec de la récupération des files d'attente");
       }
     };
 
@@ -284,7 +286,7 @@ const QueueMembersTable = () => {
         setQueueMembers(response.data.queueMembers);
         setFilteredMembers(response.data.queueMembers);
       } catch (error) {
-        setError("Failed to fetch queue members");
+        setError("Échec de la récupération des membres de la file d'attente");
       } finally {
         setLoading(false);
       }
@@ -295,7 +297,7 @@ const QueueMembersTable = () => {
         const response = await axios.get("http://localhost:5000/api/admin/QueuesMembers/sip-users");
         setUsers(response.data.users);
       } catch (error) {
-        console.error("Failed to fetch users:", error);
+        console.error("Échec de la récupération des utilisateurs:", error);
       }
     };
 
@@ -334,20 +336,20 @@ const QueueMembersTable = () => {
   const handleCSVExport = () => {
     setIsExporting(true);
     const csvData = [
-      ["Destination", "Queues", "SIP", "Paused"],
+      ["Destination", "Files d'attente", "SIP", "En pause"],
       ...filteredMembers.map(member => [
         member.interface,
         member.queue_name,
         member.sip || "N/A",
-        member.paused === 0 ? "No" : "Yes",
+        member.paused === 0 ? "Non" : "Oui",
       ]),
     ];
 
     const csvContent = "data:text/csv;charset=utf-8," + csvData.map(row => row.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    saveAs(blob, "queue_members.csv");
+    saveAs(blob, "membres_file_attente.csv");
     setIsExporting(false);
-    setSuccessMessage("Queue members exported successfully!");
+    setSuccessMessage("Membres de la file d'attente exportés avec succès !");
   };
 
   const handleCloseModal = () => setShowModal(false);
@@ -356,7 +358,7 @@ const QueueMembersTable = () => {
   const handleAddNewMember = async () => {
     try {
       if (!selectedQueue || !selectedUser) {
-        setError("Please select both queue and user");
+        setError("Veuillez sélectionner à la fois la file d'attente et l'utilisateur");
         return;
       }
 
@@ -377,7 +379,7 @@ const QueueMembersTable = () => {
             const response = await axios.get("http://localhost:5000/api/admin/QueuesMembers/");
             setQueueMembers(response.data.queueMembers);
           } catch (error) {
-            setError("Failed to fetch queue members");
+            setError("Échec de la récupération des membres de la file d'attente");
           } finally {
             setLoading(false);
           }
@@ -386,7 +388,7 @@ const QueueMembersTable = () => {
         handleCloseModal();
       }
     } catch (error) {
-      setError(error.response?.data?.error || "Failed to add queue member");
+      setError(error.response?.data?.error || "Échec de l'ajout du membre à la file d'attente");
     } finally {
       setLoading(false);
     }
@@ -394,44 +396,44 @@ const QueueMembersTable = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`/api/dids/queues-members/${id}`);
+      await axios.delete(`/api/admin/QueuesMembers/${id}`);
       const fetchQueueMembers = async () => {
         try {
           const response = await axios.get("http://localhost:5000/api/admin/QueuesMembers/");
           setQueueMembers(response.data.queueMembers);
         } catch (error) {
-          setError("Failed to fetch queue members");
+          setError("Échec de la récupération des membres de la file d'attente");
         } finally {
           setLoading(false);
         }
       };
       fetchQueueMembers();
-      setSuccessMessage('Member deleted successfully');
+      setSuccessMessage('Membre supprimé avec succès !');
       clearMessages();
     } catch (error) {
-      setError(error.response?.data?.error || 'Failed to delete member');
+      setError(error.response?.data?.error || 'Échec de la suppression du membre');
       clearMessages();
     }
   };
 
   const handleFieldChange = async (id, fieldName, value) => {
     try {
-      await axios.put(`/api/dids/queues-members/${id}`, { [fieldName]: value });
+      await axios.put(`/api/admin/QueuesMembers/${id}`, { [fieldName]: value });
       const fetchQueueMembers = async () => {
         try {
           const response = await axios.get("http://localhost:5000/api/admin/QueuesMembers/");
           setQueueMembers(response.data.queueMembers);
         } catch (error) {
-          setError("Failed to fetch queue members");
+          setError("Échec de la récupération des membres de la file d'attente");
         } finally {
           setLoading(false);
         }
       };
       fetchQueueMembers();
-      setSuccessMessage('Member updated successfully');
+      setSuccessMessage('Membre mis à jour avec succès !');
       clearMessages();
     } catch (error) {
-      setError(error.response?.data?.error || 'Failed to update member');
+      setError(error.response?.data?.error || 'Échec de la mise à jour du membre');
       clearMessages();
     }
   };
@@ -468,7 +470,7 @@ const QueueMembersTable = () => {
       
       await axios.put(`http://localhost:5000/api/admin/QueuesMembers/${memberToModify.id}`, updateData);
       
-      setSuccessMessage('Member updated successfully');
+      setSuccessMessage('Membre mis à jour avec succès !');
       const fetchQueueMembers = async () => {
         try {
           const response = await axios.get("http://localhost:5000/api/admin/QueuesMembers/");
@@ -482,7 +484,7 @@ const QueueMembersTable = () => {
       fetchQueueMembers();
       setShowModifyModal(false);
     } catch (error) {
-      setError(error.response?.data?.error || 'Failed to update member');
+      setError(error.response?.data?.error || 'Échec de la mise à jour du membre');
     } finally {
       setLoading(false);
     }
@@ -597,11 +599,11 @@ const QueueMembersTable = () => {
                       {!loading && (
                         <>
                           <Badge bg="light" text="dark" className="me-2 shadow-sm">
-                            <span className="fw-semibold">{paginatedMembers.length}</span> of {filteredMembers.length} Members
+                            <span className="fw-semibold">{paginatedMembers.length}</span> sur {filteredMembers.length} Membres
                           </Badge>
                           {searchTerm && (
                             <Badge bg="light" text="dark" className="shadow-sm">
-                              Filtered from {queueMembers.length} total
+                              Filtré parmi {queueMembers.length} total
                             </Badge>
                           )}
                         </>
@@ -622,12 +624,12 @@ const QueueMembersTable = () => {
       {/* Add New Member Modal */}
       <Modal show={showModal} onHide={handleCloseModal} centered backdrop="static">
         <Modal.Header closeButton className="bg-primary text-white">
-          <Modal.Title>Add New QueueMember</Modal.Title>
+          <Modal.Title>Ajouter un Nouveau Membre à la File d'attente</Modal.Title>
         </Modal.Header>
         <Modal.Body className="p-4">
           <Form>
             <Form.Group className="mb-3" controlId="formQueueSelect">
-              <Form.Label>Select Queue</Form.Label>
+              <Form.Label>Sélectionnez la file d'attente</Form.Label>
               <Form.Select
                 value={selectedQueue}
                 onChange={(e) => setSelectedQueue(e.target.value)}
@@ -650,7 +652,7 @@ const QueueMembersTable = () => {
                 onChange={(e) => setSelectedUser(e.target.value)}
                 required
               >
-                <option value="">Select User</option>
+                <option value="">Sélectionner un Utilisateur</option>
                 {users.map((user) => (
                   <option key={user.id} value={user.id}>
                     {user.name} ({user.accountcode})
@@ -660,10 +662,10 @@ const QueueMembersTable = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Paused</Form.Label>
+              <Form.Label>En Pause</Form.Label>
               <Form.Select id="paused" required>
-                <option value="0">No</option>
-                <option value="1">Yes</option>
+                <option value="0">Non</option>
+                <option value="1">Oui</option>
               </Form.Select>
             </Form.Group>
           </Form>
@@ -671,30 +673,30 @@ const QueueMembersTable = () => {
         <Modal.Footer>
           <Button variant="outline-secondary" onClick={handleCloseModal} className="d-flex align-items-center gap-2">
             <FaTimesCircle />
-            Close
+            Fermer
           </Button>
           <Button variant="primary" onClick={handleAddNewMember} className="d-flex align-items-center gap-2">
             <FaPlusCircle />
-            Add
+            Ajouter
           </Button>
         </Modal.Footer>
       </Modal>
       {/* Modify Modal */}
       <Modal show={showModifyModal} onHide={() => setShowModifyModal(false)} centered backdrop="static">
         <Modal.Header closeButton className="bg-primary text-white">
-          <Modal.Title>Modify Queue Member</Modal.Title>
+          <Modal.Title>Modifier le Membre de la File d'attente</Modal.Title>
         </Modal.Header>
         <Modal.Body className="p-4">
           {memberToModify && (
             <Form>
               <Form.Group className="mb-3" controlId="queue">
-                <Form.Label>Queue</Form.Label>
+                <Form.Label>File d'attente</Form.Label>
                 <Form.Select
                   value={memberToModify.queue}
                   onChange={(e) => setMemberToModify({...memberToModify, queue: e.target.value})}
                   required
                 >
-                  <option value="">Select Queue</option>
+                  <option value="">Sélectionner une File d'attente</option>
                   {queue.map((queueItem) => (
                     <option key={queueItem.id} value={queueItem.id}>
                       {queueItem.name}
@@ -704,13 +706,13 @@ const QueueMembersTable = () => {
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label>SIP User</Form.Label>
+                <Form.Label>Utilisateur SIP</Form.Label>
                 <Form.Select
                   value={memberToModify.sipUser}
                   onChange={(e) => setMemberToModify({...memberToModify, sipUser: e.target.value})}
                   required
                 >
-                  <option value="">Select User</option>
+                  <option value="">Sélectionner un Utilisateur</option>
                   {users.map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.name} ({user.accountcode})
@@ -720,15 +722,15 @@ const QueueMembersTable = () => {
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label>Paused</Form.Label>
+                <Form.Label>En Pause</Form.Label>
                 <Form.Select 
                   value={memberToModify.paused} 
                   onChange={(e) => setMemberToModify({...memberToModify, paused: e.target.value})}
                   required
                   id="pausedModify"
                 >
-                  <option value="0">No</option>
-                  <option value="1">Yes</option>
+                  <option value="0">Non</option>
+                  <option value="1">Oui</option>
                 </Form.Select>
               </Form.Group>
             </Form>
@@ -737,7 +739,7 @@ const QueueMembersTable = () => {
         <Modal.Footer>
           <Button variant="outline-secondary" onClick={() => setShowModifyModal(false)} className="d-flex align-items-center gap-2">
             <FaTimesCircle />
-            Cancel
+            Annuler
           </Button>
           <Button 
             variant="primary" 
@@ -746,7 +748,7 @@ const QueueMembersTable = () => {
             className="d-flex align-items-center gap-2"
           >
             {loading ? <Spinner animation="border" size="sm" /> : <FaCheckCircle />}
-            Save Changes
+            Enregistrer les modifications
           </Button>
         </Modal.Footer>
       </Modal>

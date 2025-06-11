@@ -15,13 +15,9 @@ import IVRs from './Pages/DIDs/IVRs';
 import DIDDestination from './Pages/DIDs/DIDDestination';
 import DIDsUse from './Pages/DIDs/DIDsUse';
 import QueuesMembres from './Pages/DIDs/QueuesMembres';
-import QueuesDashboard from './Pages/DIDs/QueuesDashboard';
 import Sda from './Pages/titleside/Sda';
-import Clients from './Pages/clients/clients';
-import Reports from './Pages/Reports/Reports';
 import CallerID from './Pages/clients/CallerID';
 import Users from './Pages/clients/Users';
-import UserHistory from './Pages/clients/UserHistory';
 import LiveCalls from './Pages/titleside/LiveCalls';
 import SipUser from './Pages/clients/SipUser';
 import Iax from './Pages/clients/Iax';
@@ -31,18 +27,9 @@ import CDRFailed from './Pages/Reports/CDRFailed';
 import SummaryPerMonth from './Pages/Reports/SummaryPerMonth';
 import SummaryMonthUser from './Pages/Reports/SummaryMonthUser';
 import SummaryDayUser from './Pages/Reports/SummaryDayUser';
-import SummaryPerTrunk from './Pages/Reports/SummaryMonthTrunk';
-import SummaryMonthTrunk from './Pages/Reports/SummaryPerTrunk';
-import SummaryDayTrunk from './Pages/Reports/SummaryDayTrunk';
-import ReportsDestination from './Pages/Reports/ReportsDestination';
-import InboundReports from './Pages/Reports/InboundReports';
 import SummaryPerUser from './Pages/Reports/SummaryPerUser';
-import CallArchive from './Pages/Reports/CallArchive';
-import ActivityDash from './Pages/Dashboard/ActivityDash';
-import RechargeHistory from './Pages/Dashboard/RechargeHistory';
 import Profile from './components/UserProfile/profile';
 import RestrictNumber from './Pages/clients/RestrictNumber';
-import DIDHistory from './Pages/DIDs/DIDHistory';
 import Refills from './Pages/Billing/Refills';
 import PaymentMethods from './Pages/Billing/PaymentMethods';
 import Voucher from './Pages/Billing/Voucher';
@@ -51,15 +38,11 @@ import Plans from './Pages/Rates/Plans';
 import Tariffs from './Pages/Rates/Tariffs';
 import Prefixes from './Pages/Rates/Prefixes';
 import UserCustomRates from './Pages/Rates/UserCustomRates';
-import Offers from './Pages/Rates/offers';
-import OfferCDR from './Pages/Rates/OffersCDR';
-import OfferUse from './Pages/Rates/OfferUse';
 import Providers from './Pages/Routes/Providers';
 import TrunkGroups from './Pages/Routes/TrunkGroups';
 import ProviderRates from './Pages/Routes/ProviderRates';
 import Servers from './Pages/Routes/Servers';
 import Trunks from './Pages/Routes/Trunks';
-import TrunkErrors from './Pages/Routes/TrunkErrors';
 import Queues from './Pages/DIDs/Queues';
 import Dashboard from './Pages/Dashboard/Dashboard';
 
@@ -212,15 +195,7 @@ function AppContent() {
         )
       } />
       
-      <Route path="/clients" element={
-        isAuthenticated ? (
-          <Layout user={user}>
-            <Clients />
-          </Layout>
-        ) : (
-          <Navigate to="/login" replace />
-        )
-      } />
+    
       
       <Route path="/clients/caller-id" element={
         isAuthenticated ? (
@@ -282,15 +257,7 @@ function AppContent() {
         )
       } />
       
-      <Route path="/reports" element={
-        isAuthenticated ? (
-          <Layout user={user}>
-            <Reports />
-          </Layout>
-        ) : (
-          <Navigate to="/login" replace />
-        )
-      } />
+     
       
       <Route path="/reports/summary-day" element={
         isAuthenticated ? (

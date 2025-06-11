@@ -4,7 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import { BiSearch, BiUserCircle, BiLogOut } from "react-icons/bi";
 import { logout, getCurrentUser } from "../utils/auth";
-
+import img from "../img/WhatsApp Image 2025-06-09 at 10.05.37.jpeg"
 const Navbar = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
@@ -23,14 +23,14 @@ const Navbar = () => {
   const translations = {
     en: {
       searchPlaceholder: "Search...",
-      profile: "Profile",
-      logout: "Logout",
+      profile: "My Profile",
+      logout: "Log Out",
       username: "root",
     },
     fr: {
       searchPlaceholder: "Rechercher...",
-      profile: "Profil",
-      logout: "Déconnexion",
+      profile: "Mon Profil",
+      logout: "Se Déconnecter",
       username: "root",
     },
   };
@@ -77,10 +77,10 @@ const Navbar = () => {
             style={{ border: "1px solid #ddd", padding: "8px 16px" }}
           >
             <img
-              src="https://via.placeholder.com/30"
-              alt="User"
+              src={img}
+             
               className="rounded-circle me-2"
-              style={{ width: "30px", height: "30px" }}
+              style={{ width: "60px", height: "60px" }}
             />
             <span className="fw-medium">{userData?.username || t.username}</span>
           </button>

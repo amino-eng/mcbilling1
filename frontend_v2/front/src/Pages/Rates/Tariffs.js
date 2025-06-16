@@ -40,8 +40,8 @@ function TariffsHeader({ onAddClick, tariffs, isExporting = false }) {
             <FaFileAlt className="text-primary fs-3" />
           </div>
           <div>
-            <h2 className="fw-bold mb-0 text-white">Tarifs</h2>
-            <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos tarifs et destinations</p>
+            <h2 className="fw-bold mb-0 text-white">Rates</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Manage your rates and destinations</p>
           </div>
         </div>
       </div>
@@ -49,7 +49,7 @@ function TariffsHeader({ onAddClick, tariffs, isExporting = false }) {
         <div className="d-flex align-items-center gap-3">
           <Badge bg="primary" className="d-flex align-items-center p-2 ps-3 rounded-pill">
             <span className="me-2 fw-normal">
-              Total: <span className="fw-bold">{tariffs.length}</span>
+Total: <span className="fw-bold">{tariffs.length}</span>
             </span>
             <span
               className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center"
@@ -68,7 +68,7 @@ function TariffsHeader({ onAddClick, tariffs, isExporting = false }) {
             <div className="icon-container">
               <FaPlusCircle />
             </div>
-            <span>Ajouter</span>
+            <span>Add</span>
           </Button>
         </div>
       </div>
@@ -84,7 +84,7 @@ function SearchBar({ searchTerm, onSearchChange }) {
         <FaSearch className="text-muted" />
       </InputGroup.Text>
       <Form.Control
-        placeholder="Rechercher par préfixe, destination ou plan..."
+        placeholder="Search by prefix, destination or plan..."
         value={searchTerm}
         onChange={onSearchChange}
         className="border-start-0"
@@ -122,9 +122,9 @@ function EmptyState() {
   return (
     <div className="text-center py-5">
       <FaFileAlt className="text-muted mb-3" size={48} />
-      <h5 className="text-muted">Aucun tarif trouvé</h5>
+      <h5 className="text-muted">No rates found</h5>
       <p className="text-muted small">
-        Commencez par ajouter un nouveau tarif
+        Start by adding a new rate
       </p>
     </div>
   )
@@ -384,7 +384,7 @@ const TariffsTable = () => {
       setPlanResults(res.data.plans || [])
     } catch (err) {
       console.error(err)
-      alert("Erreur lors de la récupération des plans")
+      alert("Error while fetching plans")
     } finally {
       setLoadingPlans(false)
     }
@@ -398,7 +398,7 @@ const TariffsTable = () => {
       setDestinationResults(res.data.prefixes || [])
     } catch (err) {
       console.error(err)
-      alert("Erreur lors de la récupération des destinations")
+      alert("Error while fetching destinations")
     } finally {
       setLoadingDestinations(false)
     }
@@ -417,7 +417,7 @@ const TariffsTable = () => {
         setTrunkGroupResults(res.data.trunkGroups || [])
       } else {
         // Sinon, extraire les groupes de trunk uniques des tarifs existants
-        console.log("Aucun résultat de l'API, utilisation des données des tarifs existants")
+        console.log("No API results, using existing rate data")
         const uniqueTrunkGroups = []
         const trunkGroupIds = new Set()
 
@@ -438,8 +438,8 @@ const TariffsTable = () => {
     } catch (err) {
       console.error("Erreur API Trunk Groups:", err)
 
-      // En cas d'erreur, extraire les groupes de trunk des tarifs existants
-      console.log("Erreur API, utilisation des données des tarifs existants")
+      // In case of error, extract trunk groups from existing rates
+      console.log("API error, using existing rate data")
       const uniqueTrunkGroups = []
       const trunkGroupIds = new Set()
 
@@ -603,7 +603,7 @@ const TariffsTable = () => {
                     <div className="text-muted small">
                       {!loading && (
                         <Badge bg="light" text="dark" className="me-2 shadow-sm">
-                          <span className="fw-semibold">{pagedTariffs.length}</span> sur {filteredTariffs.length} tarifs
+                          <span className="fw-semibold">{pagedTariffs.length} of {filteredTariffs.length} rates</span>
                         </Badge>
                       )}
                     </div>
@@ -618,7 +618,7 @@ const TariffsTable = () => {
       {/* Main Modal for Add and Update Tariffs */}
       <Modal show={showModal} onHide={() => setShowModal(false)} backdrop="static">
         <Modal.Header closeButton>
-          <Modal.Title>{currentTariff ? "Modifier Tarif" : "Ajouter Tarif"}</Modal.Title>
+          <Modal.Title>{currentTariff ? "Edit Rate" : "Add Rate"}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form onSubmit={handleSubmit}>
@@ -687,7 +687,7 @@ const TariffsTable = () => {
                 onChange={handleFormChange}
                 required
               />
-              <Form.Text className="text-muted">Stocké comme 'rateinitial' dans la base de données</Form.Text>
+              <Form.Text className="text-muted">Stored as 'rateinitial' in the database</Form.Text>
             </Form.Group>
 
             {/* Initial / Billing blocks */}
@@ -770,10 +770,10 @@ const TariffsTable = () => {
 
             <div className="d-flex justify-content-end mt-3">
               <Button variant="secondary" onClick={() => setShowModal(false)} className="me-2">
-                Annuler
+                Cancel
               </Button>
               <Button variant="primary" type="submit">
-                {currentTariff ? "Mettre à jour" : "Ajouter"}
+                {currentTariff ? "Update" : "Add"}
               </Button>
             </div>
           </Form>
@@ -783,7 +783,7 @@ const TariffsTable = () => {
       {/* Plan Search Modal */}
       <Modal show={showPlanSearch} onHide={() => setShowPlanSearch(false)} backdrop="static">
         <Modal.Header closeButton>
-          <Modal.Title>Rechercher un Plan</Modal.Title>
+          <Modal.Title>Search for a Plan</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <InputGroup className="mb-3">
@@ -825,7 +825,7 @@ const TariffsTable = () => {
                   ) : (
                     <tr>
                       <td colSpan={2} className="text-center py-3">
-                        {loadingPlans ? "Chargement..." : "Aucun résultat trouvé"}
+                        {loadingPlans ? "Loading..." : "No results found"}
                       </td>
                     </tr>
                   )}
@@ -844,7 +844,7 @@ const TariffsTable = () => {
       {/* Destination Search Modal */}
       <Modal show={showDestinationSearch} onHide={() => setShowDestinationSearch(false)} backdrop="static">
         <Modal.Header closeButton>
-          <Modal.Title>Rechercher une Destination</Modal.Title>
+          <Modal.Title>Search for a Destination</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <InputGroup className="mb-3">
@@ -888,7 +888,7 @@ const TariffsTable = () => {
                   ) : (
                     <tr>
                       <td colSpan={3} className="text-center py-3">
-                        {loadingDestinations ? "Chargement..." : "Aucun résultat trouvé"}
+                        {loadingDestinations ? "Loading..." : "No results found"}
                       </td>
                     </tr>
                   )}
@@ -907,7 +907,7 @@ const TariffsTable = () => {
       {/* Trunk Group Search Modal */}
       <Modal show={showTrunkGroupSearch} onHide={() => setShowTrunkGroupSearch(false)} backdrop="static">
         <Modal.Header closeButton>
-          <Modal.Title>Rechercher un Groupe de Trunk</Modal.Title>
+          <Modal.Title>Search for a Trunk Group</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <InputGroup className="mb-3">
@@ -955,7 +955,7 @@ const TariffsTable = () => {
                   ) : (
                     <tr>
                       <td colSpan={3} className="text-center py-3">
-                        {loadingTrunkGroups ? "Chargement..." : "Aucun résultat trouvé"}
+                        {loadingTrunkGroups ? "Loading..." : "No results found"}
                       </td>
                     </tr>
                   )}

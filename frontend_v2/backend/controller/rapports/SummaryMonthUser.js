@@ -1,5 +1,44 @@
 const connection = require("../../config/dataBase");
 
+// Get monthly user call statistics
+exports.getUserMonthlyStats = (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        u.username,
+        COALESCE(SUM(smu.nbcall), 0) as total_calls,
+        COALESCE(SUM(smu.nbcall - smu.nbcall_fail), 0) as answered_calls,
+        COALESCE(SUM(smu.nbcall_fail), 0) as failed_calls,
+        COALESCE(SUM(smu.sessiontime), 0) as total_duration,
+        smu.month
+      FROM pkg_user u
+      LEFT JOIN pkg_cdr_summary_month_user smu ON u.id = smu.id_user
+      WHERE smu.month IS NOT NULL
+      GROUP BY u.id, u.username, smu.month
+      ORDER BY smu.month DESC, total_calls DESC
+      LIMIT 5  -- Top 5 users by call volume per month
+    `;
+
+    connection.query(query, (err, results) => {
+      if (err) {
+        console.error("Error fetching monthly user stats:", err);
+        return res.status(500).json({ error: "Database error" });
+      }
+      
+      // Format month as YYYY-MM for better display
+      const formattedResults = results.map(item => ({
+        ...item,
+        month: item.month ? `${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}` : 'N/A'
+      }));
+      
+      res.json(formattedResults);
+    });
+  } catch (error) {
+    console.error("Error in getUserMonthlyStats:", error);
+    res.status(500).send("Internal server error");
+  }
+};
+
 // Get all user summaries for the month with username
 exports.getAll = (req, res) => {
     const query = `

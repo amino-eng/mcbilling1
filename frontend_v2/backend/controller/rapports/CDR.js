@@ -6,28 +6,52 @@ const connection = require("../../config/dataBase");
 
 exports.afficher = async (req, res) => {
   try {
-    const query = `
+    const { startDate, endDate } = req.query;
+    
+    let query = `
       SELECT
-    cdr.*, 
-    user.username, 
-    trunk.trunkcode, 
-    server.name AS server_name 
-FROM 
-    pkg_cdr AS cdr 
-LEFT JOIN 
-    pkg_user AS user 
-    ON cdr.id_user = user.id_user 
-LEFT JOIN 
-    pkg_trunk AS trunk 
-    ON cdr.id_trunk = trunk.id 
-LEFT JOIN 
-    pkg_servers AS server 
-    ON cdr.id_server = server.id
-      
-
+        cdr.*, 
+        user.username, 
+        trunk.trunkcode, 
+        server.name AS server_name 
+      FROM 
+        pkg_cdr AS cdr 
+      LEFT JOIN 
+        pkg_user AS user 
+        ON cdr.id_user = user.id_user 
+      LEFT JOIN 
+        pkg_trunk AS trunk 
+        ON cdr.id_trunk = trunk.id 
+      LEFT JOIN 
+        pkg_servers AS server 
+        ON cdr.id_server = server.id
     `;
+    
+    const queryParams = [];
+    
+    // Ajouter les conditions de date si elles sont fournies
+    if (startDate || endDate) {
+      const conditions = [];
+      
+      if (startDate) {
+        conditions.push('DATE(cdr.starttime) >= ?');
+        queryParams.push(startDate);
+      }
+      
+      if (endDate) {
+        conditions.push('DATE(cdr.starttime) <= ?');
+        queryParams.push(endDate);
+      }
+      
+      if (conditions.length > 0) {
+        query += ' WHERE ' + conditions.join(' AND ');
+      }
+    }
+    
+    // Trier par date la plus récente
+    query += ' ORDER BY cdr.starttime DESC';
 
-    connection.query(query, (err, results) => {
+    connection.query(query, queryParams, (err, results) => {
       if (err) {
         console.error("Error fetching CDR data:", err);
         return res.status(500).json({ error: "Database error" });

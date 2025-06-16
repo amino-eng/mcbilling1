@@ -69,8 +69,8 @@ const TrunkGroupHeader = ({ onAddClick, groups, isExporting }) => {
             <FaLayerGroup className="text-primary fs-3" />
           </div>
           <div>
-            <h2 className="fw-bold mb-0 text-white">Gestion des Trunk Groups</h2>
-            <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos groupes de trunks</p>
+            <h2 className="fw-bold mb-0 text-white">Trunk Groups Management</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Manage your trunk groups</p>
           </div>
         </div>
       </div>
@@ -97,7 +97,7 @@ const TrunkGroupHeader = ({ onAddClick, groups, isExporting }) => {
             <div>
               <BiPlusCircle />
             </div>
-            <span>Ajouter</span>
+            <span>Add</span>
           </Button>
           <CSVLink
             data={csvData}
@@ -108,7 +108,7 @@ const TrunkGroupHeader = ({ onAddClick, groups, isExporting }) => {
             <div>
               {isExporting ? <Spinner animation="border" size="sm" /> : <BiDownload />}
             </div>
-            <span>{isExporting ? "Exportation..." : "Exporter"}</span>
+            <span>{isExporting ? "Exporting..." : "Export"}</span>
           </CSVLink>
         </div>
       </div>
@@ -125,7 +125,7 @@ const SearchBar = ({ searchTerm, onSearchChange }) => {
       </InputGroup.Text>
       <Form.Control
         type="text"
-        placeholder="Rechercher..."
+        placeholder="Search..."
         value={searchTerm}
         onChange={onSearchChange}
         className="border-start-0"
@@ -143,7 +143,7 @@ const ActionButtons = ({ onEdit, onDelete }) => {
         onClick={onEdit}
         size="sm"
         className="p-1"
-        title="Modifier"
+        title="Edit"
       >
         <BiEdit />
       </Button>
@@ -152,7 +152,7 @@ const ActionButtons = ({ onEdit, onDelete }) => {
         onClick={onDelete}
         size="sm"
         className="p-1"
-        title="Supprimer"
+        title="Delete"
       >
         <BiTrash />
       </Button>
@@ -175,7 +175,7 @@ const TrunkGroupTable = ({ groups, onEdit, onDelete, isLoading }) => {
       <Table hover className="mb-0">
         <thead>
           <tr>
-            <th>Nom</th>
+            <th>Name</th>
             <th>Description</th>
             <th>Actions</th>
           </tr>
@@ -198,8 +198,8 @@ const TrunkGroupTable = ({ groups, onEdit, onDelete, isLoading }) => {
             ))
           ) : (
             <tr>
-              <td colSpan="4" className="text-center py-4">
-                Aucun trunk group trouvé
+              <td colSpan="3" className="text-center text-muted">
+                No trunk groups found.
               </td>
             </tr>
           )}
@@ -276,7 +276,7 @@ const AddTrunkGroupModal = ({
     <Modal show={show} onHide={onHide} size="lg">
       <Modal.Header closeButton>
         <Modal.Title>
-          {groupToEdit ? 'Modifier Trunk Group' : 'Ajouter Trunk Group'}
+          {groupToEdit ? 'Edit Trunk Group' : 'Add Trunk Group'}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
@@ -284,7 +284,7 @@ const AddTrunkGroupModal = ({
           <Row className="mb-3">
             <Col md={6}>
               <Form.Group>
-                <Form.Label>Nom du groupe</Form.Label>
+                <Form.Label>Group Name</Form.Label>
                 <Form.Control
                   type="text"
                   name="name"
@@ -303,7 +303,7 @@ const AddTrunkGroupModal = ({
                   onChange={handleInputChange}
                   required
                 >
-                  <option value="">-- Sélectionner --</option>
+                  <option value="">-- Select --</option>
                   <option value="Order">Order</option>
                   <option value="random">Random</option>
                   <option value="LCR">LCR</option>
@@ -331,7 +331,7 @@ const AddTrunkGroupModal = ({
 
           <div className="d-flex justify-content-end gap-2">
             <Button variant="secondary" onClick={onHide}>
-              Annuler
+              Cancel
             </Button>
             <Button 
               variant="primary" 
@@ -348,10 +348,10 @@ const AddTrunkGroupModal = ({
                     aria-hidden="true"
                     className="me-2"
                   />
-                  {groupToEdit ? 'Enregistrement...' : 'Création...'}
+                  {groupToEdit ? 'Saving...' : 'Creating...'}
                 </>
               ) : (
-                groupToEdit ? 'Enregistrer' : 'Créer'
+                groupToEdit ? 'Save' : 'Create'
               )}
             </Button>
           </div>
@@ -527,11 +527,11 @@ const TrunkGroups = () => {
                     {!isLoading && (
                       <>
                         <Badge bg="light" text="dark" className="me-2 shadow-sm">
-                          <span className="fw-semibold">{paginatedGroups.length}</span> sur {filteredGroups.length} Trunk Groups
+                          <span className="fw-semibold">{paginatedGroups.length}</span> of {filteredGroups.length} Trunk Groups
                         </Badge>
                         {searchTerm && (
                           <Badge bg="light" text="dark" className="shadow-sm">
-                            Filtrés de {trunkGroups.length} total
+                            Filtered from {trunkGroups.length} total
                           </Badge>
                         )}
                       </>

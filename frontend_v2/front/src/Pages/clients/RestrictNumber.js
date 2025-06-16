@@ -57,7 +57,7 @@ function RestricNumber() {
       setPhoneData(response.data.restrictions);
     } catch (error) {
       console.error('Erreur lors de la récupération des données:', error);
-      setError('Erreur lors de la récupération des restrictions.');
+      setError('Error fetching restrictions.');
     } finally {
       setLoading(false);
     }
@@ -72,7 +72,7 @@ function RestricNumber() {
       }
     } catch (error) {
       console.error('Erreur lors de la récupération des utilisateurs:', error);
-      setError('Erreur lors de la récupération des utilisateurs.');
+      setError('Error fetching users.');
     } finally {
       setLoading(false);
     }
@@ -85,7 +85,14 @@ function RestricNumber() {
 
   const handleAddRestriction = async () => {
     if (!phoneNumber || !restrictionType || !selectedUser) {
-      setError('Veuillez remplir tous les champs.');
+      setError('Please fill in all fields.');
+      return;
+    }
+
+    // Validate phone number has at least 8 digits
+    const phoneNumberDigits = phoneNumber.replace(/\D/g, ''); // Remove all non-digit characters
+    if (phoneNumberDigits.length < 8) {
+      setError('Phone number must contain at least 8 digits.');
       return;
     }
 
@@ -103,16 +110,16 @@ function RestricNumber() {
     try {
       if (isEditing) {
         await axios.put(`http://localhost:5000/api/admin/RestrictNumber/edit/${currentRestrictionId}`, data);
-        toast.success('Restriction modifiée avec succès !');
+        toast.success('Restriction updated successfully!');
       } else {
         await axios.post('http://localhost:5000/api/admin/RestrictNumber/add', data);
-        toast.success('Restriction ajoutée avec succès !');
+        toast.success('Restriction added successfully!');
       }
       resetForm();
       fetchData();
     } catch (error) {
       console.error("Erreur lors de l'ajout de la restriction:", error);
-      toast.error(isEditing ? "Erreur lors de la modification de la restriction." : "Erreur lors de l'ajout de la restriction.");
+      toast.error(isEditing ? "Error updating restriction." : "Error adding restriction.");
     } finally {
       setLoading(false);
     }
@@ -128,16 +135,16 @@ function RestricNumber() {
   };
 
   const handleDeleteRestriction = async (restrictionId) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette restriction ?')) return;
+    if (!window.confirm('Are you sure you want to delete this restriction?')) return;
 
     setLoading(true);
     try {
       await axios.delete(`http://localhost:5000/api/admin/RestrictNumber/delete/${restrictionId}`);
-      toast.success('Restriction supprimée avec succès !');
+      toast.success('Restriction deleted successfully!');
       fetchData();
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
-      toast.error('Erreur lors de la suppression.');
+      toast.error('Error deleting restriction.');
     } finally {
       setLoading(false);
     }
@@ -176,11 +183,11 @@ function RestricNumber() {
   // Header Component
   const RestrictionHeader = () => {
     const csvData = [
-      ["Utilisateur", "Numéro", "Direction", "Date"],
+      ["User", "Number", "Direction", "Date"],
       ...filteredPhoneData.map((item) => [
         item.agent?.username || "",
         item.number,
-        item.direction === 2 ? "Entrant" : "Sortant",
+        item.direction === 2 ? "Incoming" : "Outgoing",
         formatDateTime(item.date),
       ]),
     ];
@@ -215,8 +222,8 @@ function RestricNumber() {
               <FaBan className="text-primary fs-3" />
             </div>
             <div>
-              <h2 className="fw-bold mb-0 text-white">Gestion des Restrictions de Numéros</h2>
-              <p className="text-white-50 mb-0 d-none d-md-block">Gérez facilement vos restrictions de numéros</p>
+              <h2 className="fw-bold mb-0 text-white">Phone Number Restrictions Management</h2>
+              <p className="text-white-50 mb-0 d-none d-md-block">Easily manage your phone number restrictions</p>
             </div>
           </div>
         </div>
@@ -243,7 +250,7 @@ function RestricNumber() {
               <div className="icon-container">
                 <FaPlusCircle />
               </div>
-              <span>{showForm ? 'Annuler' : 'Ajouter'}</span>
+              <span>{showForm ? 'Cancel' : 'Add'}</span>
             </Button>
             <CSVLink
               data={csvData}
@@ -253,7 +260,7 @@ function RestricNumber() {
               <div className="icon-container">
                 <FaDownload />
               </div>
-              <span>Exporter</span>
+              <span>Export</span>
             </CSVLink>
           </div>
         </div>
@@ -267,7 +274,7 @@ function RestricNumber() {
       <div className="position-relative mb-4">
         <Form.Control
           type="text"
-          placeholder="Rechercher par utilisateur ou numéro..."
+          placeholder="Search by user or number..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="ps-4 shadow-sm border-0"
@@ -283,13 +290,13 @@ function RestricNumber() {
     if (direction === 2) {
       return (
         <Badge bg="info" pill className="px-3 py-2">
-          <FaArrowDown className="me-1" /> Entrant
+          <FaArrowDown className="me-1" /> Incoming
         </Badge>
       );
     } else {
       return (
         <Badge bg="warning" pill className="px-3 py-2">
-          <FaArrowUp className="me-1" /> Sortant
+          <FaArrowUp className="me-1" /> Outgoing
         </Badge>
       );
     }
@@ -318,8 +325,8 @@ function RestricNumber() {
             <FaBan className="text-muted" style={{ fontSize: "2rem" }} />
           </div>
         </div>
-        <h5>Aucune restriction trouvée.</h5>
-        <p className="text-muted mb-3">Il n'y a actuellement aucune restriction configurée.</p>
+        <h5>No restrictions found.</h5>
+        <p className="text-muted mb-3">There are currently no restrictions configured.</p>
       </div>
     );
   };
@@ -331,17 +338,17 @@ function RestricNumber() {
     return (
       <Card className="shadow-sm border-0 mb-4">
         <Card.Body>
-          <h5 className="mb-3">{isEditing ? 'Modifier la restriction' : 'Ajouter une restriction'}</h5>
+          <h5 className="mb-3">{isEditing ? 'Edit Restriction' : 'Add Restriction'}</h5>
           <Form>
             <Row>
               <Col md={6} className="mb-3">
                 <Form.Group>
-                  <Form.Label>Utilisateur</Form.Label>
+                  <Form.Label>User</Form.Label>
                   <Form.Select 
                     value={selectedUser}
                     onChange={(e) => setSelectedUser(e.target.value)}
                   >
-                    <option value="">Sélectionnez un utilisateur</option>
+                    <option value="">Select a user</option>
                     {userRestrict.map((e, i) => (
                       <option key={i} value={e.id}>{e.username}</option>
                     ))}
@@ -350,25 +357,29 @@ function RestricNumber() {
               </Col>
               <Col md={6} className="mb-3">
                 <Form.Group>
-                  <Form.Label>Numéro de téléphone</Form.Label>
+                  <Form.Label>Phone Number</Form.Label>
                   <Form.Control
                     type="text"
-                    placeholder="Entrez le numéro de téléphone"
+                    placeholder="Enter phone number (minimum 8 digits)"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9+]/g, ''))}
+                    isInvalid={phoneNumber && phoneNumber.replace(/\D/g, '').length < 8}
                   />
+                  <Form.Control.Feedback type="invalid">
+                    Phone number must contain at least 8 digits
+                  </Form.Control.Feedback>
                 </Form.Group>
               </Col>
               <Col md={6} className="mb-3">
                 <Form.Group>
-                  <Form.Label>Type de restriction</Form.Label>
+                  <Form.Label>Restriction Type</Form.Label>
                   <Form.Select
                     value={restrictionType}
                     onChange={(e) => setRestrictionType(e.target.value)}
                   >
-                    <option value="">Type de restriction</option>
-                    <option value="2">Entrant</option>
-                    <option value="1">Sortant</option>
+                    <option value="">Restriction Type</option>
+                    <option value="2">Incoming</option>
+                    <option value="1">Outgoing</option>
                   </Form.Select>
                 </Form.Group>
               </Col>
@@ -385,7 +396,7 @@ function RestricNumber() {
             </Row>
             <div className="d-flex justify-content-end gap-2">
               <Button variant="secondary" onClick={resetForm}>
-                Annuler
+                Cancel
               </Button>
               <Button 
                 variant="primary" 
@@ -394,7 +405,7 @@ function RestricNumber() {
                 className="d-flex align-items-center gap-2"
               >
                 {loading && <Spinner animation="border" size="sm" />}
-                {isEditing ? 'Modifier' : 'Confirmer'}
+                {isEditing ? 'Update' : 'Confirm'}
               </Button>
             </div>
           </Form>

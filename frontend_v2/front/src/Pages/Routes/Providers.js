@@ -71,8 +71,8 @@ const ProviderHeader = ({ onAddClick, providers, isExporting }) => {
             <FaUserTie className="text-primary fs-3" />
           </div>
           <div>
-            <h2 className="fw-bold mb-0 text-white">Gestion des Providers</h2>
-            <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos fournisseurs VoIP</p>
+            <h2 className="fw-bold mb-0 text-white">Providers Management</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Manage your VoIP providers</p>
           </div>
         </div>
       </div>
@@ -99,7 +99,7 @@ const ProviderHeader = ({ onAddClick, providers, isExporting }) => {
             <div className="icon-container">
               <BiPlusCircle />
             </div>
-            <span>Ajouter</span>
+            <span>Add</span>
           </Button>
           <CSVLink
             data={csvData}
@@ -110,7 +110,7 @@ const ProviderHeader = ({ onAddClick, providers, isExporting }) => {
             <div className="icon-container">
               {isExporting ? <Spinner animation="border" size="sm" /> : <BiDownload />}
             </div>
-            <span>{isExporting ? "Exportation..." : "Exporter"}</span>
+            <span>{isExporting ? "Exporting..." : "Export"}</span>
           </CSVLink>
         </div>
       </div>
@@ -124,11 +124,11 @@ const StatusBadge = ({ status }) => {
     <Badge bg={status === 1 ? "success" : "danger"} className="d-flex align-items-center gap-1">
       {status === 1 ? (
         <>
-          <BiCheckCircle /> Actif
+          <BiCheckCircle /> Active
         </>
       ) : (
         <>
-          <BiXCircle /> Inactif
+          <BiXCircle /> Inactive
         </>
       )}
     </Badge>
@@ -144,7 +144,7 @@ const SearchBar = ({ searchTerm, onSearchChange }) => {
       </InputGroup.Text>
       <Form.Control
         type="text"
-        placeholder="Rechercher un provider..."
+        placeholder="Search for a provider..."
         value={searchTerm}
         onChange={onSearchChange}
         className="border-start-0"
@@ -162,7 +162,7 @@ const ActionButtons = ({ onEdit, onDelete }) => {
         size="sm"
         onClick={onEdit}
         className="p-1"
-        title="Modifier"
+        title="Edit"
       >
         <BiEdit size={18} />
       </Button>
@@ -171,7 +171,7 @@ const ActionButtons = ({ onEdit, onDelete }) => {
         size="sm"
         onClick={onDelete}
         className="p-1"
-        title="Supprimer"
+        title="Delete"
       >
         <BiTrash size={18} />
       </Button>
@@ -186,11 +186,11 @@ const ProviderTable = ({ providers, onEdit, onDelete, isLoading }) => {
       <Table striped hover className="mb-0">
         <thead>
           <tr>
-            <th>Nom</th>
+            <th>Name</th>
             <th>Description</th>
-            <th>Crédit</th>
-            <th>Contrôle Crédit</th>
-            <th>Date Création</th>
+            <th>Credit</th>
+            <th>Credit Control</th>
+            <th>Creation Date</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -204,7 +204,7 @@ const ProviderTable = ({ providers, onEdit, onDelete, isLoading }) => {
           ) : providers.length === 0 ? (
             <tr>
               <td colSpan="6" className="text-center py-4 text-muted">
-                Aucun provider trouvé
+                No providers found
               </td>
             </tr>
           ) : (
@@ -268,8 +268,8 @@ const AddProviderModal = ({ show, onHide, onProviderAdded, providerToEdit, setPr
     
     try {
       const url = providerToEdit 
-        ? `/admin/providers/modifier/${providerToEdit.id}` 
-        : '/admin/providers/ajouter';
+        ? `/api/admin/Providers/modifier/${providerToEdit.id}` 
+        : '/api/admin/Providers/ajouter';
       
       const method = providerToEdit ? 'put' : 'post';
       
@@ -296,7 +296,7 @@ const AddProviderModal = ({ show, onHide, onProviderAdded, providerToEdit, setPr
       console.error("Error saving provider:", error);
       const errorMessage = error.response?.data?.message || 
                          error.response?.data?.error || 
-                         'Une erreur est survenue';
+                         'An error occurred';
       setError(errorMessage);
       toast.error(errorMessage, {
         position: "top-right",
@@ -323,7 +323,7 @@ const AddProviderModal = ({ show, onHide, onProviderAdded, providerToEdit, setPr
     <Modal show={show} onHide={onHide} centered>
       <Modal.Header closeButton>
         <Modal.Title>
-          {providerToEdit ? 'Modifier Provider' : 'Ajouter un Provider'}
+          {providerToEdit ? 'Edit Provider' : 'Add a Provider'}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
@@ -335,7 +335,7 @@ const AddProviderModal = ({ show, onHide, onProviderAdded, providerToEdit, setPr
         )}
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
-            <Form.Label>Nom</Form.Label>
+            <Form.Label>Name</Form.Label>
             <Form.Control
               type="text"
               name="name"
@@ -345,7 +345,7 @@ const AddProviderModal = ({ show, onHide, onProviderAdded, providerToEdit, setPr
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Crédit</Form.Label>
+            <Form.Label>Credit</Form.Label>
             <Form.Control
               type="number"
               name="credit"
@@ -355,15 +355,15 @@ const AddProviderModal = ({ show, onHide, onProviderAdded, providerToEdit, setPr
             />
           </Form.Group>
           <Form.Group className="mb-3">
-            <Form.Label>Contrôle Crédit</Form.Label>
+            <Form.Label>Reset credits:</Form.Label>
             <Form.Select
               name="credit_control"
               value={formData.credit_control}
               onChange={handleChange}
               required
             >
-              <option value="no">Non</option>
-              <option value="yes">Oui</option>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
             </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
@@ -385,18 +385,18 @@ const AddProviderModal = ({ show, onHide, onProviderAdded, providerToEdit, setPr
               }} 
               className="me-2"
             >
-              Annuler
+              Cancel
             </Button>
             <Button variant="primary" type="submit" disabled={loading}>
               {loading ? (
                 <>
                   <Spinner animation="border" size="sm" className="me-2" />
-                  Enregistrement...
+                  Saving...
                 </>
               ) : providerToEdit ? (
-                'Mettre à jour'
+                'Update'
               ) : (
-                'Enregistrer'
+                'Save'
               )}
             </Button>
           </div>
@@ -424,7 +424,7 @@ const BatchUpdateModal = ({ show, onHide, onBatchUpdate, providers }) => {
 
     try {
       const response = await axios.put(
-        '/admin/providers/batch-update', 
+        '/api/admin/Providers/batchUpdate', 
         formData
       );
 
@@ -449,7 +449,7 @@ const BatchUpdateModal = ({ show, onHide, onBatchUpdate, providers }) => {
   return (
     <Modal show={show} onHide={onHide} centered size="lg">
       <Modal.Header closeButton>
-        <Modal.Title>Mise à jour Groupée</Modal.Title>
+        <Modal.Title>Batch Credit Update</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         {error && (
@@ -459,13 +459,13 @@ const BatchUpdateModal = ({ show, onHide, onBatchUpdate, providers }) => {
           </Alert>
         )}
         <Alert variant="info" className="d-flex align-items-center">
-          Cette action affectera tous les {providers.length} providers
+          This action will affect all {providers.length} providers
         </Alert>
         <Form onSubmit={handleSubmit}>
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Montant du Crédit</Form.Label>
+                <Form.Label>Amount to add:</Form.Label>
                 <Form.Control
                   type="number"
                   name="credit_amount"
@@ -477,15 +477,15 @@ const BatchUpdateModal = ({ show, onHide, onBatchUpdate, providers }) => {
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Contrôle Crédit</Form.Label>
+                <Form.Label>Set a fixed amount:</Form.Label>
                 <Form.Select
                   name="credit_control"
                   value={formData.credit_control}
                   onChange={handleChange}
                 >
-                  <option value="">Ne pas modifier</option>
-                  <option value="yes">Activer</option>
-                  <option value="no">Désactiver</option>
+                  <option value="">Do not modify</option>
+                  <option value="yes">Activate</option>
+                  <option value="no">Deactivate</option>
                 </Form.Select>
               </Form.Group>
             </Col>
@@ -506,16 +506,16 @@ const BatchUpdateModal = ({ show, onHide, onBatchUpdate, providers }) => {
               onClick={onHide} 
               className="me-2"
             >
-              Annuler
+              Close
             </Button>
             <Button variant="warning" type="submit" disabled={loading}>
               {loading ? (
                 <>
                   <Spinner animation="border" size="sm" className="me-2" />
-                  Enregistrement...
+                  Updating...
                 </>
               ) : (
-                'Mettre à jour tous les Providers'
+                'Update all Providers'
               )}
             </Button>
           </div>
@@ -560,7 +560,7 @@ const Providers = () => {
   const fetchProviders = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get('/admin/providers/afficher');
+      const response = await axios.get('/api/admin/Providers/afficher');
       setProviders(response.data.providers);
       setFilteredProviders(response.data.providers);
     } catch (error) {
@@ -572,11 +572,11 @@ const Providers = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce provider?')) {
+    if (window.confirm('Are you sure you want to delete this provider?')) {
       try {
         setIsLoading(true);
-        await axios.delete(`/admin/providers/supprimer/${id}`);
-        setSuccessMessage('Provider supprimé avec succès');
+        await axios.delete(`/api/admin/Providers/supprimer/${id}`);
+        setSuccessMessage('Provider deleted successfully');
         fetchProviders();
       } catch (error) {
         console.error("Error deleting provider:", error);
@@ -690,11 +690,11 @@ const Providers = () => {
                     {!isLoading && (
                       <>
                         <Badge bg="light" text="dark" className="me-2 shadow-sm">
-                          <span className="fw-semibold">{paginatedProviders.length}</span> sur {filteredProviders.length} Providers
+                          <span className="fw-semibold">{paginatedProviders.length}</span> of {filteredProviders.length} Providers
                         </Badge>
                         {searchTerm && (
                           <Badge bg="light" text="dark" className="shadow-sm">
-                            Filtrés de {providers.length} total
+                            Filtered from {providers.length} total
                           </Badge>
                         )}
                       </>
@@ -707,7 +707,7 @@ const Providers = () => {
                       disabled={currentPage === 1}
                       onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                     >
-                      Précédent
+                      Previous
                     </Button>
                     <Button
                       variant="outline-primary"
@@ -715,7 +715,7 @@ const Providers = () => {
                       disabled={currentPage === pageCount}
                       onClick={() => setCurrentPage(prev => Math.min(prev + 1, pageCount))}
                     >
-                      Suivant
+                      Next
                     </Button>
                   </div>
                 </div>

@@ -12,7 +12,10 @@ import {
 } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { fr } from 'date-fns/locale';
 
 const DEFAULT_NEW_CDR = {
   starttime: "",
@@ -26,7 +29,7 @@ const DEFAULT_NEW_CDR = {
   server: ""
 };
 
-function CDRHeader({ onExportClick, cdrCount, isExporting }) {
+function CDRHeader({ onExportClick, cdrCount, isExporting, startDate, endDate, onDateChange, onResetDates }) {
   return (
     <Card.Header className="d-flex flex-wrap align-items-center p-0 rounded-top overflow-hidden">
       <div className="bg-primary p-3 w-100 position-relative">
@@ -50,8 +53,8 @@ function CDRHeader({ onExportClick, cdrCount, isExporting }) {
             <FaExclamationTriangle className="text-primary fs-3" />
           </div>
           <div>
-            <h2 className="fw-bold mb-0 text-white">CDR Échoués</h2>
-            <p className="text-white-50 mb-0 d-none d-md-block">Examiner les enregistrements de détail des appels échoués</p>
+            <h2 className="fw-bold mb-0 text-white">Failed CDRs</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Review failed call detail records</p>
           </div>
         </div>
       </div>
@@ -61,15 +64,54 @@ function CDRHeader({ onExportClick, cdrCount, isExporting }) {
             Total: <span className="fw-bold">{cdrCount}</span>
           </span>
         </Badge>
-        <Button
-          variant="primary"
-          onClick={onExportClick}
-          className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
-          disabled={isExporting}
-        >
-          {isExporting ? <Spinner size="sm" /> : <FaDownload />}
-          <span>Export</span>
-        </Button>
+        <div className="d-flex align-items-center gap-2">
+          <div className="d-flex align-items-center me-2">
+            <span className="me-2">De:</span>
+            <DatePicker
+              selected={startDate}
+              onChange={(date) => onDateChange('startDate', date)}
+              selectsStart
+              startDate={startDate}
+              endDate={endDate}
+              maxDate={new Date()}
+              className="form-control form-control-sm"
+              locale={fr}
+              dateFormat="dd/MM/yyyy"
+            />
+          </div>
+          <div className="d-flex align-items-center me-2">
+            <span className="me-2">À:</span>
+            <DatePicker
+              selected={endDate}
+              onChange={(date) => onDateChange('endDate', date)}
+              selectsEnd
+              startDate={startDate}
+              endDate={endDate}
+              minDate={startDate}
+              maxDate={new Date()}
+              className="form-control form-control-sm"
+              locale={fr}
+              dateFormat="dd/MM/yyyy"
+            />
+          </div>
+          <Button
+            variant="outline-secondary"
+            onClick={onResetDates}
+            className="me-2"
+            size="sm"
+          >
+            Réinitialiser
+          </Button>
+          <Button
+            variant="primary"
+            onClick={onExportClick}
+            className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+            disabled={isExporting}
+          >
+            {isExporting ? <Spinner size="sm" /> : <FaDownload />}
+            <span>Export</span>
+          </Button>
+        </div>
       </div>
     </Card.Header>
   );
@@ -82,17 +124,59 @@ function CdrFailedTable() {
   const [showModal, setShowModal] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState({ key: 'starttime', direction: 'desc' });
+  const [selectedRows, setSelectedRows] = useState(new Set());
+  const [selectAll, setSelectAll] = useState(false);
+  const [dateRange, setDateRange] = useState({
+    startDate: subDays(new Date(), 30),
+    endDate: new Date()
+  });
+  const [isFiltered, setIsFiltered] = useState(false);
+
+  // Process, filter, and sort data - memoized for performance
+  const displayedData = React.useMemo(() => {
+    // Filter data based on search term
+    let result = [...cdrFailedData];
+    
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      result = result.filter((cdr) => (
+        cdr.starttime?.toLowerCase().includes(searchLower) ||
+        cdr.src?.toLowerCase().includes(searchLower) ||
+        cdr.calledstation?.toLowerCase().includes(searchLower) ||
+        cdr.callerid?.toLowerCase().includes(searchLower) ||
+        cdr.terminatecauseid?.toString().toLowerCase().includes(searchLower) ||
+        cdr.username?.toLowerCase().includes(searchLower) ||
+        cdr.trunkcode?.toLowerCase().includes(searchLower) ||
+        cdr.hangupcause?.toLowerCase().includes(searchLower) ||
+        cdr.server?.toLowerCase().includes(searchLower)
+      ));
+    }
+    
+    // Sort the filtered data
+    return [...result].sort((a, b) => {
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+      
+      if (aValue === bValue) return 0;
+      if (aValue == null) return 1;
+      if (bValue == null) return -1;
+      
+      const comparison = String(aValue).localeCompare(String(bValue), undefined, {numeric: true});
+      return sortConfig.direction === 'asc' ? comparison : -comparison;
+    });
+  }, [cdrFailedData, searchTerm, sortConfig]);
 
   const allColumns = [
     { label: "Date", key: "starttime" },
-    { label: "Utilisateur SIP", key: "src" },
-    { label: "Numéro", key: "calledstation" },
+    { label: "SIP User", key: "src" },
+    { label: "Number", key: "calledstation" },
     { label: "Destination", key: "callerid" }, 
-    { label: "Statut", key: "terminatecauseid"},
-    { label: "Nom d'utilisateur", key: "username" },
+    { label: "Status", key: "terminatecauseid"},
+    { label: "Username", key: "username" },
     { label: "Trunk", key: "trunkcode" },
-    { label: "Code SIP", key: "hangupcause" },
-    { label: "Serveur", key: "server" },
+    { label: "SIP Code", key: "hangupcause" },
+    { label: "Server", key: "server" },
   ];
 
   const [visibleColumns, setVisibleColumns] = useState(
@@ -109,40 +193,98 @@ function CdrFailedTable() {
   const fetchCdrFailedData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(
-        "http://localhost:5000/api/admin/CdrFailed/affiche"
-      );
-      const data = response.data.cdr_failed;
-      setCdrFailedData(data);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      setError("Impossible de récupérer les données.");
-      toast.error("Erreur lors de la récupération des données !");
+      const params = {};
+      if (isFiltered) {
+        params.startDate = format(dateRange.startDate, 'yyyy-MM-dd');
+        params.endDate = format(dateRange.endDate, 'yyyy-MM-dd');
+      }
+      
+      const response = await axios.get("/api/admin/CDRFailed/affiche", { params });
+      if (response.data.success) {
+        setCdrFailedData(response.data.cdr_failed);
+      } else {
+        setError("Échec du chargement des CDR échoués");
+      }
+    } catch (err) {
+      console.error("Error fetching CDR failed data:", err);
+      setError("Erreur lors du chargement des données. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleDateChange = (type, date) => {
+    const newDateRange = { ...dateRange, [type]: date };
+    setDateRange(newDateRange);
+    
+    // If both dates are set, we consider it a filter
+    if (newDateRange.startDate && newDateRange.endDate) {
+      setIsFiltered(true);
+    }
+  };
+  
+  const handleResetDates = () => {
+    setDateRange({
+      startDate: subDays(new Date(), 30),
+      endDate: new Date()
+    });
+    setIsFiltered(false);
+  };
+
+  useEffect(() => {
+    fetchCdrFailedData();
+  }, [isFiltered, dateRange]);
+
+  const toggleRowSelection = (id) => {
+    const newSelectedRows = new Set(selectedRows);
+    if (selectedRows.has(id)) {
+      newSelectedRows.delete(id);
+    } else {
+      newSelectedRows.add(id);
+    }
+    setSelectedRows(newSelectedRows);    
+    if (selectAll && newSelectedRows.size < cdrFailedData.length) {
+      setSelectAll(false);
+    } else if (!selectAll && newSelectedRows.size === cdrFailedData.length) {
+      setSelectAll(true);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectAll) {
+      setSelectedRows(new Set());
+    } else {
+      const allIds = new Set(cdrFailedData.map(row => row.id));
+      setSelectedRows(allIds);
+    }
+    setSelectAll(!selectAll);
+  };
+
   const exportToCSV = () => {
     const csvRows = [];
-    const headers = allColumns
-      .filter((col) => visibleColumns[col.key])
-      .map((col) => col.label)
+    const headers = ['Selected', ...allColumns]
+      .filter((col, index) => index === 0 || (col.key && visibleColumns[col.key]))
+      .map(col => col === 'Selected' ? 'Selected' : col.label)
       .join(",");
     csvRows.push(headers);
 
-    cdrFailedData.forEach((row) => {
-      const values = allColumns
-        .filter((col) => visibleColumns[col.key])
-        .map((col) => `"${row[col.key] || ""}"`);
-      csvRows.push(values.join(","));
+    const rowsToExport = selectedRows.size > 0 
+      ? displayedData.filter(row => selectedRows.has(row.id))
+      : displayedData;
+
+    rowsToExport.forEach((row) => {
+      const isSelected = selectedRows.has(row.id) ? 'Oui' : 'Non';
+      const rowValues = [isSelected, ...allColumns
+        .filter(col => visibleColumns[col.key])
+        .map(col => `"${String(row[col.key] || '').replace(/"/g, '""')}"`)];
+      csvRows.push(rowValues.join(","));
     });
 
     const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "cdr_echoues_data.csv");
+    link.setAttribute("download", `failed_cdr_data_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -151,12 +293,12 @@ function CdrFailedTable() {
   const handleDelete = async () => {
     try {
       await axios.delete(`http://localhost:5000/api/admin/CdrFailed/delete/${confirmDeleteId}`);
-      toast.success("Enregistrement supprimé avec succès !");
+      toast.success("Record deleted successfully!");
       // Refresh the data from the server instead of just filtering
       await fetchCdrFailedData();
     } catch (error) {
       console.error("Error deleting record:", error);
-      toast.error(error.response?.data?.error || "Échec de la suppression de l'enregistrement.");
+      toast.error(error.response?.data?.error || "Failed to delete record.");
     } finally {
       setShowModal(false);
     }
@@ -203,10 +345,16 @@ function CdrFailedTable() {
     );
   };
 
-  const filteredData = cdrFailedData.filter(cdr =>
-    (cdr.src.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     cdr.calledstation.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Fonction de tri
+  const requestSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Using memoized filteredData and displayedData for rendering
 
   return (
     <div className="dashboard-main" style={{ marginLeft: "80px" }}>
@@ -240,9 +388,13 @@ function CdrFailedTable() {
           <Col xs={12} lg={11}>
             <Card className="shadow border-0 overflow-hidden main-card">
               <CDRHeader 
-                onExportClick={exportToCSV}
-                cdrCount={cdrFailedData.length}
+                onExportClick={exportToCSV} 
+                cdrCount={displayedData.length}
                 isExporting={false}
+                startDate={dateRange.startDate}
+                endDate={dateRange.endDate}
+                onDateChange={handleDateChange}
+                onResetDates={handleResetDates}
               />
               <Card.Body className="p-4" style={{ animation: "fadeIn 0.5s ease-in-out" }}>
                 {error && (
@@ -260,7 +412,7 @@ function CdrFailedTable() {
                       </span>
                       <input
                         type="text"
-                        placeholder="Rechercher des CDR..."
+                        placeholder="Search CDRs..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="form-control"
@@ -279,27 +431,59 @@ function CdrFailedTable() {
                 {loading ? (
                   <div className="text-center py-5">
                     <Spinner animation="border" variant="primary" />
-                    <p className="mt-3 text-muted">Chargement des données CDR...</p>
+                    <p className="mt-3 text-muted">Loading CDR data...</p>
                   </div>
                 ) : (
                   <div className="table-responsive">
                     <Table className="elegant-table">
                       <thead>
                         <tr>
+                          <th>
+                            <div className="form-check">
+                              <input
+                                type="checkbox"
+                                className="form-check-input"
+                                checked={selectAll}
+                                onChange={toggleSelectAll}
+                              />
+                            </div>
+                          </th>
                           {allColumns
                             .filter((col) => visibleColumns[col.key])
-                            .map((col, index) => (
-                              <th key={index} className="p-3">
-                                {col.label}
+                            .map((column, index) => (
+                              <th 
+                                key={index} 
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => requestSort(column.key)}
+                                className={sortConfig.key === column.key ? `sort-${sortConfig.direction}` : ''}
+                              >
+                                <div className="d-flex align-items-center justify-content-between">
+                                  {column.label}
+                                  {sortConfig.key === column.key && (
+                                    <span className="ms-1">
+                                      {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                                    </span>
+                                  )}
+                                </div>
                               </th>
                             ))}
                           <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredData.length > 0 ? (
-                          filteredData.map((cdr, index) => (
+                        {displayedData.length > 0 ? (
+                          displayedData.map((cdr, index) => (
                             <tr key={index} className="hover-effect">
+                              <td>
+                                <div className="form-check">
+                                  <input
+                                    type="checkbox"
+                                    className="form-check-input"
+                                    checked={selectedRows.has(cdr.id)}
+                                    onChange={() => toggleRowSelection(cdr.id)}
+                                  />
+                                </div>
+                              </td>
                               {allColumns
                                 .filter((col) => visibleColumns[col.key])
                                 .map((col, idx) => (
@@ -325,9 +509,9 @@ function CdrFailedTable() {
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={allColumns.length + 1} className="text-center py-5 text-muted">
+                            <td colSpan={allColumns.length + 2} className="text-center py-5 text-muted">
                               <FaExclamationTriangle className="mb-2" />
-                              <p>Aucun CDR échoué trouvé</p>
+                              <p>Aucun CDR en échec trouvé</p>
                             </td>
                           </tr>
                         )}
@@ -348,18 +532,18 @@ function CdrFailedTable() {
         backdrop="static"
       >
         <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title>Confirmer la Suppression</Modal.Title>
+          <Modal.Title>Confirm Deletion</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>Êtes-vous sûr de vouloir supprimer ce CDR échoué ?</p>
-          <p className="text-muted small">Cette action ne peut pas être annulée.</p>
+          <p>Are you sure you want to delete this failed CDR?</p>
+          <p className="text-muted small">This action cannot be undone.</p>
         </Modal.Body>
         <Modal.Footer className="border-0">
           <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Annuler
+            Cancel
           </Button>
           <Button variant="primary" onClick={handleDelete}>
-            Supprimer l'enregistrement
+            Delete Record
           </Button>
         </Modal.Footer>
       </Modal>

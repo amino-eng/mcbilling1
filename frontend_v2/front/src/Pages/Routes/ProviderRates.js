@@ -71,8 +71,8 @@ const ProviderRatesHeader = ({ onAddClick, rates, isExporting }) => {
             <FaMoneyBillWave className="text-primary fs-3" />
           </div>
           <div>
-            <h2 className="fw-bold mb-0 text-white">Tarifs Fournisseurs</h2>
-            <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos tarifs d'achat</p>
+            <h2 className="fw-bold mb-0 text-white">Provider Rates</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Manage your purchase rates</p>
           </div>
         </div>
       </div>
@@ -99,7 +99,7 @@ const ProviderRatesHeader = ({ onAddClick, rates, isExporting }) => {
             <div className="icon-container">
               <BiPlusCircle />
             </div>
-            <span>Ajouter</span>
+            <span>Add</span>
           </Button>
           <CSVLink
             data={csvData}
@@ -110,7 +110,7 @@ const ProviderRatesHeader = ({ onAddClick, rates, isExporting }) => {
             <div className="icon-container">
               {isExporting ? <Spinner animation="border" size="sm" /> : <BiDownload />}
             </div>
-            <span>{isExporting ? "Exportation..." : "Exporter"}</span>
+            <span>{isExporting ? "Exporting..." : "Export"}</span>
           </CSVLink>
         </div>
       </div>
@@ -127,7 +127,7 @@ const SearchBar = ({ searchTerm, onSearchChange }) => {
       </InputGroup.Text>
       <Form.Control
         type="text"
-        placeholder="Rechercher..."
+        placeholder="Search for a provider..."
         value={searchTerm}
         onChange={onSearchChange}
         className="border-start-0"
@@ -169,10 +169,10 @@ const ProviderRatesTable = ({ rates, onEdit, onDelete, isLoading }) => {
       <Table striped hover className="mb-0">
         <thead className="table-light">
           <tr>
-            <th>Préfixe</th>
+            <th>Prefix</th>
             <th>Destination</th>
-            <th>Fournisseur</th>
-            <th>Tarif</th>
+            <th>Provider</th>
+            <th>Rate</th>
             <th>Init Block</th>
             <th>Increment</th>
             <th>Min Time</th>
@@ -183,13 +183,15 @@ const ProviderRatesTable = ({ rates, onEdit, onDelete, isLoading }) => {
           {isLoading ? (
             <tr>
               <td colSpan="8" className="text-center py-4">
-                <Spinner animation="border" variant="primary" />
+                <div className="d-flex justify-content-center mt-4">
+                  <Spinner animation="border" variant="primary" />
+                </div>
               </td>
             </tr>
           ) : rates.length === 0 ? (
             <tr>
               <td colSpan="8" className="text-center py-4 text-muted">
-                Aucun tarif trouvé
+                No rates found
               </td>
             </tr>
           ) : (
@@ -309,7 +311,7 @@ const AddProviderRateModal = ({
     <Modal show={show} onHide={onHide} size="lg">
       <Modal.Header closeButton>
         <Modal.Title>
-          {rateToEdit ? "Modifier Tarif" : "Ajouter Nouveau Tarif"}
+          {rateToEdit ? "Update Rate" : "Add New Rate"}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
@@ -317,7 +319,7 @@ const AddProviderRateModal = ({
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Fournisseur</Form.Label>
+                <Form.Label>Provider</Form.Label>
                 <div className="d-flex">
                   <Form.Control
                     type="text"
@@ -337,7 +339,7 @@ const AddProviderRateModal = ({
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Préfixe/Destination</Form.Label>
+                <Form.Label>Prefix/Destination</Form.Label>
                 <div className="d-flex">
                   <Form.Control
                     type="text"
@@ -360,7 +362,7 @@ const AddProviderRateModal = ({
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Tarif</Form.Label>
+                <Form.Label>Rate</Form.Label>
                 <Form.Control
                   type="number"
                   step="0.0001"
@@ -403,7 +405,7 @@ const AddProviderRateModal = ({
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Min Time</Form.Label>
+                <Form.Label>Min Time (sec)</Form.Label>
                 <Form.Control
                   type="number"
                   value={formData.minimal_time_buy}
@@ -418,10 +420,10 @@ const AddProviderRateModal = ({
 
           <Modal.Footer>
             <Button variant="secondary" onClick={onHide}>
-              Annuler
+              Cancel
             </Button>
             <Button variant="primary" type="submit">
-              {rateToEdit ? "Modifier" : "Ajouter"}
+              {rateToEdit ? "Update" : "Add"}
             </Button>
           </Modal.Footer>
         </Form>
@@ -433,7 +435,7 @@ const AddProviderRateModal = ({
         onHide={() => setShowProviderModal(false)}
       >
         <Modal.Header closeButton>
-          <Modal.Title>Sélectionner Fournisseur</Modal.Title>
+          <Modal.Title>Select a provider</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <ul className="list-group">
@@ -457,7 +459,7 @@ const AddProviderRateModal = ({
       {/* Prefix Selection Modal */}
       <Modal show={showPrefixModal} onHide={() => setShowPrefixModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Sélectionner Préfixe</Modal.Title>
+          <Modal.Title>Select a prefix</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <ul className="list-group">
@@ -522,7 +524,7 @@ const ProviderRates = () => {
       setRates(res.data.rates);
       setError("");
     } catch (err) {
-      setError("Erreur de chargement des tarifs");
+      setError("Error loading rates");
       console.error("Error fetching rates:", err);
     } finally {
       setIsLoading(false);
@@ -561,16 +563,16 @@ const ProviderRates = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Supprimer ce tarif ?")) {
+    if (window.confirm("Delete this rate?")) {
       try {
         await axios.delete(
           `http://localhost:5000/api/admin/providerrates/supprimer/${id}`
         );
-        setSuccessMessage("Tarif supprimé avec succès");
+        setSuccessMessage("Rate deleted successfully");
         setTimeout(() => setSuccessMessage(""), 3000);
         fetchRates();
       } catch (err) {
-        setError("Erreur lors de la suppression");
+        setError("Error deleting rate");
         console.error("Error deleting rate:", err);
       }
     }
@@ -661,11 +663,11 @@ const ProviderRates = () => {
                     {!isLoading && (
                       <>
                         <Badge bg="light" text="dark" className="me-2 shadow-sm">
-                          <span className="fw-semibold">{paginatedRates.length}</span> sur {filteredRates.length} Tarifs
+                          <span className="fw-semibold">{paginatedRates.length}</span> of {filteredRates.length} Rates
                         </Badge>
                         {searchTerm && (
                           <Badge bg="light" text="dark" className="shadow-sm">
-                            Filtrés de {rates.length} total
+                            Filtered from {rates.length} total
                           </Badge>
                         )}
                       </>

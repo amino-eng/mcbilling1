@@ -5,7 +5,7 @@ import axios from "axios"
 import { Table, Button, Card, Container, Row, Col, Badge, Spinner, Alert, Form } from "react-bootstrap"
 import ReactPaginate from "react-paginate"
 import { CSVLink } from "react-csv"
-import { FaDownload, FaSearch, FaChartLine, FaTimesCircle } from "react-icons/fa"
+import { FaDownload, FaSearch, FaChartLine, FaTimesCircle, FaSort, FaSortUp, FaSortDown } from "react-icons/fa"
 
 const ITEMS_PER_PAGE = 10
 
@@ -16,6 +16,9 @@ const SummaryMonthUserTable = () => {
   const [currentPage, setCurrentPage] = useState(0)
   const [searchTerm, setSearchTerm] = useState("")
   const [isExporting, setIsExporting] = useState(false)
+  const [sortConfig, setSortConfig] = useState({ key: 'month', direction: 'asc' })
+  const [selectedRows, setSelectedRows] = useState({})
+  const [selectAll, setSelectAll] = useState(false)
 
   useEffect(() => {
     axios
@@ -25,7 +28,7 @@ const SummaryMonthUserTable = () => {
         setLoading(false)
       })
       .catch((err) => {
-        setError("Impossible de récupérer les données.")
+        setError("Unable to retrieve data.")
         setLoading(false)
       })
   }, [])
@@ -46,17 +49,62 @@ const SummaryMonthUserTable = () => {
     return "-"
   }
 
+  const sortData = (data) => {
+    return [...data].sort((a, b) => {
+      if (sortConfig.key === 'month') {
+        const monthA = parseInt(a.month)
+        const monthB = parseInt(b.month)
+        return sortConfig.direction === 'asc' ? monthA - monthB : monthB - monthA
+      }
+      return 0
+    })
+  }
+
   const filteredData = data.filter(item =>
     `${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}`.includes(searchTerm)
   )
+  
+  const sortedData = sortData(filteredData)
 
-  const pageCount = Math.ceil(filteredData.length / ITEMS_PER_PAGE)
+  const pageCount = Math.ceil(sortedData.length / ITEMS_PER_PAGE)
   const offset = currentPage * ITEMS_PER_PAGE
-  const pagedData = filteredData.slice(offset, offset + ITEMS_PER_PAGE)
+  const pagedData = sortedData.slice(offset, offset + ITEMS_PER_PAGE)
+  
+  const requestSort = (key) => {
+    let direction = 'asc'
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc'
+    }
+    setSortConfig({ key, direction })
+  }
+
+  const handleSelectRow = (id) => {
+    setSelectedRows(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }))
+  }
+
+  const handleSelectAll = () => {
+    const newSelectAll = !selectAll
+    setSelectAll(newSelectAll)
+    const newSelectedRows = {}
+    if (newSelectAll) {
+      sortedData.forEach(item => {
+        newSelectedRows[item.id] = true
+      })
+    }
+    setSelectedRows(newSelectedRows)
+  }
+
+  const getSelectedData = () => {
+    if (Object.keys(selectedRows).length === 0) return sortedData
+    return sortedData.filter(item => selectedRows[item.id])
+  }
 
   const csvData = [
-    ["Month", "Username", "Duration", "Allocated Calls", "Answered Calls", "Buy Price (€)", "Sell Price (€)", "Markup", "ASR (%)"],
-    ...filteredData.map(item => [
+    ["Mois", "Utilisateur", "Durée", "Appels alloués", "Appels répondu", "Prix d'achat (€)", "Prix de vente (€)", "Marge", "ASR (%)"],
+    ...getSelectedData().map(item => [
       `${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}`,
       item.username,
       formatSessionTime(item.sessiontime),
@@ -115,8 +163,8 @@ const SummaryMonthUserTable = () => {
                     <FaChartLine className="text-primary fs-3" />
                   </div>
                   <div>
-                    <h2 className="fw-bold mb-0 text-white">Rapports mensuels des utilisateurs</h2>
-                    <p className="text-white-50 mb-0 d-none d-md-block">Statistiques détaillées d'utilisation mensuelles par utilisateur</p>
+                    <h2 className="fw-bold mb-0 text-white">Monthly User Reports</h2>
+                    <p className="text-white-50 mb-0 d-none d-md-block">Detailed monthly usage statistics by user</p>
                   </div>
                 </div>
               </Card.Header>
@@ -126,7 +174,7 @@ const SummaryMonthUserTable = () => {
                   <Col md={6} lg={4}>
                     <Form.Control
                       type="text"
-                      placeholder="Rechercher par mois..."
+                      placeholder="Search by month..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="shadow-sm"
@@ -135,12 +183,13 @@ const SummaryMonthUserTable = () => {
                   <Col md={6} lg={8} className="d-flex justify-content-end">
                     <CSVLink
                       data={csvData}
-                      filename="rapports_mensuels_utilisateurs.csv"
-                      className="btn btn-success d-flex align-items-center gap-2"
-                      disabled={isExporting}
+                      filename="monthly_user_reports.csv"
+                      className={`btn btn-success d-flex align-items-center gap-2 ${Object.keys(selectedRows).length === 0 ? 'disabled' : ''}`}
+                      disabled={isExporting || Object.keys(selectedRows).length === 0}
+                      title={Object.keys(selectedRows).length === 0 ? 'Sélectionnez au moins une ligne à exporter' : ''}
                     >
                       {isExporting ? <Spinner animation="border" size="sm" /> : <FaDownload />}
-                      Export
+                      {Object.keys(selectedRows).length > 0 ? `Exporter (${Object.values(selectedRows).filter(Boolean).length})` : 'Exporter'}
                     </CSVLink>
                   </Col>
                 </Row>
@@ -149,20 +198,49 @@ const SummaryMonthUserTable = () => {
                   <Table striped bordered hover className="elegant-table">
                     <thead>
                       <tr>
-                        <th>Mois</th>
-                        <th>Nom d'utilisateur</th>
-                        <th>Durée</th>
-                        <th>Appels alloués</th>
-                        <th>Appels répondus</th>
-                        <th>Prix d'achat (€)</th>
-                        <th>Prix de vente (€)</th>
-                        <th>Marge</th>
+                        <th>
+                          <Form.Check
+                            type="checkbox"
+                            checked={selectAll && Object.keys(selectedRows).length === sortedData.length}
+                            onChange={handleSelectAll}
+                            className="d-inline-block"
+                          />
+                        </th>
+                        <th 
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => requestSort('month')}
+                          className="d-flex align-items-center"
+                        >
+                          Mois
+                          {sortConfig.key === 'month' ? (
+                            sortConfig.direction === 'asc' ? 
+                              <FaSortUp className="ms-1" /> : 
+                              <FaSortDown className="ms-1" />
+                          ) : (
+                            <FaSort className="ms-1 text-muted" />
+                          )}
+                        </th>
+                        <th>Username</th>
+                        <th>Duration</th>
+                        <th>Allocated Calls</th>
+                        <th>Answered Calls</th>
+                        <th>Buy Price (€)</th>
+                        <th>Sell Price (€)</th>
+                        <th>Markup</th>
                         <th>ASR (%)</th>
                       </tr>
                     </thead>
                     <tbody>
                       {pagedData.map((item) => (
                         <tr key={item.id}>
+                          <td>
+                            <Form.Check
+                              type="checkbox"
+                              checked={!!selectedRows[item.id]}
+                              onChange={() => handleSelectRow(item.id)}
+                              className="d-inline-block"
+                            />
+                          </td>
                           <td>{`${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}`}</td>
                           <td>{item.username}</td>
                           <td>{formatSessionTime(item.sessiontime)}</td>
@@ -185,18 +263,18 @@ const SummaryMonthUserTable = () => {
                 <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
                   <div className="text-muted small">
                     <Badge bg="light" text="dark" className="me-2 shadow-sm">
-                      <span className="fw-semibold">{pagedData.length}</span> sur {filteredData.length} enregistrements
+                      <span className="fw-semibold">{pagedData.length}</span> of {filteredData.length} records
                     </Badge>
                     {searchTerm && (
                       <Badge bg="light" text="dark" className="shadow-sm">
-                        Filtré à partir de {data.length} enregistrements au total
+                        Filtered from {data.length} total records
                       </Badge>
                     )}
                   </div>
                   
                   <ReactPaginate
-                    previousLabel="Précédent"
-                    nextLabel="Suivant"
+                    previousLabel="Previous"
+                    nextLabel="Next"
                     breakLabel="..."
                     pageCount={pageCount}
                     marginPagesDisplayed={2}

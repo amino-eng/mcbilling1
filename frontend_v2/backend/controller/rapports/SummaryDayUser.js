@@ -1,12 +1,43 @@
 const connection = require("../../config/dataBase");
 
-// Afficher tous les enregistrements
+// Get user call statistics
+exports.getUserCallStats = (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        u.username,
+        COALESCE(SUM(cdr.nbcall), 0) as total_calls,
+        COALESCE(SUM(cdr.nbcall - cdr.nbcall_fail), 0) as answered_calls,
+        COALESCE(SUM(cdr.nbcall_fail), 0) as failed_calls,
+        COALESCE(SUM(cdr.sessiontime), 0) as total_duration
+      FROM pkg_user u
+      LEFT JOIN pkg_cdr_summary_day_user cdr ON u.id = cdr.id_user
+      GROUP BY u.id, u.username
+      ORDER BY total_calls DESC
+      LIMIT 5  -- Top 5 users by call volume
+    `;
+
+    connection.query(query, (err, results) => {
+      if (err) {
+        console.error("Error fetching user call stats:", err);
+        return res.status(500).json({ error: "Database error" });
+      }
+      res.json(results);
+    });
+  } catch (error) {
+    console.error("Error in getUserCallStats:", error);
+    res.status(500).send("Internal server error");
+  }
+};
+
+// Afficher les enregistrements avec filtrage par plage de dates
 exports.afficher = async (req, res) => {
     try {
-      const query = `
+      const { startDate, endDate } = req.query;
+      let query = `
         SELECT 
           cdr.id, 
-          u.username,  -- Retrieve the username instead of id_user
+          u.username,
           cdr.day,
           cdr.sessiontime, 
           cdr.nbcall, 
@@ -20,10 +51,22 @@ exports.afficher = async (req, res) => {
           cdr.aloc_all_calls
         FROM pkg_cdr_summary_day_user cdr
         JOIN pkg_user u ON cdr.id_user = u.id
-        LIMIT 25
       `;
-  
-      connection.query(query, (err, results) => {
+
+      const queryParams = [];
+      
+      // Add date range filter if provided
+      if (startDate && endDate) {
+        query += ' WHERE cdr.day BETWEEN ? AND ?';
+        queryParams.push(startDate, endDate);
+      }
+
+      query += ' ORDER BY cdr.day DESC';
+      
+      // Remove the LIMIT to get all matching records
+      // The frontend will handle pagination
+
+      connection.query(query, queryParams, (err, results) => {
         if (err) {
           console.error("Erreur lors de la récupération des données :", err);
           return res.status(500).json({ error: "Erreur de base de données" });
@@ -35,7 +78,6 @@ exports.afficher = async (req, res) => {
       res.status(500).send("Erreur interne du serveur");
     }
   };
-// Supprimer un enregistrement
 exports.del = (req, res) => {
   const summaryId = req.params.id;
   const query = "DELETE FROM pkg_cdr_summary_day_user WHERE id = ?";

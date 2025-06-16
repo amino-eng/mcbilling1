@@ -1,6 +1,6 @@
 const express = require("express");
 const { body, param } = require("express-validator");
-const { getAll, getById, add, del } = require("../../controller/rapports/SummaryMonthUser");
+const { getAll, getById, add, del, getUserMonthlyStats } = require("../../controller/rapports/SummaryMonthUser");
 
 const router = express.Router();
 
@@ -34,5 +34,8 @@ router.post("/", validateAdd, add);
 
 // Route to delete a record by ID with validation
 router.delete("/:id", validateId, del);
+
+// Route to get monthly user call statistics
+router.get("/stats/user-monthly-stats", getUserMonthlyStats);
 
 module.exports = router;

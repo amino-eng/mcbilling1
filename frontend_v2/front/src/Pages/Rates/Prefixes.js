@@ -27,7 +27,7 @@ const DEFAULT_MODAL_DATA = {
 // Header Component
 function PrefixesHeader({ onAddClick, prefixes, isExporting = false }) {
   const csvData = [
-    ["Préfixe", "Destination"],
+    ["Prefix", "Destination"],
     ...prefixes.map(prefix => [
       prefix.prefix,
       prefix.destination
@@ -64,8 +64,8 @@ function PrefixesHeader({ onAddClick, prefixes, isExporting = false }) {
             <FaFileAlt className="text-primary fs-3" />
           </div>
           <div>
-            <h2 className="fw-bold mb-0 text-white">Liste des Préfixes</h2>
-            <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos préfixes facilement</p>
+            <h2 className="fw-bold mb-0 text-white">Prefix List</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Manage your prefixes easily</p>
           </div>
         </div>
       </div>
@@ -92,7 +92,7 @@ function PrefixesHeader({ onAddClick, prefixes, isExporting = false }) {
             <div className="icon-container">
               <FaPlusCircle />
             </div>
-            <span>Ajouter</span>
+            <span>Add</span>
           </Button>
           <CSVLink
             data={csvData}
@@ -103,7 +103,7 @@ function PrefixesHeader({ onAddClick, prefixes, isExporting = false }) {
             <div className="icon-container">
               {isExporting ? <Spinner animation="border" size="sm" /> : <FaDownload />}
             </div>
-            <span>{isExporting ? "Exportation..." : "Exporter CSV"}</span>
+            <span>{isExporting ? "Exporting..." : "Export CSV"}</span>
           </CSVLink>
         </div>
       </div>
@@ -117,7 +117,7 @@ function SearchBar({ searchTerm, onSearchChange }) {
     <div className="position-relative">
       <FormControl
         type="search"
-        placeholder="Rechercher des préfixes..."
+        placeholder="Search prefixes..."
         className="ps-5"
         value={searchTerm}
         onChange={onSearchChange}
@@ -136,7 +136,7 @@ function ActionButtons({ onEdit, onDelete }) {
         size="sm"
         onClick={onEdit}
         className="action-btn"
-        title="Modifier"
+        title="Edit"
       >
         <FaEdit />
       </Button>
@@ -145,7 +145,7 @@ function ActionButtons({ onEdit, onDelete }) {
         size="sm"
         onClick={onDelete}
         className="action-btn"
-        title="Supprimer"
+        title="Delete"
       >
         <FaTrashAlt />
       </Button>
@@ -158,8 +158,8 @@ function EmptyState() {
   return (
     <div className="text-center py-5">
       <FaFileAlt className="text-muted mb-3" size={48} />
-      <h5 className="text-muted">Aucun préfixe trouvé</h5>
-      <p className="text-muted small">Commencez par ajouter un nouveau préfixe</p>
+      <h5 className="text-muted">No prefixes found</h5>
+      <p className="text-muted small">Start by adding a new prefix</p>
     </div>
   );
 }
@@ -182,7 +182,7 @@ function PrefixesTableComponent({ prefixes, onEdit, onDelete, isLoading }) {
     <Table hover className="mb-0">
       <thead>
         <tr>
-          <th>Préfixe</th>
+          <th>Prefix</th>
           <th>Destination</th>
           <th className="text-end">Actions</th>
         </tr>
@@ -211,8 +211,8 @@ function PaginationSection({ pageCount, onPageChange, currentPage }) {
 
   return (
     <ReactPaginate
-      previousLabel="Précédent"
-      nextLabel="Suivant"
+      previousLabel="Previous"
+      nextLabel="Next"
       breakLabel="..."
       breakClassName="page-item"
       breakLinkClassName="page-link"
@@ -252,7 +252,7 @@ function PrefixModal({
       <Modal.Body>
         <Form>
           <Form.Group className="mb-3">
-            <Form.Label>Préfixe</Form.Label>
+            <Form.Label>Prefix</Form.Label>
             <Form.Control
               type="text"
               name="prefix"
@@ -278,16 +278,16 @@ function PrefixModal({
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={onHide}>
-          Annuler
+          Cancel
         </Button>
         <Button variant="primary" onClick={onSubmit} disabled={isSubmitting}>
           {isSubmitting ? (
             <>
               <Spinner animation="border" size="sm" className="me-2" />
-              En cours...
+              Saving...
             </>
           ) : (
-            "Enregistrer"
+            "Save"
           )}
         </Button>
       </Modal.Footer>
@@ -318,7 +318,7 @@ const PrefixesTable = () => {
       setFilteredPrefixes(res.data.prefixes);
       setError("");
     } catch (err) {
-      setError("Erreur lors du chargement des préfixes");
+      setError("Error loading prefixes");
     } finally {
       setIsLoading(false);
     }
@@ -343,7 +343,7 @@ const PrefixesTable = () => {
   
     if (name === "prefix") {
       if (/\D/.test(value)) {
-        setPrefixError("Le préfixe ne doit contenir que des chiffres.");
+        setPrefixError("The prefix must contain only numbers.");
       } else {
         setPrefixError("");
       }
@@ -368,7 +368,7 @@ const PrefixesTable = () => {
 
   const handleModalSubmit = async () => {
     if (!modalData.prefix || !modalData.destination) {
-      setError("Tous les champs sont requis !");
+      setError("All fields are required!");
       return;
     }
 
@@ -376,31 +376,31 @@ const PrefixesTable = () => {
       setIsSubmitting(true);
       if (prefixId === null) {
         await axios.post("http://localhost:5000/api/admin/Prefixes/ajouter", modalData);
-        setSuccessMessage("Préfixe ajouté avec succès !");
+        setSuccessMessage("Prefix added successfully!");
       } else {
         await axios.put(`http://localhost:5000/api/admin/Prefixes/modifier/${prefixId}`, modalData);
-        setSuccessMessage("Préfixe modifié avec succès !");
+        setSuccessMessage("Prefix updated successfully!");
       }
 
       setShowModal(false);
       fetchPrefixes();
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
-      setError("Erreur lors de l'enregistrement");
+      setError("Error saving changes");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Supprimer ce préfixe ?")) {
+    if (window.confirm("Delete this prefix?")) {
       try {
         await axios.delete(`http://localhost:5000/api/admin/Prefixes/supprimer/${id}`);
-        setSuccessMessage("Préfixe supprimé avec succès !");
+        setSuccessMessage("Prefix deleted successfully!");
         fetchPrefixes();
         setTimeout(() => setSuccessMessage(""), 3000);
       } catch (err) {
-        setError("Erreur lors de la suppression");
+        setError("Error deleting prefix");
       }
     }
   };
@@ -500,11 +500,11 @@ const PrefixesTable = () => {
                       {!isLoading && (
                         <>
                           <Badge bg="light" text="dark" className="me-2 shadow-sm">
-                            <span className="fw-semibold">{pagedPrefixes.length}</span> sur {filteredPrefixes.length} préfixes
+                            <span className="fw-semibold">{pagedPrefixes.length}</span> of {filteredPrefixes.length} prefixes
                           </Badge>
                           {searchTerm && (
                             <Badge bg="light" text="dark" className="shadow-sm">
-                              Filtrés de {prefixes.length} total
+                              Filtered from {prefixes.length} total
                             </Badge>
                           )}
                         </>
@@ -526,7 +526,7 @@ const PrefixesTable = () => {
       <PrefixModal
         show={showModal}
         onHide={() => setShowModal(false)}
-        title={prefixId === null ? "Ajouter un préfixe" : "Modifier le préfixe"}
+        title={prefixId === null ? "Add Prefix" : "Edit Prefix"}
         onSubmit={handleModalSubmit}
         modalData={modalData}
         onInputChange={handleInputChange}

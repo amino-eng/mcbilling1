@@ -68,8 +68,8 @@ const IaxHeader = ({ onAddClick, data, onExportClick }) => (
                     <FaPhoneAlt className="text-primary fs-3" />
                 </div>
                 <div>
-                    <h2 className="fw-bold mb-0 text-white">Gestion des IAX</h2>
-                    <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos comptes IAX facilement</p>
+                    <h2 className="fw-bold mb-0 text-white">IAX Management</h2>
+                    <p className="text-white-50 mb-0 d-none d-md-block">Easily manage your IAX accounts</p>
                 </div>
             </div>
         </div>
@@ -91,7 +91,7 @@ const IaxHeader = ({ onAddClick, data, onExportClick }) => (
                     <div className="icon-container">
                         <FaPlusCircle />
                     </div>
-                    <span>Ajouter</span>
+                    <span>Add</span>
                 </Button>
                 <CSVLink 
                     data={data} 
@@ -212,7 +212,7 @@ const IaxTable = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
     const [hiddenColumns, setHiddenColumns] = useState([
-        'IAX Pass', 'Context', 'CallerID', 'Codec', 'NAT', 'Qualify', 'Dtmfmode', 'Insecure', 'Type', 'IP',
+        'IAX Password', 'Context', 'CallerID', 'Codec', 'NAT', 'Qualify', 'Dtmfmode', 'Insecure', 'Type', 'IP',
     ]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -425,13 +425,13 @@ const IaxTable = () => {
 
     // Define column names and their corresponding data fields
     const columns = [
-        'Nom d\'utilisateur', 'IAX User', 'IAX Pass', 'Host', 'IP', 'Context',
+        'Username', 'IAX User', 'IAX Password', 'Host', 'IP', 'Context',
         'CallerID', 'Codec', 'NAT', 'Dtmfmode', 'Insecure', 'Type'
     ];
     
     // Map column names to data fields
     const columnToField = {
-        'Nom d\'utilisateur': 'display_username', // Use the display_username field we created
+        'Username': 'display_username', // Use the display_username field we created
         'IAX User': 'user_name',  // IAX User is the user_name field in the data
         'Host': 'host',
         'Type': 'type',
@@ -675,7 +675,7 @@ const IaxTable = () => {
                         bg="success"
                     >
                         <Toast.Header closeButton>
-                            <strong className="me-auto">Succès</strong>
+                            <strong className="me-auto">Confirm Deletion</strong>
                         </Toast.Header>
                         <Toast.Body className="text-white">{successMessage}</Toast.Body>
                     </Toast>
@@ -689,7 +689,7 @@ const IaxTable = () => {
                         bg="danger"
                     >
                         <Toast.Header closeButton>
-                            <strong className="me-auto">Erreur</strong>
+                            <strong className="me-auto">Error</strong>
                         </Toast.Header>
                         <Toast.Body className="text-white">{error}</Toast.Body>
                     </Toast>
@@ -723,10 +723,10 @@ const IaxTable = () => {
                                     </Col>
                                     <Col md={6} lg={4} className="ms-auto d-flex justify-content-end align-items-center">
                                         <div className="d-flex align-items-center gap-2">
-                                            <span className="text-muted">Colonnes:</span>
+                                            <span className="text-muted">Columns:</span>
                                             <Dropdown>
                                                 <Dropdown.Toggle variant="light" id="dropdown-columns" className="d-flex align-items-center gap-2">
-                                                    <FaFilter size={14} /> Filtrer
+                                                    <FaFilter size={14} /> Filter
                                                 </Dropdown.Toggle>
                                                 <Dropdown.Menu>
                                                     {columns.map((column) => (
@@ -735,7 +735,13 @@ const IaxTable = () => {
                                                             onClick={() => toggleColumnVisibility(column)}
                                                             active={!hiddenColumns.includes(column)}
                                                         >
-                                                            {column}
+                                                            {column === 'Nom d\'utilisateur' ? 'Username' :
+                                                            column === 'IAX User' ? 'IAX User' :
+                                                            column === 'IAX Pass' ? 'IAX Password' :
+                                                            column === 'Host' ? 'Host' :
+                                                            column === 'Type' ? 'Type' :
+                                                            column === 'Context' ? 'Context' : column
+                                                        }
                                                         </Dropdown.Item>
                                                     ))}
                                                 </Dropdown.Menu>
@@ -749,7 +755,7 @@ const IaxTable = () => {
                                     {loading ? (
                                         <div className="text-center py-5">
                                             <Spinner animation="border" variant="primary" />
-                                            <p className="mt-3 text-muted">Chargement des données...</p>
+                                            <p className="mt-3 text-muted">Loading data...</p>
                                         </div>
                                     ) : filteredData.length === 0 ? (
                                         <div className="text-center py-5" style={styles.emptyState}>
@@ -761,10 +767,10 @@ const IaxTable = () => {
                                                     <div className="position-absolute top-0 start-0 w-100 h-100 rounded-circle border border-3 border-primary" style={{ borderStyle: 'dashed', animation: 'spin 10s linear infinite' }}></div>
                                                 </div>
                                             </div>
-                                            <h5 className="mb-2">Aucun compte IAX trouvé</h5>
-                                            <p className="text-muted mb-4">Aucune donnée correspondant à vos critères de recherche</p>
+                                            <h5 className="mb-2">No IAX account found</h5>
+                                            <p className="text-muted mb-4">No data matching your search criteria</p>
                                             <Button variant="primary" onClick={() => { setIsEditMode(false); setShowAddModal(true); }}>
-                                                <FaPlusCircle className="me-2" /> Ajouter un compte IAX
+                                                <FaPlusCircle className="me-2" /> Add an IAX account
                                             </Button>
                                         </div>
                                     ) : (
@@ -772,42 +778,47 @@ const IaxTable = () => {
                                             <thead className="bg-light">
                                                 <tr>
                                                     {columns.map(column => !hiddenColumns.includes(column) && (
-                                                        <th key={column} className="py-3">{column}</th>
+                                                        <th key={column} className="py-3">{
+                                                        column === 'Nom d\'utilisateur' ? 'Username' :
+                                                        column === 'IAX User' ? 'IAX User' :
+                                                        column === 'IAX Pass' ? 'IAX Password' :
+                                                        column === 'Host' ? 'Host' :
+                                                        column === 'Type' ? 'Type' :
+                                                        column === 'Context' ? 'Context' : column
+                                                    }</th>
                                                     ))}
-                                                    {!hiddenColumns.includes('Actions') && <th className="text-end">Actions</th>}
+                                                    <th className="text-end">Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {currentItems.map((item, index) => (
                                                     <tr key={index} className="align-middle">
-                                                        {!hiddenColumns.includes('Nom d\'utilisateur') && <td>{item.display_username}</td>}
-                                                        {!hiddenColumns.includes('IAX User') && <td>{item.user_name}</td>}
-                                                        {!hiddenColumns.includes('IAX Pass') && <td>••••••••</td>}
-                                                        {!hiddenColumns.includes('Host') && <td>{item.host}</td>}
-                                                        {!hiddenColumns.includes('Type') && <td>{item.type}</td>}
-                                                        {!hiddenColumns.includes('Context') && <td>{item.context}</td>}
+                                                        {!hiddenColumns.includes('Username') && <td>{item.display_username || '-'}</td>}
+                                                        {!hiddenColumns.includes('IAX User') && <td>{item.user_name || '-'}</td>}
+                                                        {!hiddenColumns.includes('IAX Password') && <td>••••••••</td>}
+                                                        {!hiddenColumns.includes('Host') && <td>{item.host || '-'}</td>}
+                                                        {!hiddenColumns.includes('Type') && <td>{item.type || '-'}</td>}
+                                                        {!hiddenColumns.includes('Context') && <td>{item.context || '-'}</td>}
                                                         
-                                                        {!hiddenColumns.includes('Actions') && (
-                                                            <td className="text-end">
-                                                                <Button 
-                                                                    variant="outline-primary" 
-                                                                    size="sm" 
-                                                                    className="me-2" 
-                                                                    onClick={() => handleEdit(item)}
-                                                                    style={styles.actionBtn}
-                                                                >
-                                                                    <FaEdit />
-                                                                </Button>
-                                                                <Button 
-                                                                    variant="outline-danger" 
-                                                                    size="sm" 
-                                                                    onClick={() => handleDelete(item)}
-                                                                    style={styles.actionBtn}
-                                                                >
-                                                                    <FaTrash />
-                                                                </Button>
-                                                            </td>
-                                                        )}
+                                                        <td className="text-end">
+                                                            <Button 
+                                                                variant="outline-primary" 
+                                                                size="sm" 
+                                                                className="me-2" 
+                                                                onClick={() => handleEdit(item)}
+                                                                style={styles.actionBtn}
+                                                            >
+                                                                <FaEdit />
+                                                            </Button>
+                                                            <Button 
+                                                                variant="outline-danger" 
+                                                                size="sm" 
+                                                                onClick={() => handleDelete(item)}
+                                                                style={styles.actionBtn}
+                                                            >
+                                                                <FaTrash />
+                                                            </Button>
+                                                        </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -819,8 +830,8 @@ const IaxTable = () => {
                                 {filteredData.length > 0 && (
                                     <div className="d-flex justify-content-between align-items-center mt-4">
                                         <div className="text-muted small">
-                                            Affichage de {indexOfFirstItem + 1} à {Math.min(indexOfLastItem, filteredData.length)} sur {filteredData.length} entrées
-                                            {searchTerm && ` (filtrées depuis ${data.length} entrées totales)`}
+                                            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredData.length)} of {filteredData.length} entries
+                                            {searchTerm && ` (filtered from ${data.length} total entries)`}
                                         </div>
                                         <PaginationSection 
                                             currentPage={currentPage} 
@@ -838,7 +849,7 @@ const IaxTable = () => {
             {/* Modals */}
             <Modal show={showAddModal} onHide={() => setShowAddModal(false)} size="lg">
                 <Modal.Header closeButton>
-                    <Modal.Title>{isEditMode ? "Modifier l'utilisateur IAX" : "Ajouter un nouvel utilisateur IAX"}</Modal.Title>
+                    <Modal.Title>{isEditMode ? "Edit IAX User" : "Add New IAX User"}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form>
@@ -923,7 +934,7 @@ const IaxTable = () => {
                                             </div>
                                         </Form.Group>
                                     </Tab>
-                                    <Tab eventKey="NAT details" title="NAT details">
+                                    <Tab eventKey="NAT details" title="NAT Details">
                                         <Form.Group className="mb-3" controlId="formNAT">
                                             <Form.Label>NAT</Form.Label>
                                             <Form.Control 
@@ -934,7 +945,7 @@ const IaxTable = () => {
                                             />
                                         </Form.Group>
                                     </Tab>
-                                    <Tab eventKey="Supplementary info" title="Supplementary info">
+                                    <Tab eventKey="Supplementary info" title="Additional Info">
                                         <Form.Group className="mb-3" controlId="formContext">
                                             <Form.Label>Context</Form.Label>
                                             <Form.Control 
@@ -986,10 +997,10 @@ const IaxTable = () => {
                         </Modal.Body>
                         <Modal.Footer>
                             <Button variant="secondary" onClick={() => setShowAddModal(false)}>
-                                Fermer
+                                Close
                             </Button>
                             <Button variant="primary" onClick={isEditMode ? handleAddNew : handleAddNew} disabled={isLoading}>
-                                {isLoading ? 'Processing...' : (isEditMode ? 'Modifier' : 'Ajouter')}
+                                {isLoading ? 'Processing...' : (isEditMode ? 'Update' : 'Add')}
                             </Button>
                         </Modal.Footer>
                     </Modal>
@@ -999,17 +1010,17 @@ const IaxTable = () => {
                             <Modal.Title>Confirmer la suppression</Modal.Title>
                         </Modal.Header>
                         <Modal.Body>
-                            <p>Êtes-vous sûr de vouloir supprimer cet élément ?</p>
+                            <p>Are you sure you want to delete this item?</p>
                             {idFieldName && (
                                 <p><strong>ID ({idFieldName}):</strong> {deleteItemId}</p>
                             )}
                         </Modal.Body>
                         <Modal.Footer>
                             <Button variant="secondary" onClick={() => setDeleteItemId(null)}>
-                                Annuler
+                                Cancel
                             </Button>
                             <Button variant="danger" onClick={confirmDelete} disabled={isLoading}>
-                                {isLoading ? 'Deleting...' : 'Supprimer'}
+                                {isLoading ? 'Deleting...' : 'Delete'}
                             </Button>
                         </Modal.Footer>
                     </Modal>

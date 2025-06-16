@@ -237,15 +237,19 @@ const UsersTable = ({ users, selectedColumns, onEdit, onDelete, isLoading }) => 
                     variant="outline-primary"
                     onClick={() => onEdit(user.id)}
                     size="sm"
+                    className="p-1"
+                    title="Modifier"
                   >
-                    <FaEdit /> Modifier
+                    <FaEdit className="fs-5" />
                   </Button>
                   <Button
                     variant="outline-danger"
                     onClick={() => onDelete(user.id)}
                     size="sm"
+                    className="p-1"
+                    title="Supprimer"
                   >
-                    <FaTrash /> Supprimer
+                    <FaTrash className="fs-5" />
                   </Button>
                 </div>
               </td>
@@ -306,18 +310,18 @@ function Users() {
   const [showEditUserForm, setShowEditUserForm] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
 
-  // États pour les toasts
+  // States for toasts
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState("")
   const [toastType, setToastType] = useState("success") // success, danger, warning
 
-  // États pour New User
+  // States for New User
   const [newUser, setNewUser] = useState({
     username: "",
     password: "",
     group: "",
     plan: "",
-    language: "fr",
+    language: "en",
     status: "Active",
     country: "United States/Canada",
     description: "",
@@ -348,13 +352,13 @@ function Users() {
     restriction: "No",
   })
 
-  // États pour Edit User
+  // States for Edit User
   const [editUser, setEditUser] = useState({
     username: "",
     password: "",
     group: "",
     plan: "",
-    language: "fr",
+    language: "en",
     status: "Active",
     country: "United States/Canada",
     description: "",
@@ -385,32 +389,33 @@ function Users() {
     restriction: "No",
   })
 
-  // États pour les données supplémentaires
+  // States for additional data
   const [groups, setGroups] = useState([])
   const [plans, setPlans] = useState([])
 
-  // États pour la suppression
+  // States for deletion
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [userIdToDelete, setUserIdToDelete] = useState(null)
 
-  // États pour les erreurs
+  // Error states
   const [errors, setErrors] = useState("")
 
-  // Fonction pour afficher un toast
+  // Notification handling
   const showNotification = (message, type = "success") => {
     setToastMessage(message)
     setToastType(type)
     setShowToast(true)
+    setTimeout(() => setShowToast(false), 5000)
   }
 
-  // Colonnes disponibles
+  // Available columns
   const availableColumns = [
     "username",
     "credit",
     "plan_name",
     "group_name",
     "agent",
-    "active",
+    "status",
     "creationdate",
     "sip_count",
     "email",
@@ -434,7 +439,7 @@ function Users() {
     "last_notification",
   ]
 
-  // Fonctions pour récupérer les données
+  // Fetch groups
   const fetchGroup = () => {
     axios
       .get("http://localhost:5000/api/admin/users/groups")
@@ -443,12 +448,13 @@ function Users() {
       })
       .catch((err) => {
         console.error("Error fetching groups:", err)
-        setError("Erreur lors de la récupération des groupes")
+        setError("Error fetching groups")
       })
   }
 
   const [showPassword, setShowPassword] = useState(false)
 
+  // Generate secure password
   const generateSecurePassword = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()"
     let password = ""
@@ -458,6 +464,7 @@ function Users() {
     return password
   }
 
+  // Check password strength
   const checkPasswordStrength = (password) => {
     if (password.length === 0) return 0
     let strength = 0
@@ -475,18 +482,21 @@ function Users() {
     return strength
   }
 
+  // Get password strength color
   const getPasswordStrengthColor = (strength) => {
     if (strength <= 2) return "danger"
     if (strength <= 4) return "warning"
     return "success"
   }
 
+  // Get password strength text
   const getPasswordStrengthText = (strength) => {
     if (strength <= 2) return "Weak"
     if (strength <= 4) return "Medium"
     return "Strong"
   }
 
+  // Fetch plans
   const fetchPlan = () => {
     axios
       .get("http://localhost:5000/api/admin/users/plans")
@@ -495,7 +505,7 @@ function Users() {
       })
       .catch((err) => {
         console.error("Error fetching plans:", err)
-        setError("Erreur lors de la récupération des plans")
+        setError("Error fetching plans")
       })
   }
 
@@ -509,19 +519,19 @@ function Users() {
       })
       .catch((err) => {
         console.error("Error fetching users:", err)
-        setError("Erreur lors de la récupération des utilisateurs")
+        setError("Error fetching users")
         setLoading(false)
       })
   }
 
-  // Effet initial
+  // Initial effect
   useEffect(() => {
     fetchUsers()
     fetchGroup()
     fetchPlan()
   }, [])
 
-  // Gestion de la recherche
+  // Search handling
   const handleSearchChange = (e) => {
     const term = e.target.value.toLowerCase()
     setSearchTerm(term)
@@ -554,7 +564,7 @@ function Users() {
     }
   }
 
-  // Gestion des colonnes
+  // Column handling
   const handleColumnChange = (column) => {
     if (!selectedColumns.includes(column)) {
       setSelectedColumns((prevColumns) => [...prevColumns, column])
@@ -568,7 +578,7 @@ function Users() {
     }))
   }
 
-  // Export CSV
+  // CSV export
   const exportToCSV = () => {
     const csvContent = [
       selectedColumns.join(","),
@@ -584,7 +594,7 @@ function Users() {
     document.body.removeChild(a)
   }
 
-  // Gestion de la suppression
+  // Delete handling
   const handleDelete = (id) => {
     setUserIdToDelete(id)
     setShowConfirmModal(true)
@@ -596,19 +606,24 @@ function Users() {
       .then(() => {
         fetchUsers();
         setShowConfirmModal(false);
-        showNotification("Utilisateur supprimé avec succès", "success");
+        showNotification("User deleted successfully", "success");
       })
       .catch((err) => {
         console.error(err);
         if (err.response && err.response.data) {
-          showNotification(err.response.data.error, "danger"); // Display the error message
+          // Translate the error message if it's in French
+          let errorMessage = err.response.data.error;
+          if (errorMessage.includes("lié à des enregistrements DID")) {
+            errorMessage = "This user is linked to DID records. Please delete or reassign these records before deleting the user.";
+          }
+          showNotification(errorMessage, "danger");
         } else {
-          showNotification("Erreur lors de la suppression de l'utilisateur", "danger");
+          showNotification("Error deleting user", "danger");
         }
       });
   };
 
-  // Gestion des changements de formulaire
+  // Form change handling
   const handleNewUserChange = (e) => {
     const { name, value } = e.target
     // Ensure numberOfSipUsers is an integer
@@ -624,7 +639,7 @@ function Users() {
     setEditUser((prevState) => ({ ...prevState, [name]: value }))
   }
 
-  // Vérifier si le nom d'utilisateur existe déjà
+  // Check if username already exists
   const checkUsernameExists = async (username) => {
     try {
       const response = await axios.get("http://localhost:5000/api/admin/users/users")
@@ -636,14 +651,14 @@ function Users() {
     }
   }
 
-  // Soumission du formulaire New User
+  // New User form submission
   const handleNewUserSubmit = async (e) => {
     e.preventDefault()
 
-    // Vérifier si le nom d'utilisateur existe déjà
+    // Check if username already exists
     const usernameExists = await checkUsernameExists(newUser.username)
     if (usernameExists) {
-      showNotification("Ce nom d'utilisateur existe déjà", "danger")
+      showNotification("This username already exists", "danger")
       return
     }
 
@@ -717,26 +732,40 @@ function Users() {
         password: "",
         group: "",
         plan: "",
-        language: "fr",
+        language: "en",
         status: "Active",
         country: "United States/Canada",
         description: "",
         numberOfSipUsers: 1,
         numberOfIax: 1,
       })
-      showNotification("Utilisateur ajouté avec succès", "success")
+      showNotification("User added successfully", "success")
     } catch (error) {
       console.error("Error adding user:", error)
-      showNotification("Erreur lors de l'ajout de l'utilisateur", "danger")
+      showNotification("Error adding user", "danger")
     }
   }
 
   // Alias for handleNewUserSubmit to use with the add modal
   const handleAddUserSubmit = handleNewUserSubmit;
   
-  // Soumission du formulaire Edit User
+  // Edit User form submission
   const handleEditUserSubmit = async (e) => {
     e.preventDefault()
+
+    // Map status to the correct value
+    const statusMapping = {
+      'Active': 1,
+      'Inactive': 0,
+      'Pending': 2,
+      'Blocked': 3,
+      'Blocked In Out': 4
+    };
+    
+    // Get the numeric status value from the mapping
+    const activeStatus = statusMapping[editUser.status] !== undefined 
+      ? statusMapping[editUser.status] 
+      : 1; // Default to Active if status not recognized
 
     // Create a more complete userData object with all fields
     const userData = {
@@ -744,7 +773,7 @@ function Users() {
       id_group: editUser.group,
       id_plan: editUser.plan,
       language: editUser.language,
-      active: editUser.status,
+      active: activeStatus, // Use the mapped numeric value
       email: editUser.Email,
       firstname: editUser.firstname,
       city: editUser.city,
@@ -787,10 +816,10 @@ function Users() {
       fetchUsers()
       setShowEditUserForm(false)
       resetEditUserForm()
-      showNotification("Utilisateur modifié avec succès", "success")
+      showNotification("User updated successfully", "success")
     } catch (error) {
       console.error("Error updating user:", error)
-      showNotification("Erreur lors de la modification de l'utilisateur", "danger")
+      showNotification("Error updating user", "danger")
     }
   }
 
@@ -802,7 +831,7 @@ function Users() {
       password: "",
       group: "",
       plan: "",
-      language: "fr",
+      language: "en",
       status: "Active",
       country: "United States/Canada",
       description: "",
@@ -810,7 +839,7 @@ function Users() {
     })
   }
 
-  // Édition d'un utilisateur
+  // Edit a user
   const handleEdit = (id) => {
     // First, fetch the complete user data from the backend
     axios
@@ -841,12 +870,12 @@ function Users() {
 
     // Map active status to the correct value
     let statusValue
-    if (userToEdit.active === 1) statusValue = "1"
-    else if (userToEdit.active === 0) statusValue = "0"
-    else if (userToEdit.active === 2) statusValue = "2"
-    else if (userToEdit.active === 3) statusValue = "3"
-    else if (userToEdit.active === 4) statusValue = "4"
-    else statusValue = "1" // Default to active if unknown
+    if (userToEdit.active === 1) statusValue = "Active"
+    else if (userToEdit.active === 0) statusValue = "Inactive"
+    else if (userToEdit.active === 2) statusValue = "Pending"
+    else if (userToEdit.active === 3) statusValue = "Blocked"
+    else if (userToEdit.active === 4) statusValue = "Blocked In Out"
+    else statusValue = "Active" // Default to active if unknown
 
     setEditUser({
       id: userToEdit.id,
@@ -854,43 +883,41 @@ function Users() {
       password: userToEdit.password || "", // Use existing password if available
       group: userToEdit.id_group || "",
       plan: userToEdit.id_plan || "",
-      language: userToEdit.language || "fr",
+      language: userToEdit.language || "en",
       status: statusValue,
       country: userToEdit.country || "United States/Canada",
       description: userToEdit.description || "",
       company: userToEdit.company || "",
-      companyn: userToEdit.company_name || "",
-      commercialco: userToEdit.commercial_name || "",
-      state: userToEdit.state_number || "",
+      company_name: userToEdit.company_name || "",
+      commercial_name: userToEdit.commercial_name || "",
+      state_number: userToEdit.state_number || "",
       firstname: userToEdit.firstname || "",
       city: userToEdit.city || "",
       adresse: userToEdit.address || "",
-      Neighborhood: userToEdit.neighborhood || "",
-      Zipcode: userToEdit.zip_code || "",
-      Phone: userToEdit.phone || "",
-      Mobile: userToEdit.mobile || "",
-      Email: userToEdit.email || "",
-      Email2: userToEdit.email2 || "",
-      DOC: userToEdit.doc || "",
-      VAT: userToEdit.vat || "",
-      Contractvalue: userToEdit.contract_value || "",
-      DIST: userToEdit.dist || "",
+      neighborhood: userToEdit.neighborhood || "",
+      zipcode: userToEdit.zip_code || "",
+      phone: userToEdit.phone || "",
+      mobile: userToEdit.mobile || "",
+      email: userToEdit.email || "",
+      email2: userToEdit.email2 || "",
+      doc: userToEdit.doc || "",
+      vat: userToEdit.vat || "",
+      contract_value: userToEdit.contract_value || "",
+      dist: userToEdit.dist || "",
       numberOfSipUsers: userToEdit.sip_count || 0,
       numberOfIax: userToEdit.iax_count || 0,
       expirationDate: userToEdit.expiration_date || "",
       call: userToEdit.call_limit || "",
-      DIsk: userToEdit.disk_space || "",
-      sip: userToEdit.sip_account_limit || "",
-      pin: userToEdit.callingcard_pin || "",
+      disk_space: userToEdit.disk_space || "",
+      sip_account_limit: userToEdit.sip_account_limit || "",
+      callingcard_pin: userToEdit.callingcard_pin || "",
       restriction: userToEdit.restriction || "No",
     })
 
     setShowEditUserForm(true)
   }
 
-  // Affichage pendant le chargement - Maintenant géré par le composant UsersTable
-
-  // Rendu principal
+  // Render the main content
   return (
     <div
       className="min-vh-100 users-page"
@@ -1053,11 +1080,11 @@ function Users() {
               {toastType === "warning" && <FaExclamationCircle className="text-warning" size={18} />}
             </div>
             <strong className="me-auto fw-semibold">
-              {toastType === "success" && "Succès"}
-              {toastType === "danger" && "Erreur"}
-              {toastType === "warning" && "Attention"}
+              {toastType === "success" && "Success"}
+              {toastType === "danger" && "Error"}
+              {toastType === "warning" && "Warning"}
             </strong>
-            <small className="text-muted">à l'instant</small>
+            <small className="text-muted">just now</small>
           </Toast.Header>
           <Toast.Body className="bg-white text-dark py-3">{toastMessage}</Toast.Body>
         </Toast>
@@ -1078,26 +1105,16 @@ function Users() {
             <Card className="shadow-lg border-0 mb-4" style={{ borderRadius: "12px", overflow: "hidden" }}>
               <Card.Header className="d-flex flex-wrap align-items-center p-0 rounded-top overflow-hidden">
                 <div className="bg-primary p-3 w-100 position-relative">
-                  <div className="position-absolute top-0 end-0 p-2 d-none d-md-block">
-                    {Array(5).fill().map((_, i) => (
-                      <div key={i} className="floating-icon position-absolute" style={{
-                        top: `${Math.random() * 100}%`,
-                        left: `${Math.random() * 100}%`,
-                        animationDelay: `${i * 0.5}s`,
-                      }}>
-                        <FaUsers className="text-white opacity-25" style={{
-                          fontSize: `${Math.random() * 1.5 + 0.5}rem`,
-                        }} />
-                      </div>
-                    ))}
+                  <div className="position-absolute top-50 start-0 translate-middle-y ps-3 search-icon">
+                    <FaSearch className="text-white" />
                   </div>
                   <div className="d-flex align-items-center position-relative z-2">
                     <div className="bg-white rounded-circle p-3 me-3 shadow" style={{ animation: "pulse 2s infinite" }}>
                       <FaUsers className="text-primary fs-3" />
                     </div>
                     <div>
-                      <h2 className="fw-bold mb-0 text-white">Gestion des Utilisateurs</h2>
-                      <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos utilisateurs facilement</p>
+                      <h2 className="fw-bold mb-0 text-white">User Management</h2>
+                      <p className="text-white-50 mb-0 d-none d-md-block">Manage your users easily</p>
                     </div>
                   </div>
                 </div>
@@ -1119,7 +1136,7 @@ function Users() {
                       <div className="icon-container">
                         <FaUserPlus />
                       </div>
-                      <span>Ajouter</span>
+                      <span>Add</span>
                     </Button>
                     <Button
                       variant="success"
@@ -1129,7 +1146,7 @@ function Users() {
                       <div className="icon-container">
                         <FaDownload />
                       </div>
-                      <span>Exporter</span>
+                      <span>Export</span>
                     </Button>
                   </div>
                 </div>
@@ -1150,7 +1167,7 @@ function Users() {
                       </div>
                       <Form.Control
                         type="text"
-                        placeholder="Rechercher un utilisateur..."
+                        placeholder="Search for a user..."
                         value={searchTerm}
                         onChange={handleSearchChange}
                         className="py-2 ps-5 shadow-sm border-0 search-input"
@@ -1165,10 +1182,10 @@ function Users() {
                   </Col>
                   <Col md={6} lg={4} className="ms-auto d-flex justify-content-end align-items-center">
                     <div className="d-flex align-items-center gap-2">
-                      <span className="text-muted">Colonnes:</span>
+                      <span className="text-muted">Columns:</span>
                       <Dropdown>
                         <Dropdown.Toggle variant="light" id="dropdown-columns" className="d-flex align-items-center gap-2">
-                          <FaFilter size={14} /> Filtrer
+                          <FaFilter size={14} /> Filter
                         </Dropdown.Toggle>
                         <Dropdown.Menu>
                           {availableColumns.map((col) => (
@@ -1190,7 +1207,7 @@ function Users() {
       <Modal show={showAddModal} onHide={() => setShowAddModal(false)} size="lg" centered dialogClassName="modal-90w">
         <Modal.Header closeButton className="bg-primary text-white">
           <Modal.Title className="d-flex align-items-center">
-            <FaUserPlus className="me-2" /> Ajouter un nouvel utilisateur
+            <FaUserPlus className="me-2" /> Add a new user
           </Modal.Title>
         </Modal.Header>
         <Modal.Body className="p-4">
@@ -1202,7 +1219,7 @@ function Users() {
             variant="pills"
             fill
           >
-            <Tab eventKey="basicInfo" title={<span><FaUser className="me-2" /> Informations de base</span>}>
+            <Tab eventKey="basicInfo" title={<span><FaUser className="me-2" /> Basic Information</span>}>
                 <Form.Group controlId="formUsername" className="mb-3">
                   {errors && <div className="alert alert-danger">{errors}</div>}
                   <Form.Label>Username</Form.Label>
@@ -1284,8 +1301,8 @@ function Users() {
                     onChange={handleNewUserChange}
                     required
                   >
-                    <option value="fr">Français</option>
                     <option value="en">English</option>
+                    <option value="fr">French</option>
                     <option value="sp">Spanish</option>
                     <option value="it">Portuguese</option>
                     <option value="rs">Russian</option>
@@ -1682,8 +1699,8 @@ function Users() {
                     onChange={handleEditUserChange}
                     required
                   >
-                    <option value="fr">Français</option>
                     <option value="en">English</option>
+                    <option value="fr">French</option>
                     <option value="sp">Spanish</option>
                     <option value="it">Portuguese</option>
                     <option value="rs">Russian</option>
@@ -1699,11 +1716,11 @@ function Users() {
                     onChange={handleEditUserChange}
                     required
                   >
-                    <option value="1">Active</option>
-                    <option value="0">Inactive</option>
-                    <option value="2">Pending</option>
-                    <option value="3">Blocked</option>
-                    <option value="4">Blocked In Out</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Blocked">Blocked</option>
+                    <option value="Blocked In Out">Blocked In Out</option>
                   </Form.Control>
                 </Form.Group>
 
@@ -1857,13 +1874,13 @@ function Users() {
         <Modal.Header closeButton>
           <Modal.Title>Confirmation</Modal.Title>
         </Modal.Header>
-        <Modal.Body>Êtes-vous sûr de vouloir supprimer cet utilisateur ?</Modal.Body>
+        <Modal.Body>Are you sure you want to delete this user?</Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>
-            Annuler
+            Cancel
           </Button>
           <Button variant="danger" onClick={confirmDelete}>
-            Supprimer
+            Delete
           </Button>
         </Modal.Footer>
       </Modal>
@@ -1879,7 +1896,7 @@ function Users() {
                   {loading ? (
                     <div className="text-center py-5">
                       <Spinner animation="border" variant="primary" />
-                      <p className="mt-2">Chargement des données...</p>
+                      <p className="mt-2">Loading data...</p>
                     </div>
                   ) : currentUsers.length === 0 ? (
                     <div className="text-center py-5 my-4 empty-state">
@@ -1903,13 +1920,13 @@ function Users() {
                           <FaUsers className="text-primary" />
                         </div>
                       </div>
-                      <h4 className="text-dark mb-3">Aucun utilisateur trouvé</h4>
-                      <p className="text-muted mb-4">Ajoutez un nouvel utilisateur ou modifiez votre recherche</p>
+                      <h4 className="text-dark mb-3">No users found</h4>
+                      <p className="text-muted mb-4">Add a new user or modify your search</p>
                       <Button variant="primary" onClick={() => window.location.reload()} className="btn-hover-effect">
                         <div className="icon-container me-2">
                           <FaSyncAlt />
                         </div>
-                        Rafraîchir la page
+                        Refresh page
                       </Button>
                     </div>
                   ) : (
@@ -2006,11 +2023,11 @@ function Users() {
                                        user[col] === 3 ? <FaLock /> :
                                        <FaUnlock />}
                                     </span>{" "}
-                                    {user[col] === 1 ? "Actif" :
-                                     user[col] === 0 ? "Inactif" :
-                                     user[col] === 2 ? "En attente" :
-                                     user[col] === 3 ? "Bloqué" :
-                                     "Autre"}
+                                    {user[col] === 1 ? "Active" :
+                                     user[col] === 0 ? "Inactive" :
+                                     user[col] === 2 ? "Pending" :
+                                     user[col] === 3 ? "Blocked" :
+                                     "Other"}
                                   </Badge>
                                 ) : user[col] !== null && user[col] !== undefined ? (
                                   user[col].toString()
@@ -2030,7 +2047,7 @@ function Users() {
                                   <span className="btn-icon">
                                     <FaEdit />
                                   </span>{" "}
-                                  Modifier
+                                  Edit
                                 </Button>
                                 <Button
                                   variant="outline-danger"
@@ -2041,7 +2058,7 @@ function Users() {
                                   <span className="btn-icon">
                                     <FaTrash />
                                   </span>{" "}
-                                  Supprimer
+                                  Delete
                                 </Button>
                               </div>
                             </td>
@@ -2057,11 +2074,11 @@ function Users() {
                     {!loading && (
                       <>
                         <Badge bg="light" text="dark" className="me-2 shadow-sm">
-                          <span className="fw-semibold">{currentUsers.length}</span> sur {filteredUsers.length} Utilisateurs
+                          <span className="fw-semibold">{currentUsers.length}</span> of {filteredUsers.length} Users
                         </Badge>
                         {searchTerm && (
                           <Badge bg="light" text="dark" className="shadow-sm">
-                            Filtrés de {users.length} total
+                            Filtered from {users.length} total
                           </Badge>
                         )}
                       </>
@@ -2097,9 +2114,9 @@ function Users() {
             </Card>
           </Col>
         </Row>
-      </Container>
-    </div>
-  )
+</Container>
+</div>
+)
 }
 
 export default Users

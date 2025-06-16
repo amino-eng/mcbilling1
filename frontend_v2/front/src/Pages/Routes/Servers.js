@@ -306,7 +306,7 @@ export default function ServersRefactored() {
       dispatch({ type: ACTIONS.FETCH_SUCCESS, payload: formattedServers })
     } catch (err) {
       console.error(err)
-      dispatch({ type: ACTIONS.FETCH_ERROR, payload: "Échec du chargement des serveurs" })
+      dispatch({ type: ACTIONS.FETCH_ERROR, payload: "Failed to load servers" })
     }
   }, [])
 
@@ -339,7 +339,7 @@ export default function ServersRefactored() {
   const handleSubmit = async () => {
     // Validate required fields
     if (!formData.name || !formData.host || !formData.username) {
-      dispatch({ type: ACTIONS.SET_ERROR, payload: "Name, host et username sont requis" })
+      dispatch({ type: ACTIONS.SET_ERROR, payload: "Name, host and username are required" })
       return
     }
 
@@ -363,10 +363,10 @@ export default function ServersRefactored() {
       if (serverToEdit) {
         const response = await axios.put(`${API_BASE}/modifier/${serverToEdit.id}`, payload)
         console.log("Server update response:", response.data)
-        dispatch({ type: ACTIONS.SET_SUCCESS_MESSAGE, payload: "Serveur modifié avec succès" })
+        dispatch({ type: ACTIONS.SET_SUCCESS_MESSAGE, payload: "Server updated successfully" })
       } else {
         await axios.post(`${API_BASE}/ajouter`, payload)
-        dispatch({ type: ACTIONS.SET_SUCCESS_MESSAGE, payload: "Serveur ajouté avec succès" })
+        dispatch({ type: ACTIONS.SET_SUCCESS_MESSAGE, payload: "Server added successfully" })
       }
 
       fetchServers()
@@ -375,21 +375,21 @@ export default function ServersRefactored() {
       console.error("Error submitting server:", err.response || err)
       dispatch({
         type: ACTIONS.SET_ERROR,
-        payload: err.response?.data?.error || "Erreur réseau",
+        payload: err.response?.data?.error || "Network error",
       })
     }
   }
 
   // Handle server deletion
   const handleDelete = async (id) => {
-    if (!window.confirm("Confirmer la suppression ?")) return
+    if (!window.confirm("Confirm deletion?")) return
 
     try {
       await axios.delete(`${API_BASE}/supprimer/${id}`)
-      dispatch({ type: ACTIONS.SET_SUCCESS_MESSAGE, payload: "Serveur supprimé avec succès" })
+      dispatch({ type: ACTIONS.SET_SUCCESS_MESSAGE, payload: "Server deleted successfully" })
       fetchServers()
     } catch (err) {
-      dispatch({ type: ACTIONS.SET_ERROR, payload: "Erreur lors de la suppression" })
+      dispatch({ type: ACTIONS.SET_ERROR, payload: "Error during deletion" })
     }
   }
 
@@ -428,7 +428,7 @@ export default function ServersRefactored() {
 
       dispatch({
         type: ACTIONS.SET_SUCCESS_MESSAGE,
-        payload: `Statut du serveur changé à ${newStatus == 1 ? "Actif" : "Inactif"}`,
+        payload: `Server status changed to ${newStatus == 1 ? "Active" : "Inactive"}`,
       })
 
       // Refresh the server list to ensure consistency with the database
@@ -437,7 +437,7 @@ export default function ServersRefactored() {
       console.error("Error updating status:", err.response || err)
       dispatch({
         type: ACTIONS.SET_ERROR,
-        payload: "Erreur lors de la modification du statut",
+        payload: "Error updating status",
       })
       // Revert the optimistic update on error by refreshing data
       fetchServers()
@@ -454,7 +454,7 @@ export default function ServersRefactored() {
       server.username,
       server.port || "-",
       server.sip_port || "-",
-      server.status == 1 ? "Actif" : "Inactif",
+      server.status == 1 ? "Active" : "Inactive",
       server.type,
       server.description || "-",
     ]),
@@ -544,8 +544,8 @@ export default function ServersRefactored() {
                     <FaServer className="text-primary fs-3" />
                   </div>
                   <div>
-                    <h2 className="fw-bold mb-0 text-white">Gestion des Serveurs</h2>
-                    <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos serveurs VoIP</p>
+                    <h2 className="fw-bold mb-0 text-white">Server Management</h2>
+                    <p className="text-white-50 mb-0 d-none d-md-block">Manage your VoIP servers</p>
                   </div>
                 </div>
               </div>
@@ -571,7 +571,7 @@ export default function ServersRefactored() {
                     className="d-flex align-items-center gap-1"
                   >
                     <BiRefresh className={isLoading ? "spin" : ""} />
-                    <span className="d-none d-md-inline">Rafraîchir</span>
+                    <span className="d-none d-md-inline">Refresh</span>
                   </Button>
                 </div>
                 <div className="d-flex gap-2">
@@ -586,7 +586,7 @@ export default function ServersRefactored() {
                     <div className="icon-container">
                       <BiPlusCircle />
                     </div>
-                    <span>Ajouter</span>
+                    <span>Add</span>
                   </Button>
                   <CSVLink
                     data={csvData}
@@ -597,7 +597,7 @@ export default function ServersRefactored() {
                     <div className="icon-container">
                       {isExporting ? <Spinner animation="border" size="sm" /> : <BiDownload />}
                     </div>
-                    <span>{isExporting ? "Exportation..." : "Exporter"}</span>
+                    <span>{isExporting ? "Exporting..." : "Export"}</span>
                   </CSVLink>
                 </div>
               </div>
@@ -637,7 +637,7 @@ export default function ServersRefactored() {
                       <BiSearch />
                     </InputGroup.Text>
                     <Form.Control
-                      placeholder="Rechercher par nom..."
+                      placeholder="Search by name..."
                       value={searchTerm}
                       onChange={(e) =>
                         dispatch({
@@ -658,16 +658,16 @@ export default function ServersRefactored() {
                 </div>
               ) : paginatedServers.length === 0 ? (
                 <Alert variant="info" className="text-center my-4">
-                  Aucun serveur trouvé
+                  No servers found
                 </Alert>
               ) : (
                 <Table hover className="align-middle">
                   <thead>
                     <tr>
-                      <th>Nom</th>
-                      <th>Hôte</th>
-                      <th>Utilisateur</th>
-                      <th>Statut</th>
+                      <th>Name</th>
+                      <th>Host</th>
+                      <th>Username</th>
+                      <th>Status</th>
                       <th>Type</th>
                       <th className="text-end">Actions</th>
                     </tr>
@@ -692,7 +692,7 @@ export default function ServersRefactored() {
                             ) : (
                               <BiXCircle size={14} />
                             )}
-                            <span>{server.status == 1 ? "Actif" : "Inactif"}</span>
+                            <span>{server.status == 1 ? "Active" : "Inactive"}</span>
                           </Badge>
                         </td>
                         <td>
@@ -738,12 +738,12 @@ export default function ServersRefactored() {
                     {!isLoading && (
                       <>
                         <Badge bg="light" text="dark" className="me-2 shadow-sm">
-                          <span className="fw-semibold">{paginatedServers.length}</span> sur {filteredServers.length}{" "}
-                          Serveurs
+                          <span className="fw-semibold">{paginatedServers.length}</span> of {filteredServers.length}{' '}
+                          Servers
                         </Badge>
                         {searchTerm && (
                           <Badge bg="light" text="dark" className="shadow-sm">
-                            Filtrés de {servers.length} total
+                            Filtered from {servers.length} total
                           </Badge>
                         )}
                       </>
@@ -761,7 +761,7 @@ export default function ServersRefactored() {
                         })
                       }
                     >
-                      Précédent
+                      Previous
                     </Button>
                     <Button
                       variant="outline-primary"
@@ -774,7 +774,7 @@ export default function ServersRefactored() {
                         })
                       }
                     >
-                      Suivant
+                      Next
                     </Button>
                   </div>
                 </div>
@@ -787,12 +787,12 @@ export default function ServersRefactored() {
       {/* Add/Edit Server Modal */}
       <Modal show={showAddModal} onHide={() => dispatch({ type: ACTIONS.HIDE_MODAL })} size="lg" backdrop="static">
         <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title className="fw-bold">{serverToEdit ? "Modifier Serveur" : "Ajouter Serveur"}</Modal.Title>
+          <Modal.Title className="fw-bold">{serverToEdit ? "Edit Server" : "Add Server"}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="pt-0">
           <Row>
             {[
-              ["name", "Nom", "text"],
+              ["name", "Name", "text"],
               ["host", "Host", "text"],
               ["public_ip", "Public IP", "text"],
               ["username", "Username", "text"],
@@ -846,10 +846,10 @@ export default function ServersRefactored() {
             </Col>
 
             <Col md={6} className="mb-3">
-              <Form.Label className="fw-semibold small text-muted">Statut</Form.Label>
+              <Form.Label className="fw-semibold small text-muted">Status</Form.Label>
               <Form.Select name="status" value={formData.status} onChange={handleChange}>
-                <option value={1}>Actif</option>
-                <option value={0}>Inactif</option>
+                <option value={1}>Active</option>
+                <option value={0}>Inactive</option>
               </Form.Select>
             </Col>
 
@@ -867,10 +867,10 @@ export default function ServersRefactored() {
         </Modal.Body>
         <Modal.Footer className="border-0">
           <Button variant="light" onClick={() => dispatch({ type: ACTIONS.HIDE_MODAL })}>
-            Annuler
+            Cancel
           </Button>
           <Button variant="primary" onClick={handleSubmit}>
-            {serverToEdit ? "Enregistrer" : "Ajouter"}
+            {serverToEdit ? "Save" : "Add"}
           </Button>
         </Modal.Footer>
       </Modal>

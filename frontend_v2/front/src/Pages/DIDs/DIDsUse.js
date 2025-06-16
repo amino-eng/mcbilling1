@@ -24,11 +24,11 @@ import {
 
 const columnDisplayNames = {
   DID: "DID",
-  Username: "Nom d'utilisateur",
-  MonthPayed: "Mois Payé",
-  ReservationDate: "Date de Réservation",
-  ReleaseDate: "Date de Libération",
-  NextDueDate: "Prochaine Échéance"
+  Username: "Username",
+  MonthPayed: "Month Paid",
+  ReservationDate: "Reservation Date",
+  ReleaseDate: "Release Date",
+  NextDueDate: "Next Due Date"
 };
 
 // Constants
@@ -66,8 +66,8 @@ function DIDsUseHeader({ dids, onExportClick, onToggleColumnSelector, isExportin
             <FaCalendarAlt className="text-primary fs-3" />
           </div>
           <div>
-            <h2 className="fw-bold mb-0 text-white">Utilisation des DIDs</h2>
-            <p className="text-white-50 mb-0 d-none d-md-block">Suivez et gérez l'utilisation des DIDs dans votre système</p>
+            <h2 className="fw-bold mb-0 text-white">DID Usage</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Track and manage DID usage in your system</p>
           </div>
         </div>
       </div>
@@ -95,7 +95,7 @@ function DIDsUseHeader({ dids, onExportClick, onToggleColumnSelector, isExportin
             <div className="icon-container">
               {isExporting ? <Spinner animation="border" size="sm" /> : <FaDownload />}
             </div>
-            <span>Exporter CSV</span>
+            <span>Export CSV</span>
           </Button>
           <Button
             variant="secondary"
@@ -105,7 +105,7 @@ function DIDsUseHeader({ dids, onExportClick, onToggleColumnSelector, isExportin
             <div className="icon-container">
               <FaEye />
             </div>
-            <span>Afficher/Masquer les colonnes</span>
+            <span>Show/Hide Columns</span>
           </Button>
         </div>
       </div>
@@ -119,7 +119,7 @@ function ColumnSelector({ visibleColumns, onColumnToggle }) {
     <Card className="mb-4 shadow-sm border-0 overflow-hidden">
       <Card.Header className="bg-light d-flex align-items-center">
         <FaCog className="text-primary me-2" />
-        <h5 className="mb-0 fw-semibold">Personnaliser les colonnes visibles</h5>
+        <h5 className="mb-0 fw-semibold">Customize Visible Columns</h5>
       </Card.Header>
       <Card.Body className="p-3">
         <Row>
@@ -147,7 +147,7 @@ function DIDsUseTable({ dids, visibleColumns, formatDate, isLoading }) {
     return (
       <div className="text-center py-5">
         <Spinner animation="border" variant="primary" />
-        <p className="mt-3 text-muted">Chargement des données d'utilisation des DID...</p>
+        <p className="mt-3 text-muted">Loading DID usage data...</p>
       </div>
     )
   }
@@ -156,7 +156,7 @@ function DIDsUseTable({ dids, visibleColumns, formatDate, isLoading }) {
     return (
       <div className="text-center py-5 bg-light rounded">
         <FaPhoneAlt className="text-muted mb-3" size={40} />
-        <h5 className="text-muted">Aucune donnée d'utilisation des DID disponible</h5>
+        <h5 className="text-muted">No DID usage data available</h5>
       </div>
     )
   }

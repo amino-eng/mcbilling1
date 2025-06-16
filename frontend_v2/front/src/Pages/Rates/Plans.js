@@ -31,7 +31,7 @@ const DEFAULT_MODAL_DATA = {
 // Header Component
 function PlansHeader({ onAddClick, plans, isExporting = false }) {
   const csvData = [
-    ["Nom", "Tech Prefix", "Date de création", "Utiliser lors de l'inscription", "Alertes audio", "Services"],
+    ["Name", "Tech Prefix", "Creation Date", "Use on Signup", "Audio Alerts", "Services"],
     ...plans.map(plan => [
       plan.name,
       plan.techprefix,
@@ -72,8 +72,8 @@ function PlansHeader({ onAddClick, plans, isExporting = false }) {
             <FaFileAlt className="text-primary fs-3" />
           </div>
           <div>
-            <h2 className="fw-bold mb-0 text-white">Liste des Plans</h2>
-            <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos plans facilement</p>
+            <h2 className="fw-bold mb-0 text-white">Plans List</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Manage your plans easily</p>
           </div>
         </div>
       </div>
@@ -100,7 +100,7 @@ function PlansHeader({ onAddClick, plans, isExporting = false }) {
             <div className="icon-container">
               <FaPlusCircle />
             </div>
-            <span>Ajouter</span>
+            <span>Add</span>
           </Button>
           <CSVLink
             data={csvData}
@@ -111,7 +111,7 @@ function PlansHeader({ onAddClick, plans, isExporting = false }) {
             <div className="icon-container">
               {isExporting ? <Spinner animation="border" size="sm" /> : <FaDownload />}
             </div>
-            <span>{isExporting ? "Exportation..." : "Exporter CSV"}</span>
+            <span>{isExporting ? "Exporting..." : "Export CSV"}</span>
           </CSVLink>
         </div>
       </div>
@@ -129,7 +129,7 @@ function SearchBar({ searchTerm, onSearchChange }) {
         </span>
         <Form.Control
           type="text"
-          placeholder="Recherche par nom"
+          placeholder="Search by name"
           value={searchTerm}
           onChange={onSearchChange}
           className="border-start-0 shadow-none ps-0"
@@ -148,7 +148,7 @@ function ActionButtons({ onEdit, onDelete }) {
         variant="light"
         className="d-flex align-items-center justify-content-center p-2 rounded-circle action-btn"
         onClick={onEdit}
-        title="Modifier"
+        title="Update"
       >
         <FaEdit className="btn-icon text-primary" />
       </Button>
@@ -157,7 +157,7 @@ function ActionButtons({ onEdit, onDelete }) {
         variant="light"
         className="d-flex align-items-center justify-content-center p-2 rounded-circle action-btn"
         onClick={onDelete}
-        title="Supprimer"
+        title="Delete"
       >
         <FaTrashAlt className="btn-icon text-danger" />
       </Button>
@@ -172,8 +172,8 @@ function EmptyState() {
       <div className="mb-3">
         <FaFileAlt size={48} className="text-muted" />
       </div>
-      <h5>Aucun plan trouvé</h5>
-      <p className="text-muted">Aucun plan ne correspond à votre recherche</p>
+      <h5>No plan found</h5>
+      <p className="text-muted">No plan matches your search</p>
     </div>
   );
 }
@@ -184,7 +184,7 @@ function PlansTableComponent({ plans, onEdit, onDelete, isLoading }) {
     return (
       <div className="text-center py-5">
         <Spinner animation="border" variant="primary" />
-        <p className="mt-3 text-muted">Chargement des plans...</p>
+        <p className="mt-3 text-muted">Loading plans...</p>
       </div>
     );
   }
@@ -198,9 +198,9 @@ function PlansTableComponent({ plans, onEdit, onDelete, isLoading }) {
       <Table hover className="align-middle mb-0 bg-white">
         <thead className="bg-light">
           <tr>
-            <th className="fw-semibold">Nom</th>
+            <th className="fw-semibold">Name</th>
             <th className="fw-semibold">Tech Prefix</th>
-            <th className="fw-semibold">Date de création</th>
+            <th className="fw-semibold">Creation Date</th>
             <th className="fw-semibold text-center">Actions</th>
           </tr>
         </thead>
@@ -282,7 +282,7 @@ function PlanModal({
         </Modal.Header>
         <Modal.Body>
           <Form.Group className="mb-3">
-            <Form.Label className="fw-semibold">Nom</Form.Label>
+            <Form.Label className="fw-semibold">Name</Form.Label>
             <Form.Control
               type="text"
               value={modalData.name}
@@ -292,26 +292,26 @@ function PlanModal({
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label className="fw-semibold">Utiliser lors de l'inscription</Form.Label>
+            <Form.Label className="fw-semibold">Use on signup</Form.Label>
             <Form.Select
               value={modalData.useOnSignup}
               onChange={(e) => onInputChange({ ...modalData, useOnSignup: e.target.value })}
               className="shadow-none"
             >
-              <option value="No">Non</option>
-              <option value="Yes">Oui</option>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
             </Form.Select>
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label className="fw-semibold">Alertes audio</Form.Label>
+            <Form.Label className="fw-semibold">Audio alerts</Form.Label>
             <Form.Select
               value={modalData.noticesWithAudio}
               onChange={(e) => onInputChange({ ...modalData, noticesWithAudio: e.target.value })}
               className="shadow-none"
             >
-              <option value="Yes">Oui</option>
-              <option value="No">Non</option>
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
             </Form.Select>
           </Form.Group>
 
@@ -330,7 +330,7 @@ function PlanModal({
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label className="fw-semibold">Sélectionnez un ou plusieurs services</Form.Label>
+            <Form.Label className="fw-semibold">Select one or more services</Form.Label>
             <Form.Select
               multiple
               value={modalData.services}
@@ -348,7 +348,7 @@ function PlanModal({
         </Modal.Body>
         <Modal.Footer className="bg-light">
           <Button variant="outline-secondary" onClick={onHide}>
-            Annuler
+            Cancel
           </Button>
           <Button
             variant="primary"
@@ -357,7 +357,7 @@ function PlanModal({
             className="d-flex align-items-center gap-2"
           >
             {isSubmitting && <Spinner animation="border" size="sm" />}
-            {modalData.id ? "Modifier" : "Ajouter"}
+            {modalData.id ? "Update" : "Add"}
           </Button>
         </Modal.Footer>
       </Form>
@@ -405,7 +405,7 @@ const PlansTable = () => {
       setIsLoading(false);
     } catch (error) {
       console.error("Erreur de chargement:", error);
-      setError("Erreur lors du chargement des plans. Veuillez réessayer.");
+      setError("Error loading plans. Please try again.");
       setIsLoading(false);
     }
   };
@@ -416,7 +416,7 @@ const PlansTable = () => {
       setAvailablePlans(res.data.plans);
     } catch (error) {
       console.error("Erreur de chargement:", error);
-      setError("Erreur lors du chargement des plans disponibles.");
+      setError("Error loading available plans.");
     }
   };
 
@@ -441,7 +441,7 @@ const PlansTable = () => {
 
   const handleModalSubmit = async () => {
     if (!modalData.name && !modalData.selectedPlan) {
-      setError("Veuillez sélectionner un plan ou saisir un nom.");
+      setError("Please select a plan or enter a name.");
       return;
     }
 
@@ -449,20 +449,20 @@ const PlansTable = () => {
     try {
       if (modalData.id) {
         await axios.put(`http://localhost:5000/api/admin/Plans/modifier/${modalData.id}`, modalData);
-        setSuccessMessage("Plan modifié avec succès!");
+        setSuccessMessage("Plan updated successfully!");
         // Show alert after modification
-        alert("Plan modifié avec succès!");
+        alert("Plan updated successfully!");
       } else {
         await axios.post("http://localhost:5000/api/admin/Plans/ajouter", modalData);
-        setSuccessMessage("Plan ajouté avec succès!");
+        setSuccessMessage("Plan added successfully!");
         // Show alert after addition
-        alert("Plan ajouté avec succès!");
+        alert("Plan added successfully!");
       }
       setShowModal(false);
       fetchPlans();
     } catch (error) {
       console.error("Erreur d'enregistrement:", error);
-      setError("Erreur lors de l'enregistrement du plan.");
+      setError("Error saving the plan.");
     } finally {
       setIsSubmitting(false);
     }
@@ -487,7 +487,7 @@ const PlansTable = () => {
         if (error.response && error.response.data) {
           const { error: errorMessage, details } = error.response.data;
           if (details && details.includes('foreign key')) {
-            setError("Ce plan ne peut pas être supprimé car il est utilisé dans d'autres enregistrements.");
+            setError("This plan cannot be deleted as it is used in other records.");
           } else {
             setError(errorMessage || "Erreur lors de la suppression du plan.");
           }
@@ -652,21 +652,21 @@ const PlansTable = () => {
           <Modal.Title>Confirmation</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>Êtes-vous sûr de vouloir supprimer ce plan ? Cette action est irréversible.</p>
+          <p>Are you sure you want to delete this plan? This action cannot be undone.</p>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setDeleteModal(false)}>
-            Annuler
+            Cancel
           </Button>
           <Button variant="danger" onClick={confirmDelete}>
-            Supprimer
+            Delete
           </Button>
         </Modal.Footer>
       </Modal>
       <PlanModal
         show={showModal}
         onHide={() => setShowModal(false)}
-        title={modalData.id ? "Modifier Plan" : "Ajouter Plan"}
+        title={modalData.id ? "Update Plan" : "Add Plan"}
         onSubmit={handleModalSubmit}
         modalData={modalData}
         availablePlans={availablePlans}

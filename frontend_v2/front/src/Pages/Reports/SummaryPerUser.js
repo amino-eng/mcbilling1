@@ -1,5 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { Table, Spinner, Container, Button, Form, Badge, Card, Alert, Row, Col } from 'react-bootstrap';
+import React, { useEffect, useState, useCallback } from 'react';
+import { 
+  Table, 
+  Spinner, 
+  Container, 
+  Button, 
+  Form, 
+  Badge, 
+  Card, 
+  Alert, 
+  Row, 
+  Col, 
+  FormCheck 
+} from 'react-bootstrap';
 import ReactPaginate from 'react-paginate';
 import { FaDownload, FaSearch, FaUser, FaClock, FaPhone, FaEuroSign, FaPercentage, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 
@@ -10,6 +22,8 @@ const SummaryPerUser = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [successMessage, setSuccessMessage] = useState('');
+  const [selectedRows, setSelectedRows] = useState({});
+  const [selectAll, setSelectAll] = useState(false);
   const itemsPerPage = 10;
 
   // Fetch data from the API on component mount
@@ -24,7 +38,7 @@ const SummaryPerUser = () => {
       .then((data) => {
         setData(data.data);
         setLoading(false);
-        setSuccessMessage('Données chargées avec succès');
+        setSuccessMessage('Data loaded successfully');
         setTimeout(() => setSuccessMessage(''), 3000);
       })
       .catch((error) => {
@@ -44,9 +58,27 @@ const SummaryPerUser = () => {
     return num ? num.toFixed(2) : '0.00';
   };
 
-  const exportToCSV = () => {
+  const filteredData = data.filter(user => 
+    user.username.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const pageCount = Math.ceil(filteredData.length / itemsPerPage);
+  const offset = currentPage * itemsPerPage;
+  const paginatedData = filteredData.slice(offset, offset + itemsPerPage);
+
+  const exportToCSV = useCallback(() => {
+    const dataToExport = Object.keys(selectedRows).length > 0 
+      ? filteredData.filter((_, index) => selectedRows[index])
+      : filteredData;
+      
     const header = ['Username', 'Duration', 'Allocated Calls', 'Answered', 'Failed', 'Buy Price', 'Sell Price', 'Markup', 'ASR'];
-    const rows = filteredData.map((userSummary) => [
+
+    if (dataToExport.length === 0) {
+      alert('Veuillez sélectionner au moins une ligne à exporter');
+      return;
+    }
+
+    const rows = dataToExport.map((userSummary) => [
       userSummary.username,
       formatSessionTime(userSummary.sessiontime),
       userSummary.aloc_all_calls,
@@ -64,15 +96,36 @@ const SummaryPerUser = () => {
     link.href = `data:text/csv;charset=utf-8,${encodeURIComponent(csvContent)}`;
     link.download = 'resume_utilisateur.csv';
     link.click();
+  }, [selectedRows, filteredData]);
+
+  const handleRowSelect = (index) => {
+    setSelectedRows(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
   };
 
-  const filteredData = data.filter(user => 
-    user.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleSelectAll = (e) => {
+    const isSelected = e.target.checked;
+    setSelectAll(isSelected);
+    
+    if (isSelected) {
+      const allSelected = {};
+      paginatedData.forEach((_, index) => {
+        allSelected[offset + index] = true;
+      });
+      setSelectedRows(allSelected);
+    } else {
+      setSelectedRows({});
+    }
+  };
 
-  const pageCount = Math.ceil(filteredData.length / itemsPerPage);
-  const offset = currentPage * itemsPerPage;
-  const paginatedData = filteredData.slice(offset, offset + itemsPerPage);
+  // Reset select all when data changes
+  useEffect(() => {
+    setSelectAll(false);
+  }, [filteredData, currentPage]);
+
+
 
   const handlePageChange = ({ selected }) => {
     setCurrentPage(selected);
@@ -123,8 +176,8 @@ const SummaryPerUser = () => {
                   <FaUser className="text-primary fs-3" />
                 </div>
                 <div>
-                  <h2 className="fw-bold mb-0 text-white">Résumé des appels par utilisateur</h2>
-                  <p className="text-white-50 mb-0 d-none d-md-block">Statistiques détaillées des appels par utilisateur</p>
+                  <h2 className="fw-bold mb-0 text-white">Call Summary by User</h2>
+                  <p className="text-white-50 mb-0 d-none d-md-block">Detailed call statistics by user</p>
                 </div>
               </div>
             </Card.Header>
@@ -146,7 +199,7 @@ const SummaryPerUser = () => {
                       </span>
                       <Form.Control
                         type="text"
-                        placeholder="Rechercher par nom d'utilisateur..."
+                        placeholder="Search by username..."
                         value={searchTerm}
                         onChange={(e) => {
                           setSearchTerm(e.target.value);
@@ -157,16 +210,22 @@ const SummaryPerUser = () => {
                     </div>
                   </Form.Group>
                 </Col>
-                <Col md={6} lg={8} className="d-flex justify-content-end">
+                <Col md={6} lg={8} className="d-flex justify-content-end align-items-center gap-3">
+                  {Object.values(selectedRows).filter(Boolean).length > 0 && (
+                    <span className="text-muted">
+                      {Object.values(selectedRows).filter(Boolean).length} {Object.values(selectedRows).filter(Boolean).length > 1 ? 'lignes sélectionnées' : 'ligne sélectionnée'}
+                    </span>
+                  )}
                   <Button 
                     variant="success" 
                     onClick={exportToCSV} 
                     className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+                    disabled={loading}
                   >
                     <div className="icon-container">
                       <FaDownload />
                     </div>
-                    <span>Exporter en CSV</span>
+                    <span>Export to CSV</span>
                   </Button>
                 </Col>
               </Row>
@@ -175,21 +234,37 @@ const SummaryPerUser = () => {
                 <Table striped bordered hover className="elegant-table">
                   <thead className="bg-light">
                     <tr>
-                      <th><FaUser className="me-2" /> Nom d'utilisateur</th>
-                      <th><FaClock className="me-2" /> Durée</th>
-                      <th><FaPhone className="me-2" /> Appels alloués</th>
-                      <th><FaCheckCircle className="me-2" /> Répondus</th>
-                      <th><FaTimesCircle className="me-2" /> Échoués</th>
-                      <th><FaEuroSign className="me-2" /> Prix d'achat</th>
-                      <th><FaEuroSign className="me-2" /> Prix de vente</th>
-                      <th>Marge</th>
-                      <th><FaPercentage className="me-2" /> Taux de réponse</th>
+                      <th style={{ width: '40px' }}>
+                        <FormCheck
+                          type="checkbox"
+                          checked={selectAll}
+                          onChange={handleSelectAll}
+                          className="d-inline-block"
+                        />
+                      </th>
+                      <th><FaUser className="me-2" /> Username</th>
+                      <th><FaClock className="me-2" /> Duration</th>
+                      <th><FaPhone className="me-2" /> Allocated Calls</th>
+                      <th><FaCheckCircle className="me-2" /> Answered</th>
+                      <th><FaTimesCircle className="me-2" /> Failed</th>
+                      <th><FaEuroSign className="me-2" /> Buy Price</th>
+                      <th><FaEuroSign className="me-2" /> Sell Price</th>
+                      <th>Markup</th>
+                      <th><FaPercentage className="me-2" /> Answer Rate</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedData.length > 0 ? (
-                      paginatedData.map((userSummary) => (
+                      paginatedData.map((userSummary, index) => (
                         <tr key={userSummary.id}>
+                          <td>
+                            <FormCheck
+                              type="checkbox"
+                              checked={!!selectedRows[offset + index]}
+                              onChange={() => handleRowSelect(offset + index)}
+                              className="d-inline-block"
+                            />
+                          </td>
                           <td>{userSummary.username}</td>
                           <td>{formatSessionTime(userSummary.sessiontime)}</td>
                           <td>{userSummary.aloc_all_calls}</td>
@@ -203,7 +278,7 @@ const SummaryPerUser = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="9" className="text-center py-4">
+                        <td colSpan="10" className="text-center py-4">
                           <div className="d-flex flex-column align-items-center">
                             <FaUser className="text-muted mb-2" size={24} />
                             <span className="text-muted">No matching users found</span>

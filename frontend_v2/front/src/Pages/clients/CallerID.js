@@ -30,18 +30,16 @@ const DEFAULT_NEW_CALLER_ID = {
   status: "1",
 }
 
-
-
 // Header with Export & Add
 function CallerIDHeader({ onAddClick, callerIds, isExporting }) {
   const csvData = [
-    ["Caller ID", "Nom", "Utilisateur", "Description", "Statut"],
+    ["Caller ID", "Name", "User", "Description", "Status"],
     ...callerIds.map((caller) => [
       caller.cid,
       caller.name,
       caller.username,
       caller.description,
-      caller.activated == 1 ? "Actif" : "Inactif",
+      caller.activated == 1 ? "Active" : "Inactive",
     ]),
   ]
 
@@ -70,8 +68,8 @@ function CallerIDHeader({ onAddClick, callerIds, isExporting }) {
             <FaPhoneAlt className="text-primary fs-3" />
           </div>
           <div>
-            <h2 className="fw-bold mb-0 text-white">Gestion des Caller ID</h2>
-            <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos identifiants d'appel facilement</p>
+            <h2 className="fw-bold mb-0 text-white">Caller ID Management</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Easily manage your caller IDs</p>
           </div>
         </div>
       </div>
@@ -79,7 +77,7 @@ function CallerIDHeader({ onAddClick, callerIds, isExporting }) {
         <div className="d-flex align-items-center gap-3">
           <Badge bg="primary" className="d-flex align-items-center p-2 ps-3 rounded-pill">
             <span className="me-2 fw-normal">
-              Total : <span className="fw-bold">{callerIds.length}</span>
+              Total: <span className="fw-bold">{callerIds.length}</span>
             </span>
             <span
               className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center"
@@ -98,7 +96,7 @@ function CallerIDHeader({ onAddClick, callerIds, isExporting }) {
             <div className="icon-container">
               <FaPlusCircle />
             </div>
-            <span>Ajouter un Caller ID</span>
+            <span>Add Caller ID</span>
           </Button>
           <CSVLink
             data={csvData}
@@ -109,7 +107,7 @@ function CallerIDHeader({ onAddClick, callerIds, isExporting }) {
             <div className="icon-container">
               {isExporting ? <Spinner animation="border" size="sm" /> : <FaDownload />}
             </div>
-            <span>{isExporting ? "Exportation..." : "Exporter"}</span>
+            <span>{isExporting ? "Exporting..." : "Export"}</span>
           </CSVLink>
         </div>
       </div>
@@ -126,7 +124,7 @@ function SearchBar({ searchTerm, onSearchChange }) {
       </div>
       <Form.Control
         type="text"
-        placeholder="Rechercher par Caller ID, Nom, Utilisateur..."
+        placeholder="Search by Caller ID, Name, User..."
         value={searchTerm}
         onChange={onSearchChange}
         className="py-2 ps-5 shadow-sm border-0 search-input"
@@ -157,7 +155,7 @@ function StatusBadge({ status }) {
       <span className="status-icon">
         <FaCheckCircle />
       </span>{" "}
-      Actif
+      Active
     </Badge>
   ) : (
     <Badge
@@ -173,7 +171,7 @@ function StatusBadge({ status }) {
       <span className="status-icon">
         <FaTimesCircle />
       </span>{" "}
-      Inactif
+      Inactive
     </Badge>
   )
 }
@@ -191,7 +189,7 @@ function ActionButtons({ onEdit, onDelete }) {
         <span className="btn-icon">
           <FaEdit />
         </span>{" "}
-        Modifier
+        Edit
       </Button>
       <Button
         variant="outline-danger"
@@ -202,7 +200,7 @@ function ActionButtons({ onEdit, onDelete }) {
         <span className="btn-icon">
           <FaTrashAlt />
         </span>{" "}
-        Supprimer
+        Delete
       </Button>
     </div>
   )
@@ -232,13 +230,13 @@ function EmptyState() {
           <FaPhoneAlt className="text-primary" />
         </div>
       </div>
-      <h4 className="text-dark mb-3">Aucun Caller ID trouvé</h4>
-      <p className="text-muted mb-4">Ajoutez un nouveau Caller ID ou modifiez votre recherche</p>
+      <h4 className="text-dark mb-3">No Caller ID found</h4>
+      <p className="text-muted mb-4">Add a new Caller ID or modify your search</p>
       <Button variant="primary" onClick={() => window.location.reload()} className="btn-hover-effect">
         <div className="icon-container me-2">
           <i className="bi bi-arrow-clockwise"></i>
         </div>
-        Rafraîchir la page
+        Refresh page
       </Button>
     </div>
   )
@@ -250,7 +248,7 @@ function CallerIdTable({ callerIds, onEdit, onDelete, isLoading }) {
     return (
       <div className="text-center py-5">
         <Spinner animation="border" variant="primary" />
-        <p className="mt-2">Chargement des données...</p>
+        <p className="mt-2">Loading Caller IDs...</p>
       </div>
     )
   }
@@ -303,7 +301,7 @@ function CallerIdTable({ callerIds, onEdit, onDelete, isLoading }) {
                 paddingBottom: "15px",
               }}
             >
-              Nom
+              Name
             </th>
             <th
               className="py-3 px-4"
@@ -317,7 +315,7 @@ function CallerIdTable({ callerIds, onEdit, onDelete, isLoading }) {
                 paddingBottom: "15px",
               }}
             >
-              Utilisateur
+              User
             </th>
             <th
               className="py-3 px-4"
@@ -345,7 +343,7 @@ function CallerIdTable({ callerIds, onEdit, onDelete, isLoading }) {
                 paddingBottom: "15px",
               }}
             >
-              Statut
+              Status
             </th>
             <th
               className="py-3 px-4 text-center"
@@ -377,7 +375,7 @@ function CallerIdTable({ callerIds, onEdit, onDelete, isLoading }) {
               <td className="py-3 px-4">{caller.name}</td>
               <td className="py-3 px-4">{caller.username}</td>
               <td className="py-3 px-4">
-                {caller.description || <span className="text-muted fst-italic">Non spécifié</span>}
+                {caller.description || <span className="text-muted fst-italic">Not specified</span>}
               </td>
               <td className="py-3 px-4 text-center">
                 <StatusBadge status={caller.activated} />
@@ -463,14 +461,14 @@ function CallerIdModal({
                   onChange={(e) => onInputChange(e, "callerid")}
                   required
                   className="shadow-sm"
-                  placeholder="Entrez le Caller ID"
+                  placeholder="Enter Caller ID"
                 />
               </Form.Group>
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
                 <Form.Label className="fw-semibold">
-                  Nom <span className="text-danger">*</span>
+                  Name <span className="text-danger">*</span>
                 </Form.Label>
                 <Form.Control
                   type="text"
@@ -479,7 +477,7 @@ function CallerIdModal({
                   onChange={(e) => onInputChange(e, "name")}
                   required
                   className="shadow-sm"
-                  placeholder="Entrez le nom"
+                  placeholder="Enter name"
                 />
               </Form.Group>
             </Col>
@@ -489,7 +487,7 @@ function CallerIdModal({
             <Col md={6}>
               <Form.Group className="mb-3">
                 <Form.Label className="fw-semibold">
-                  Utilisateur <span className="text-danger">*</span>
+                  User <span className="text-danger">*</span>
                 </Form.Label>
                 <Dropdown className="w-100">
                   <Dropdown.Toggle
@@ -497,11 +495,11 @@ function CallerIdModal({
                     id="dropdown-basic"
                     className="shadow-sm w-100 text-start d-flex justify-content-between align-items-center"
                   >
-                    <span>{callerId.username || "Sélectionner un utilisateur"}</span>
+                    <span>{callerId.username || "Select a user"}</span>
                   </Dropdown.Toggle>
                   <Dropdown.Menu className="w-100">
                     {usernames.length === 0 ? (
-                      <Dropdown.Item disabled>Aucun utilisateur disponible</Dropdown.Item>
+                      <Dropdown.Item disabled>No users available</Dropdown.Item>
                     ) : (
                       usernames.map((user) => (
                         <Dropdown.Item key={user.id} onClick={() => onUsernameChange(user.id)}>
@@ -515,15 +513,15 @@ function CallerIdModal({
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label className="fw-semibold">Statut</Form.Label>
+                <Form.Label className="fw-semibold">Status</Form.Label>
                 <Form.Select
                   name="status"
                   value={callerId.status}
                   onChange={(e) => onInputChange(e, "status")}
                   className="shadow-sm"
                 >
-                  <option value="1">Actif</option>
-                  <option value="0">Inactif</option>
+                  <option value="1">Active</option>
+                  <option value="0">Inactive</option>
                 </Form.Select>
               </Form.Group>
             </Col>
@@ -538,7 +536,7 @@ function CallerIdModal({
               value={callerId.description}
               onChange={(e) => onInputChange(e, "description")}
               className="shadow-sm"
-              placeholder="Entrez une description (optionnel)"
+              placeholder="Enter a description (optional)"
             />
           </Form.Group>
         </Form>
@@ -546,18 +544,18 @@ function CallerIdModal({
       <Modal.Footer className="border-0 pt-0 bg-light bg-opacity-50">
         <hr className="w-100 mt-0" />
         <Button variant="light" onClick={onHide} className="fw-semibold shadow-sm" disabled={isSubmitting}>
-          <span className="d-flex align-items-center">Annuler</span>
+          <span className="d-flex align-items-center">Cancel</span>
         </Button>
         <Button variant="primary" onClick={onSubmit} className="fw-semibold shadow-sm" disabled={isSubmitting}>
           {isSubmitting ? (
             <>
               <Spinner animation="border" size="sm" className="me-2" />
-              {title === "Ajouter Caller ID" ? "Ajout en cours..." : "Modification en cours..."}
+              {title === "Add Caller ID" ? "Adding..." : "Saving..."}
             </>
-          ) : title === "Ajouter Caller ID" ? (
-            "Ajouter"
+          ) : title === "Add Caller ID" ? (
+            "Add"
           ) : (
-            "Enregistrer"
+            "Save"
           )}
         </Button>
       </Modal.Footer>
@@ -593,7 +591,7 @@ export default function CallerIDPage() {
         setCallerIds(callerRes.data.callerid)
         setUsernames(userRes.data.users)
       } catch (e) {
-        setError("Erreur de chargement des données. Veuillez rafraîchir la page.")
+        setError("Error loading data. Please refresh the page.")
         console.error("Error fetching data:", e)
       } finally {
         setIsLoading(false)
@@ -628,7 +626,7 @@ export default function CallerIDPage() {
   // Handlers
   async function handleAddCallerId() {
     if (!newCallerId.callerid || !newCallerId.username || !newCallerId.name) {
-      setError("Veuillez remplir tous les champs obligatoires.")
+      setError("Please fill in all required fields.")
       return
     }
 
@@ -637,7 +635,7 @@ export default function CallerIDPage() {
       await axios.post("http://localhost:5000/api/admin/CallerId/ajouter", newCallerId)
       setShowAddModal(false)
       setNewCallerId(DEFAULT_NEW_CALLER_ID)
-      setSuccessMessage("Caller ID ajouté avec succès.")
+      setSuccessMessage("Caller ID added successfully.")
       clearMessages()
 
       // Refresh list
@@ -645,7 +643,7 @@ export default function CallerIDPage() {
       setCallerIds(res.data.callerid)
     } catch (err) {
       console.error("Error adding caller ID:", err)
-      setError("Erreur lors de l'ajout du Caller ID.")
+      setError("Error adding caller ID.")
       clearMessages()
     } finally {
       setIsSubmitting(false)
@@ -654,7 +652,7 @@ export default function CallerIDPage() {
 
   async function handleEditCallerId() {
     if (!editCallerId.callerid || !editCallerId.username || !editCallerId.name) {
-      setError("Veuillez remplir tous les champs obligatoires.")
+      setError("Please fill in all required fields.")
       return
     }
 
@@ -670,14 +668,14 @@ export default function CallerIDPage() {
 
       setShowEditModal(false)
       setEditCallerId(DEFAULT_NEW_CALLER_ID)
-      setSuccessMessage("Caller ID modifié avec succès.")
+      setSuccessMessage("Caller ID updated successfully.")
       clearMessages()
 
       const res = await axios.get("http://localhost:5000/api/admin/CallerId/affiche")
       setCallerIds(res.data.callerid)
     } catch (err) {
       console.error("Error editing caller ID:", err)
-      setError("Erreur lors de la modification du Caller ID.")
+      setError("Error editing caller ID.")
       clearMessages()
     } finally {
       setIsSubmitting(false)
@@ -685,11 +683,11 @@ export default function CallerIDPage() {
   }
 
   async function handleDeleteCallerId(id) {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce Caller ID ?")) return
+    if (!window.confirm("Are you sure you want to delete this Caller ID?")) return
 
     try {
       await axios.delete(`http://localhost:5000/api/admin/CallerId/delete/${id}`)
-      setSuccessMessage("Caller ID supprimé avec succès.")
+      setSuccessMessage("Caller ID deleted successfully.")
       clearMessages()
 
       const res = await axios.get("http://localhost:5000/api/admin/CallerId/affiche")
@@ -932,7 +930,7 @@ export default function CallerIDPage() {
       <CallerIdModal
         show={showEditModal}
         onHide={() => setShowEditModal(false)}
-        title="Modifier Caller ID"
+        title="Edit Caller ID"
         onSubmit={handleEditCallerId}
         callerId={editCallerId}
         usernames={usernames}

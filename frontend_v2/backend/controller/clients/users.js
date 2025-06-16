@@ -451,69 +451,93 @@ exports.ajouterUtilisateur = (req, res) => {
 // Supprimer un utilisateur
 exports.supprimerUtilisateur = (req, res) => {
   const { id } = req.params;
+  const userId = Number(id);
 
   // Vérifier si l'ID est valide
-  if (isNaN(id) || Number(id) <= 0) {
+  if (isNaN(userId) || userId <= 0) {
     console.error("ID utilisateur invalide :", id);
     return res.status(400).json({ error: "ID utilisateur invalide" });
   }
 
-  console.log(`Tentative de suppression de l'utilisateur avec l'ID : ${id}`);
+  console.log(`Tentative de suppression de l'utilisateur avec l'ID : ${userId}`);
 
   // Vérifier si l'utilisateur existe
   const checkUserQuery = "SELECT * FROM pkg_user WHERE id = ?";
-  connection.query(checkUserQuery, [Number(id)], (checkErr, results) => {
+  connection.query(checkUserQuery, [userId], (checkErr, results) => {
     if (checkErr) {
       console.error("Erreur lors de la vérification de l'existence de l'utilisateur :", checkErr);
       return res.status(500).json({ error: "Erreur serveur" });
     }
     if (results.length === 0) {
-      console.warn("Utilisateur non trouvé pour l'ID :", id);
+      console.warn("Utilisateur non trouvé pour l'ID :", userId);
       return res.status(404).json({ error: "Utilisateur non trouvé" });
     }
 
-    // Vérifier les enregistrements SIP, IAX et DID
-    const checkSipQuery = "SELECT COUNT(*) AS count FROM pkg_sip WHERE id_user = ?";
-    const checkIaxQuery = "SELECT COUNT(*) AS count FROM pkg_iax WHERE id_user = ?";
-    const checkDidQuery = "SELECT COUNT(*) AS count FROM pkg_did WHERE id_user = ?";
+    // Fonction pour supprimer les entrées IAX d'un utilisateur
+    const deleteIaxEntries = (callback) => {
+      const deleteIaxQuery = "DELETE FROM pkg_iax WHERE id_user = ?";
+      connection.query(deleteIaxQuery, [userId], (err, result) => {
+        if (err) {
+          console.error("Erreur lors de la suppression des entrées IAX :", err);
+          return callback(err);
+        }
+        console.log(`Suppression de ${result.affectedRows} entrée(s) IAX pour l'utilisateur ${userId}`);
+        callback(null);
+      });
+    };
 
-    connection.query(checkSipQuery, [Number(id)], (sipErr, sipResults) => {
-      if (sipErr) {
-        console.error("Erreur lors de la vérification des enregistrements SIP :", sipErr);
+    // Fonction pour supprimer les utilisateurs SIP d'un utilisateur
+    const deleteSipUsers = (callback) => {
+      const deleteSipQuery = "DELETE FROM pkg_sip WHERE id_user = ?";
+      connection.query(deleteSipQuery, [userId], (err, result) => {
+        if (err) {
+          console.error("Erreur lors de la suppression des utilisateurs SIP :", err);
+          return callback(err);
+        }
+        console.log(`Suppression de ${result.affectedRows} utilisateur(s) SIP pour l'utilisateur ${userId}`);
+        callback(null);
+      });
+    };
+
+    // Vérifier s'il y a des enregistrements DID liés
+    const checkDidQuery = "SELECT COUNT(*) AS count FROM pkg_did WHERE id_user = ?";
+    connection.query(checkDidQuery, [userId], (didErr, didResults) => {
+      if (didErr) {
+        console.error("Erreur lors de la vérification des enregistrements DID :", didErr);
         return res.status(500).json({ error: "Erreur serveur" });
       }
 
-      connection.query(checkIaxQuery, [Number(id)], (iaxErr, iaxResults) => {
+      const didCount = didResults[0].count;
+      if (didCount > 0) {
+        return res.status(400).json({ 
+          error: "Cet utilisateur est lié à des enregistrements DID. Veuillez d'abord supprimer ou réaffecter ces enregistrements avant de supprimer l'utilisateur." 
+        });
+      }
+
+      // Supprimer d'abord les entrées IAX, puis les utilisateurs SIP, puis l'utilisateur
+      deleteIaxEntries((iaxErr) => {
         if (iaxErr) {
-          console.error("Erreur lors de la vérification des enregistrements IAX :", iaxErr);
-          return res.status(500).json({ error: "Erreur serveur" });
+          return res.status(500).json({ error: "Erreur lors de la suppression des entrées IAX" });
         }
 
-        connection.query(checkDidQuery, [Number(id)], (didErr, didResults) => {
-          if (didErr) {
-            console.error("Erreur lors de la vérification des enregistrements DID :", didErr);
-            return res.status(500).json({ error: "Erreur serveur" });
+        deleteSipUsers((sipErr) => {
+          if (sipErr) {
+            return res.status(500).json({ error: "Erreur lors de la suppression des utilisateurs SIP" });
           }
 
-          // Check counts from the results
-          const sipCount = sipResults[0].count;
-          const iaxCount = iaxResults[0].count;
-          const didCount = didResults[0].count;
-
-          if (sipCount > 0 || iaxCount > 0 || didCount > 0) {
-            return res.status(400).json({ error: "Cet utilisateur est lié à des enregistrements SIP, IAX ou DID. Suppression non autorisée." });
-          }
-
-          // Proceed to delete the user if no associations are found
+          // Maintenant, supprimer l'utilisateur
           const deleteUserQuery = "DELETE FROM pkg_user WHERE id = ?";
-          connection.query(deleteUserQuery, [Number(id)], (userErr) => {
+          connection.query(deleteUserQuery, [userId], (userErr) => {
             if (userErr) {
               console.error("Erreur lors de la suppression de l'utilisateur :", userErr);
-              return res.status(500).json({ error: "Erreur lors de la suppression de l'utilisateur" });
+              return res.status(500).json({ error: "Erreur lors de la suppression de l'utilisateur " });
             }
 
-            console.log("Utilisateur supprimé avec succès.");
-            res.status(200).json({ message: "Utilisateur supprimé avec succès" });
+            console.log("Utilisateur et toutes ses données associées supprimés avec succès.");
+            res.status(200).json({ 
+              success: true,
+              message: "Utilisateur et toutes ses données associées (SIP, IAX) ont été supprimés avec succès." 
+            });
           });
         });
       });
@@ -554,6 +578,7 @@ exports.modifierUtilisateur = (req, res) => {
     } = req.body;
 
     console.log("Update request body:", req.body);
+    console.log("Active value received:", active, "Type:", typeof active);
 
     const checkUserQuery = "SELECT * FROM pkg_user WHERE id = ?";
     connection.query(checkUserQuery, [Number(userId)], (checkErr, results) => {
@@ -597,7 +622,11 @@ exports.modifierUtilisateur = (req, res) => {
 
       if (active !== undefined) {
         updateFields.push("active = ?");
-        queryParams.push(Number(active));
+        // Convert string 'Active'/'Inactive' to 1/0, or use the numeric value directly
+        const activeValue = typeof active === 'string' 
+          ? (active.toLowerCase() === 'active' ? 1 : 0)
+          : Number(active);
+        queryParams.push(activeValue);
       }
 
       // Include other fields similarly...

@@ -69,8 +69,8 @@ const TrunkHeader = ({ onAddClick, trunks, isExporting }) => {
             <FaNetworkWired className="text-primary fs-3" />
           </div>
           <div>
-            <h2 className="fw-bold mb-0 text-white">Gestion des Trunks</h2>
-            <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos connexions SIP</p>
+            <h2 className="fw-bold mb-0 text-white">Trunks Management</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Manage your SIP connections</p>
           </div>
         </div>
       </div>
@@ -97,7 +97,7 @@ const TrunkHeader = ({ onAddClick, trunks, isExporting }) => {
             <div className="icon-container">
               <BiPlusCircle />
             </div>
-            <span>Ajouter</span>
+            <span>Add</span>
           </Button>
           <CSVLink
             data={csvData}
@@ -108,7 +108,7 @@ const TrunkHeader = ({ onAddClick, trunks, isExporting }) => {
             <div className="icon-container">
               {isExporting ? <Spinner animation="border" size="sm" /> : <BiDownload />}
             </div>
-            <span>{isExporting ? "Exportation..." : "Exporter"}</span>
+            <span>{isExporting ? "Exporting..." : "Export"}</span>
           </CSVLink>
         </div>
       </div>
@@ -119,15 +119,15 @@ const TrunkHeader = ({ onAddClick, trunks, isExporting }) => {
 // ------------------ StatusBadge Component ------------------
 const StatusBadge = ({ status }) => {
   const statusLabels = {
-    0: { label: "Inactif", variant: "secondary" },
-    1: { label: "Actif", variant: "success" },
-    2: { label: "En attente", variant: "warning" },
-    3: { label: "Envoyé", variant: "info" },
-    4: { label: "Bloqué", variant: "danger" },
+    0: { label: "Inactive", variant: "secondary" },
+    1: { label: "Active", variant: "success" },
+    2: { label: "Pending", variant: "warning" },
+    3: { label: "Sent", variant: "info" },
+    4: { label: "Blocked", variant: "danger" },
     5: { label: "AMD", variant: "primary" },
   }
 
-  const statusInfo = statusLabels[status] || { label: "Inconnu", variant: "dark" }
+  const statusInfo = statusLabels[status] || { label: "Unknown", variant: "dark" }
 
   return (
     <Badge bg={statusInfo.variant} className="text-capitalize">
@@ -139,7 +139,7 @@ const StatusBadge = ({ status }) => {
 // ------------------ SearchBar Component ------------------
 const SearchBar = ({ searchTerm, onSearchChange }) => (
   <InputGroup className="search-bar">
-    <Form.Control placeholder="Rechercher des trunks..." value={searchTerm} onChange={onSearchChange} />
+    <Form.Control placeholder="Search trunks..." value={searchTerm} onChange={onSearchChange} />
     <InputGroup.Text>
       <BiSearch />
     </InputGroup.Text>
@@ -149,10 +149,10 @@ const SearchBar = ({ searchTerm, onSearchChange }) => (
 // ------------------ ActionButtons Component ------------------
 const ActionButtons = ({ onEdit, onDelete }) => (
   <div className="d-flex gap-2">
-    <Button variant="primary" size="sm" onClick={onEdit} className="btn-hover-effect" title="Modifier">
+    <Button variant="primary" size="sm" onClick={onEdit} className="btn-hover-effect" title="Edit">
       <BiEdit />
     </Button>
-    <Button variant="danger" size="sm" onClick={onDelete} className="btn-hover-effect" title="Supprimer">
+    <Button variant="danger" size="sm" onClick={onDelete} className="btn-hover-effect" title="Delete">
       <BiTrash />
     </Button>
   </div>
@@ -171,7 +171,7 @@ const TrunkTable = ({ trunks, onEdit, onDelete, isLoading }) => {
   if (trunks.length === 0) {
     return (
       <div className="text-center py-5">
-        <h5 className="text-muted">Aucun trunk trouvé</h5>
+        <h5 className="text-muted">No trunks found</h5>
       </div>
     )
   }
@@ -180,13 +180,13 @@ const TrunkTable = ({ trunks, onEdit, onDelete, isLoading }) => {
     <Table striped bordered hover responsive className="mt-3">
       <thead>
         <tr>
-          <th>Nom</th>
-          <th>Préfixe Ajouté</th>
-          <th>Préfixe Retiré</th>
-          <th>Hôte</th>
-          <th>Fournisseur</th>
-          <th>Statut</th>
-          <th>Date de création</th>
+          <th>Name</th>
+          <th>Added Prefix</th>
+          <th>Removed Prefix</th>
+          <th>Host</th>
+          <th>Provider</th>
+          <th>Status</th>
+          <th>Creation Date</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -329,8 +329,8 @@ const AddTrunkModal = ({ show, onHide, onTrunkAdded, trunkToEdit, setTrunkToEdit
     const errors = {}
 
     // Required fields
-    if (!formData.name) errors.name = "Le nom est requis"
-    if (!formData.host) errors.host = "L'hôte est requis"
+    if (!formData.name) errors.name = "Name is required"
+    if (!formData.host) errors.host = "Host is required"
 
     // Set validation errors
     setValidationErrors(errors)

@@ -44,11 +44,11 @@ const DEFAULT_NEW_DID = {
 // Header with Export & Add
 function DIDsHeader({ onAddClick, dids, isExporting }) {
   const csvData = [
-    ["DID", "Pays", "Statut", "Frais d'Installation €", "Prix Mensuel €", "Description"],
+    ["DID", "Country", "Status", "Setup Fee €", "Monthly Price €", "Description"],
     ...dids.map((did) => [
       did.did,
       did.country,
-      did.activated == 1 ? "Actif" : "Inactif",
+      did.activated == 1 ? "Active" : "Inactive",
       did.connection_charge || "0",
       did.fixrate || "0",
       did.description || "",
@@ -85,8 +85,8 @@ function DIDsHeader({ onAddClick, dids, isExporting }) {
             <FaGlobe className="text-primary fs-3" />
           </div>
           <div>
-            <h2 className="fw-bold mb-0 text-white">Gérer les DIDs</h2>
-            <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos numéros de Sélection Directe à l'Arrivée</p>
+            <h2 className="fw-bold mb-0 text-white">Manage DIDs</h2>
+            <p className="text-white-50 mb-0 d-none d-md-block">Manage your Direct Inward Dialing numbers</p>
           </div>
         </div>
       </div>
@@ -110,10 +110,8 @@ function DIDsHeader({ onAddClick, dids, isExporting }) {
             onClick={onAddClick}
             className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
           >
-            <div className="icon-container">
-              <FaPlusCircle />
-            </div>
-            <span>Ajouter un DID</span>
+            <FaPlusCircle className="me-2" />
+            <span>Add DID</span>
           </Button>
           <CSVLink
             data={csvData}
@@ -121,10 +119,8 @@ function DIDsHeader({ onAddClick, dids, isExporting }) {
             className="btn btn-success d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
             disabled={isExporting}
           >
-            <div className="icon-container">
-              {isExporting ? <Spinner animation="border" size="sm" /> : <FaDownload />}
-            </div>
-            <span>Exporter</span>
+            <FaDownload className="me-2" />
+            <span>Export</span>
           </CSVLink>
         </div>
       </div>
@@ -140,7 +136,7 @@ function SearchBar({ searchTerm, onSearchChange }) {
       <input
         type="text"
         className="form-control ps-4 border-0 shadow-sm"
-        placeholder="Rechercher des DIDs..."
+        placeholder="Search for DIDs..."
         value={searchTerm}
         onChange={onSearchChange}
         style={{ borderRadius: "8px", height: "42px" }}
@@ -152,12 +148,12 @@ function SearchBar({ searchTerm, onSearchChange }) {
 // Status Badge
 function StatusBadge({ status }) {
   let variant = "success"
-  let text = "Actif"
+  let text = "Active"
   let icon = <FaCheckCircle className="me-1" />
 
   if (status !== 1 && status !== "1") {
     variant = "danger"
-    text = "Inactif"
+    text = "Inactive"
     icon = <FaTimesCircle className="me-1" />
   }
 
@@ -189,10 +185,10 @@ function EmptyState() {
       <div className="mb-3">
         <FaPhoneAlt className="text-muted" style={{ fontSize: "3rem", opacity: "0.3" }} />
       </div>
-      <h5 className="text-muted mb-3">Aucun DID Trouvé</h5>
-      <p className="text-muted mb-4">Aucun DID à afficher. Essayez d'ajouter un nouveau DID ou d'ajuster votre recherche.</p>
+      <h5 className="text-muted mb-3">No DIDs Found</h5>
+      <p className="text-muted mb-4">No DIDs to display. Try adding a new DID or adjusting your search.</p>
       <Button variant="primary" className="d-inline-flex align-items-center gap-2">
-        <FaPlusCircle /> Ajoutez Votre Premier DID
+        <FaPlusCircle /> Add Your First DID
       </Button>
     </div>
   )
@@ -204,7 +200,7 @@ function DIDsTable({ dids, onEdit, onDelete, isLoading }) {
     return (
       <div className="text-center py-5">
         <Spinner animation="border" variant="primary" />
-        <p className="mt-3 text-muted">Chargement des DIDs...</p>
+        <p className="mt-3 text-muted">Loading DIDs...</p>
       </div>
     )
   }
@@ -219,10 +215,10 @@ function DIDsTable({ dids, onEdit, onDelete, isLoading }) {
         <thead className="bg-light">
           <tr>
             <th className="ps-3 py-3">DID</th>
-            <th className="py-3">Pays</th>
-            <th className="py-3 text-center">Statut</th>
-            <th className="py-3 text-end">Frais d'Installation €</th>
-            <th className="py-3 text-end">Prix Mensuel €</th>
+            <th className="py-3">Country</th>
+            <th className="py-3 text-center">Status</th>
+            <th className="py-3 text-end">Setup Fee (€)</th>
+            <th className="py-3 text-end">Monthly Price (€)</th>
             <th className="py-3">Description</th>
             <th className="py-3 text-center">Actions</th>
           </tr>
@@ -262,8 +258,8 @@ function PaginationSection({ pageCount, onPageChange, currentPage }) {
 
   return (
     <ReactPaginate
-      previousLabel={"Précédent"}
-      nextLabel={"Suivant"}
+      previousLabel={"Previous"}
+      nextLabel={"Next"}
       breakLabel={"..."}
       pageCount={pageCount}
       marginPagesDisplayed={2}
@@ -310,37 +306,37 @@ function DIDModal({
             <div className="col-md-6">
               {/* Basic Info */}
               <div className="border p-3 mb-3">
-                <h6>Informations de Base</h6>
+                <h6>Basic Information</h6>
                 <Form.Group className="mb-2">
-                  <Form.Label>Numéro DID</Form.Label>
+                  <Form.Label>DID Number</Form.Label>
                   <Form.Control
                     type="text"
                     name="did"
                     value={did.did}
                     onChange={(e) => onInputChange(e, "did")}
-                    placeholder="Entrez le numéro DID"
+                    placeholder="Enter DID number"
                     required
                   />
                 </Form.Group>
                 <Form.Group className="mb-2">
-                  <Form.Label>Pays</Form.Label>
+                  <Form.Label>Country</Form.Label>
                   <Form.Control
                     type="text"
                     name="country"
                     value={did.country}
                     onChange={(e) => onInputChange(e, "country")}
-                    placeholder="Entrez le pays"
+                    placeholder="Enter country"
                   />
                 </Form.Group>
                 <Form.Group className="mb-2">
-                  <Form.Label>Statut</Form.Label>
+                  <Form.Label>Status</Form.Label>
                   <Form.Select
                     name="activated"
                     value={did.activated}
                     onChange={(e) => onInputChange(e, "activated")}
                   >
-                    <option value="1">Actif</option>
-                    <option value="0">Inactif</option>
+                    <option value="1">Active</option>
+                    <option value="0">Inactive</option>
                   </Form.Select>
                 </Form.Group>
                 <Form.Group className="mb-2">
@@ -350,7 +346,7 @@ function DIDModal({
                     name="description"
                     value={did.description}
                     onChange={(e) => onInputChange(e, "description")}
-                    placeholder="Description optionnelle"
+                    placeholder="Optional description"
                     rows={3}
                   />
                 </Form.Group>
@@ -359,63 +355,63 @@ function DIDModal({
             <div className="col-md-6">
               {/* Pricing */}
               <div className="border p-3 mb-3">
-                <h6>Tarification</h6>
+                <h6>Pricing</h6>
                 <Form.Group className="mb-2">
-                  <Form.Label>Frais de Connexion (€)</Form.Label>
+                  <Form.Label>Setup Fee (€)</Form.Label>
                   <Form.Control
                     type="number"
                     step="0.01"
                     name="connection_charge"
                     value={did.connection_charge}
                     onChange={(e) => onInputChange(e, "connection_charge")}
-                    placeholder="Entrez les frais de connexion"
+                    placeholder="Enter setup fee"
                   />
                 </Form.Group>
                 <Form.Group className="mb-2">
-                  <Form.Label>Prix Mensuel (€)</Form.Label>
+                  <Form.Label>Monthly Price (€)</Form.Label>
                   <Form.Control
                     type="number"
                     step="0.01"
                     name="fixrate"
                     value={did.fixrate}
                     onChange={(e) => onInputChange(e, "fixrate")}
-                    placeholder="Entrez le prix mensuel"
+                    placeholder="Enter monthly price"
                   />
                 </Form.Group>
               </div>
               {/* Advanced Settings */}
               <div className="border p-3 mb-3">
-                <h6>Paramètres Avancés</h6>
+                <h6>Advanced Settings</h6>
                 <Form.Group className="mb-2">
-                  <Form.Label>Temps Min. Achat (s)</Form.Label>
+                  <Form.Label>Minimum Buy Time (s)</Form.Label>
                   <Form.Control
                     type="number"
                     name="min_time_buy"
                     value={did.min_time_buy}
                     onChange={(e) => onInputChange(e, "min_time_buy")}
-                    placeholder="Entrez le temps min. achat"
+                    placeholder="Enter minimum buy time"
                   />
                 </Form.Group>
                 <Form.Group className="mb-2">
-                  <Form.Label>Prix d'Achat par Bloc (€)</Form.Label>
+                  <Form.Label>Purchase Price per Block (€)</Form.Label>
                   <Form.Control
                     type="number"
                     step="0.01"
                     name="buy_price_inblock"
                     value={did.buy_price_inblock}
                     onChange={(e) => onInputChange(e, "buy_price_inblock")}
-                    placeholder="Entrez le prix d'achat par bloc"
+                    placeholder="Enter purchase price per block"
                   />
                 </Form.Group>
                 <Form.Group className="mb-2">
-                  <Form.Label>Incrément Prix d'Achat (€)</Form.Label>
+                  <Form.Label>Purchase Price Increment (€)</Form.Label>
                   <Form.Control
                     type="number"
                     step="0.01"
                     name="buy_price_increment"
                     value={did.buy_price_increment}
                     onChange={(e) => onInputChange(e, "buy_price_increment")}
-                    placeholder="Entrez l'incrément prix d'achat"
+                    placeholder="Enter purchase price increment"
                   />
                 </Form.Group>
               </div>
@@ -430,7 +426,7 @@ function DIDModal({
             {isSubmitting ? (
               <>
                 <Spinner animation="border" size="sm" className="me-2" />
-                Traitement...
+                Processing...
               </>
             ) : (
               title
@@ -482,7 +478,7 @@ function DIDsPage() {
       })
       .catch((error) => {
         console.error('Error fetching DIDs:', error);
-        setErrorMessage(`Erreur lors du chargement des DIDs : ${error.response?.data?.message || error.message}`);
+        setErrorMessage(`Error loading DIDs: ${error.response?.data?.message || error.message}`);
         setIsLoading(false);
       });
   };
@@ -533,13 +529,13 @@ function DIDsPage() {
         fetchDIDs();
         setNewDid(DEFAULT_NEW_DID);
         setShowAddModal(false);
-        setSuccessMessage('DID ajouté avec succès !');
+        setSuccessMessage('DID added successfully!');
         setErrorMessage('');
         clearMessages();
       })
       .catch((error) => {
         console.error('Error adding DID:', error);
-        setErrorMessage(`Erreur lors de l'ajout du DID : ${error.response?.data?.message || error.message}`);
+        setErrorMessage(`Error adding DID: ${error.response?.data?.message || error.message}`);
         setSuccessMessage('');
       })
       .finally(() => {
@@ -569,13 +565,13 @@ function DIDsPage() {
       .then(() => {
         fetchDIDs();
         setShowEditModal(false);
-        setSuccessMessage('DID mis à jour avec succès !');
+        setSuccessMessage('DID updated successfully!');
         setErrorMessage('');
         clearMessages();
       })
       .catch((error) => {
         console.error('Error updating DID:', error);
-        setErrorMessage(`Erreur lors de la mise à jour du DID : ${error.response?.data?.message || error.message}`);
+        setErrorMessage(`Error updating DID: ${error.response?.data?.message || error.message}`);
         setSuccessMessage('');
       })
       .finally(() => {
@@ -584,17 +580,17 @@ function DIDsPage() {
   };
 
   const handleDeleteDid = (didId) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce DID ?')) {
+    if (window.confirm('Are you sure you want to delete this DID?')) {
       axios.delete(`http://localhost:5000/api/admin/DIDs/supprimer/${didId}`)
         .then(() => {
           fetchDIDs();
-          setSuccessMessage('DID supprimé avec succès !');
+          setSuccessMessage('DID deleted successfully!');
           setErrorMessage('');
           clearMessages();
         })
         .catch((error) => {
           console.error('Error deleting DID:', error);
-          setErrorMessage(`Erreur lors de la suppression du DID : ${error.response?.data?.message || error.message}`);
+          setErrorMessage(`Error deleting DID: ${error.response?.data?.message || error.message}`);
           setSuccessMessage('');
         });
     }
@@ -659,7 +655,7 @@ function DIDsPage() {
           <DIDsTable dids={pagedDids} onEdit={openEditModal} onDelete={handleDeleteDid} isLoading={isLoading} />
           <div className="d-flex justify-content-between align-items-center mt-3">
             <div className="text-muted">
-              Affichage de {currentPage * ITEMS_PER_PAGE + 1} à {Math.min((currentPage + 1) * ITEMS_PER_PAGE, filteredDids.length)} sur {filteredDids.length} entrées
+              Showing {currentPage * ITEMS_PER_PAGE + 1} to {Math.min((currentPage + 1) * ITEMS_PER_PAGE, filteredDids.length)} of {filteredDids.length} entries
             </div>
             <PaginationSection pageCount={pageCount} onPageChange={handlePageChange} currentPage={currentPage} />
           </div>
@@ -669,7 +665,7 @@ function DIDsPage() {
       <DIDModal
         show={showAddModal}
         onHide={() => setShowAddModal(false)}
-        title="Ajouter un DID"
+        title="Add DID"
         onSubmit={handleAddDid}
         did={newDid}
         onInputChange={handleInputChange}
@@ -679,7 +675,7 @@ function DIDsPage() {
       <DIDModal
         show={showEditModal}
         onHide={() => setShowEditModal(false)}
-        title="Modifier le DID"
+        title="Edit DID"
         onSubmit={handleEditDid}
         did={editDid || {}}
         onInputChange={handleInputChange}

@@ -442,7 +442,7 @@ function Users() {
   // Fetch groups
   const fetchGroup = () => {
     axios
-      .get("http://localhost:5000/api/admin/users/groups")
+      .get("http://localhost:5001/api/admin/users/groups")
       .then((response) => {
         setGroups(response.data.groups)
       })
@@ -499,7 +499,7 @@ function Users() {
   // Fetch plans
   const fetchPlan = () => {
     axios
-      .get("http://localhost:5000/api/admin/users/plans")
+      .get("http://localhost:5001/api/admin/users/plans")
       .then((response) => {
         setPlans(response.data.plans)
       })
@@ -511,7 +511,7 @@ function Users() {
 
   const fetchUsers = () => {
     axios
-      .get("http://localhost:5000/api/admin/users/affiche")
+      .get("http://localhost:5001/api/admin/users/affiche")
       .then((response) => {
         setUsers(response.data.users)
         setFilteredUsers(response.data.users)
@@ -602,7 +602,7 @@ function Users() {
 
   const confirmDelete = () => {
     axios
-      .delete(`http://localhost:5000/api/admin/users/supprimer/${userIdToDelete}`)
+      .delete(`http://localhost:5001/api/admin/users/supprimer/${userIdToDelete}`)
       .then(() => {
         fetchUsers();
         setShowConfirmModal(false);
@@ -642,7 +642,7 @@ function Users() {
   // Check if username already exists
   const checkUsernameExists = async (username) => {
     try {
-      const response = await axios.get("http://localhost:5000/api/admin/users/users")
+      const response = await axios.get("http://localhost:5001/api/admin/users/users")
       const existingUsers = response.data.users
       return existingUsers.some((user) => user.username === username)
     } catch (error) {
@@ -710,7 +710,7 @@ function Users() {
     console.log("User Data to send:", userData) // Debugging log
 
     try {
-      const response = await fetch("http://localhost:5000/api/admin/users/ajouter", {
+      const response = await fetch("http://localhost:5001/api/admin/users/ajouter", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -797,7 +797,7 @@ function Users() {
     console.log("Sending update data:", userData)
 
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/users/modifier/${editUser.id}`, {
+      const response = await fetch(`http://localhost:5001/api/admin/users/modifier/${editUser.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -843,7 +843,7 @@ function Users() {
   const handleEdit = (id) => {
     // First, fetch the complete user data from the backend
     axios
-      .get(`http://localhost:5000/api/admin/users/user/${id}`)
+      .get(`http://localhost:5001/api/admin/users/user/${id}`)
       .then((response) => {
         const userToEdit = response.data.user
 

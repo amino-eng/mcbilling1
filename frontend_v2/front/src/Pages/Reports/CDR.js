@@ -12,7 +12,9 @@ import {
   FaEye,
   FaEyeSlash,
   FaFilter,
-  FaFileExport
+  FaFileExport,
+  FaSortAmountDown,
+  FaSortAmountDownAlt
 } from "react-icons/fa";
 
 const CDRTable = () => {
@@ -47,6 +49,16 @@ const CDRTable = () => {
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [recordsPerPage] = useState(10);
+  
+  // Tri
+  const [sortConfig, setSortConfig] = useState({
+    key: 'starttime',
+    direction: 'desc' // 'asc' ou 'desc'
+  });
 
 
 
@@ -134,14 +146,74 @@ const CDRTable = () => {
     });
   }, []);
 
-  // Pagination logic
-  // Filter records based on search term
-  const filteredRecords = cdrData.filter(cdr => {
-    const matchesSearch = cdr.callerid && cdr.callerid.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
-  });
+  // Fonction de tri
+  const requestSort = (key) => {
+    setSortConfig(prevConfig => ({
+      key,
+      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
 
-  const currentRecords = filteredRecords;
+  // Filter, sort and deduplicate records based on search term
+  const { filteredRecords, totalUniqueRecords } = React.useMemo(() => {
+    // Filtrer d'abord les données selon le terme de recherche
+    let filtered = cdrData.filter(cdr => {
+      if (!cdr.callerid) return false;
+      return cdr.callerid.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+    
+    // Trier les enregistrements
+    if (sortConfig.key) {
+      filtered = [...filtered].sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    
+    // Dédupliquer les enregistrements
+    const uniqueRecords = [];
+    const seenIds = new Set();
+    
+    filtered.forEach(record => {
+      if (record.id && !seenIds.has(record.id)) {
+        seenIds.add(record.id);
+        uniqueRecords.push(record);
+      }
+    });
+    
+    return {
+      filteredRecords: uniqueRecords,
+      totalUniqueRecords: uniqueRecords.length
+    };
+  }, [cdrData, searchTerm, sortConfig]);
+
+  // Pagination logic
+  const currentRecords = React.useMemo(() => {
+    const indexOfLastRecord = currentPage * recordsPerPage;
+    const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+    return filteredRecords.slice(indexOfFirstRecord, indexOfLastRecord);
+  }, [filteredRecords, currentPage, recordsPerPage]);
+  
+  const totalPages = Math.ceil(totalUniqueRecords / recordsPerPage);
+  
+  // Change page
+  const paginate = (pageNumber, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setCurrentPage(pageNumber);
+  };
+  
+  // Reset to first page when search or filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, startDate, endDate]);
 
 
 
@@ -167,40 +239,96 @@ const CDRTable = () => {
     };
   }, []);
 
-  // Toggle select all rows
+  // Toggle select all rows on current page
   const toggleSelectAll = () => {
     const newSelectAll = !selectAll;
     setSelectAll(newSelectAll);
     
-    if (newSelectAll) {
-      const allSelected = {};
-      currentRecords.forEach(cdr => {
-        allSelected[cdr.id] = true;
-      });
-      setSelectedRows(allSelected);
-    } else {
-      setSelectedRows({});
-    }
+    setSelectedRows(prev => {
+      const newSelected = { ...prev };
+      
+      if (newSelectAll) {
+        // Sélectionner toutes les lignes de la page actuelle
+        currentRecords.forEach(cdr => {
+          if (cdr.id) {
+            newSelected[cdr.id] = true;
+          }
+        });
+      } else {
+        // Désélectionner toutes les lignes de la page actuelle
+        currentRecords.forEach(cdr => {
+          if (cdr.id) {
+            delete newSelected[cdr.id];
+          }
+        });
+      }
+      
+      return newSelected;
+    });
   };
 
+  // Vérifier si toutes les lignes de la page sont sélectionnées
+  useEffect(() => {
+    if (currentRecords.length > 0) {
+      const allCurrentSelected = currentRecords.every(
+        cdr => cdr.id && selectedRows[cdr.id]
+      );
+      setSelectAll(allCurrentSelected);
+    } else {
+      setSelectAll(false);
+    }
+  }, [currentRecords, selectedRows]);
+
   // Toggle single row selection
-  const toggleRowSelection = (id) => {
-    setSelectedRows(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-  };
+  const toggleRowSelection = React.useCallback((id) => {
+    if (!id) return;
+    
+    setSelectedRows(prevSelected => {
+      // Créer une nouvelle copie de l'objet de sélection
+      const newSelection = { ...prevSelected };
+      
+      // Toggle l'état de la ligne actuelle
+      newSelection[id] = !prevSelected[id];
+      
+      return newSelection;
+    });
+  }, []);
+  
+  // Mettre à jour l'état selectAll quand les sélections ou les données changent
+  useEffect(() => {
+    if (currentRecords.length > 0) {
+      const allSelected = currentRecords.every(record => 
+        record.id && selectedRows[record.id]
+      );
+      setSelectAll(allSelected);
+    } else {
+      setSelectAll(false);
+    }
+  }, [currentRecords, selectedRows]);
 
   // Export to CSV
   const exportToCSV = () => {
     const selectedCount = Object.values(selectedRows).filter(Boolean).length;
+    
+    // Si des éléments sont sélectionnés, on les exporte tous, sinon on exporte tout
     const recordsToExport = selectedCount > 0 
-      ? currentRecords.filter(cdr => selectedRows[cdr.id])
-      : currentRecords;
+      ? filteredRecords.filter(cdr => selectedRows[cdr.id])
+      : filteredRecords;
 
     if (recordsToExport.length === 0) {
       alert("Veuillez sélectionner au moins une ligne à exporter.");
       return;
+    }
+    
+    // Afficher une alerte avec le nombre d'éléments qui seront exportés
+    if (selectedCount > 0) {
+      if (!window.confirm(`Voulez-vous exporter les ${selectedCount} éléments sélectionnés ?`)) {
+        return;
+      }
+    } else {
+      if (!window.confirm(`Voulez-vous exporter tous les ${filteredRecords.length} éléments ?`)) {
+        return;
+      }
     }
 
     const headers = Object.entries({
@@ -248,14 +376,32 @@ const CDRTable = () => {
       })
       .join("\n");
 
-    const blob = new Blob([headers + csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([
+      '﻿', // BOM pour l'encodage UTF-8 sous Excel
+      headers,
+      csvContent
+    ], { type: 'text/csv;charset=utf-8;' });
+    
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `rapport_cdr_${new Date().toISOString().slice(0,10)}.csv`);
+    const link = document.createElement('a');
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
+    const filename = `rapport_cdr_${timestamp}.csv`;
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    
+    // Nettoyage
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 100);
+    
+    // Afficher une notification de succès
+    alert(`Export réussi ! ${recordsToExport.length} éléments ont été exportés.`);
   };
 
   return (
@@ -390,7 +536,22 @@ const CDRTable = () => {
                             title="Sélectionner/Désélectionner tout"
                           />
                         </th>
-                        {visibleColumns.Date && <th>Date</th>}
+                        {visibleColumns.Date && (
+                          <th 
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => requestSort('starttime')}
+                            className="user-select-none"
+                          >
+                            <div className="d-flex align-items-center gap-1">
+                              Date
+                              {sortConfig.key === 'starttime' && (
+                                sortConfig.direction === 'asc' ? 
+                                <FaSortAmountDownAlt /> : 
+                                <FaSortAmountDown />
+                              )}
+                            </div>
+                          </th>
+                        )}
                         {visibleColumns.utilisateurSip && <th>SIP User</th>}
                         {visibleColumns.idAppelant && <th>Caller ID</th>}
                         {visibleColumns.numero && <th>Number</th>}
@@ -409,13 +570,17 @@ const CDRTable = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {currentRecords.map((cdr) => (
-                        <tr key={cdr.id}>
+                      {currentRecords.map((cdr, index) => (
+                        <tr key={`${cdr.id}-${index}`}>
+                          {/* Ajout d'un identifiant unique combinant l'ID et l'index pour éviter les doublons */}
                           <td>
                             <Form.Check
                               type="checkbox"
                               checked={!!selectedRows[cdr.id]}
-                              onChange={() => toggleRowSelection(cdr.id)}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                toggleRowSelection(cdr.id, index);
+                              }}
                               onClick={(e) => e.stopPropagation()}
                             />
                           </td>
@@ -443,8 +608,55 @@ const CDRTable = () => {
               )}
 
               <div className="text-muted mt-3">
-                Showing {filteredRecords.length} records
+                Affichage de {totalUniqueRecords} enregistrement{totalUniqueRecords !== 1 ? 's' : ''} (page {currentPage} sur {totalPages})
               </div>
+
+              {filteredRecords.length > recordsPerPage && (
+                <div className="d-flex justify-content-center mt-3">
+                  <Pagination onClick={(e) => e.preventDefault()}>
+                    <Pagination.First 
+                      onClick={(e) => paginate(1, e)} 
+                      disabled={currentPage === 1} 
+                    />
+                    <Pagination.Prev 
+                      onClick={(e) => paginate(currentPage - 1, e)} 
+                      disabled={currentPage === 1} 
+                    />
+                    
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <Pagination.Item
+                          key={pageNum}
+                          active={pageNum === currentPage}
+                          onClick={(e) => paginate(pageNum, e)}
+                        >
+                          {pageNum}
+                        </Pagination.Item>
+                      );
+                    })}
+                    
+                    <Pagination.Next 
+                      onClick={(e) => paginate(currentPage + 1, e)} 
+                      disabled={currentPage === totalPages} 
+                    />
+                    <Pagination.Last 
+                      onClick={(e) => paginate(totalPages, e)} 
+                      disabled={currentPage === totalPages} 
+                    />
+                  </Pagination>
+                </div>
+              )}
             </Card.Body>
           </Card>
         </Col>

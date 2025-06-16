@@ -8,8 +8,10 @@ const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [errorType, setErrorType] = useState(''); // 'auth_error', 'access_denied', 'network_error'
   const [loading, setLoading] = useState(false);
-  const [year, setYear] = useState(new Date().getFullYear());
+  const [year] = useState(new Date().getFullYear());
+  const [showAccessDenied, setShowAccessDenied] = useState(false);
   const navigate = useNavigate();
   
   // Animation effect when component mounts
@@ -17,19 +19,50 @@ const Login = () => {
     document.querySelector('.login-container').classList.add('fade-in');
   }, []);
 
+  // Reset error states when user starts typing
+  const handleUsernameChange = (e) => {
+    setUsername(e.target.value);
+    if (errorType) setErrorType('');
+    if (error) setError('');
+  };
+  
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value);
+    if (errorType) setErrorType('');
+    if (error) setError('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setErrorType('');
+    setShowAccessDenied(false);
     setLoading(true);
 
-    // Log the credentials being sent (remove in production)
-    console.log('Attempting login with:', { username });
+    // Basic validation
+    if (!username && !password) {
+      setErrorType('both');
+      setError('Veuillez saisir votre nom d\'utilisateur et votre mot de passe');
+      setLoading(false);
+      return;
+    }
+
+    if (!username) {
+      setErrorType('username');
+      setError('Veuillez saisir votre nom d\'utilisateur');
+      setLoading(false);
+      return;
+    }
+
+    if (!password) {
+      setErrorType('password');
+      setError('Veuillez saisir votre mot de passe');
+      setLoading(false);
+      return;
+    }
 
     try {
-      // Use the login utility function with direct parameters
       await login(username, password);
-      
-      // Redirect to dashboard
       navigate('/');
     } catch (err) {
       console.error('Login error details:', {
@@ -39,13 +72,24 @@ const Login = () => {
         message: err.message
       });
 
-      if (err.response?.data?.error) {
-        setError(err.response.data.error);
+      const errorData = err.response?.data || {};
+      const errorMessage = errorData.error || 'Échec de la connexion. Veuillez réessayer.';
+      
+      // Set error type based on response
+      if (errorData.errorType === 'access_denied') {
+        setErrorType('access_denied');
+        setShowAccessDenied(true);
+        // Hide the animation after 2 seconds
+        setTimeout(() => setShowAccessDenied(false), 2000);
+      } else if (errorData.errorType === 'auth_error' || err.response?.status === 401) {
+        setErrorType('auth_error');
       } else if (err.message.includes('Network Error')) {
+        setErrorType('network_error');
         setError('Impossible de se connecter au serveur. Veuillez vérifier votre connexion réseau.');
-      } else {
-        setError('Échec de la connexion. Veuillez réessayer.');
+        return;
       }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -62,37 +106,44 @@ const Login = () => {
           <p>Tableau de bord d'administration</p>
         </div>
         
-        <div className="login-form-container">
+        <div className={`login-form-container ${showAccessDenied ? 'access-denied' : ''}`}>
           <div className="login-header">
             <h2>Bienvenue</h2>
             <p>Veuillez vous connecter pour continuer</p>
           </div>
           
-          {error && <div className="error-message">{error}</div>}
-          
+          {error && (
+            <div className={`error-message ${errorType === 'access_denied' ? 'error-access-denied' : ''}`}>
+              {error}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="login-form">
-            <div className="form-group">
+            <div className={`form-group ${errorType === 'username' || errorType === 'both' ? 'error-username' : ''}`}>
               <div className="input-icon-wrapper">
                 <FaUser className="input-icon" />
                 <input
                   type="text"
                   placeholder="Nom d'utilisateur"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
+                  onChange={handleUsernameChange}
+                  className="form-control"
+                  disabled={loading}
+                  autoComplete="username"
                 />
               </div>
             </div>
-            
-            <div className="form-group">
+
+            <div className={`form-group ${errorType === 'password' || errorType === 'both' ? 'error-password' : ''}`}>
               <div className="input-icon-wrapper">
                 <FaLock className="input-icon" />
                 <input
                   type="password"
                   placeholder="Mot de passe"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
+                  onChange={handlePasswordChange}
+                  className="form-control"
+                  disabled={loading}
+                  autoComplete="current-password"
                 />
               </div>
             </div>

@@ -3,23 +3,27 @@ import axios from "axios";
 import {
   Button,
   Table,
-  Form,
   Modal,
+  Form,
+  Spinner,
+  Alert,
   Row,
   Col,
   InputGroup,
-  Alert,
+  FormControl,
+  FormCheck,
+  FormSelect,
   Card,
-  Badge,
-  Spinner,
+  Badge
 } from "react-bootstrap";
 import { CSVLink } from "react-csv";
 import { 
-  BiSearch, 
   BiEdit, 
   BiTrash,
-  BiPlusCircle,
-  BiDownload,
+  BiPlus as BiPlusCircle,
+  BiSearch, 
+  BiFilterAlt, 
+  BiExport as BiDownload,
   BiCheckCircle,
   BiXCircle
 } from "react-icons/bi";
@@ -29,6 +33,28 @@ import 'react-toastify/dist/ReactToastify.css';
 
 // Constants
 const ITEMS_PER_PAGE = 10;
+
+// Fonction utilitaire pour formater la date
+const formatDate = (dateString) => {
+  if (!dateString) return '-';
+  try {
+    const date = new Date(dateString);
+    // Vérifier si la date est valide
+    if (isNaN(date.getTime())) {
+      return dateString; // Retourne la chaîne originale si la conversion échoue
+    }
+    return date.toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (error) {
+    console.error('Erreur de formatage de date:', error);
+    return dateString; // En cas d'erreur, retourne la valeur d'origine
+  }
+};
 
 // ------------------ ProviderHeader Component ------------------
 const ProviderHeader = ({ onAddClick, providers, isExporting }) => {
@@ -180,12 +206,33 @@ const ActionButtons = ({ onEdit, onDelete }) => {
 };
 
 // ------------------ ProviderTable Component ------------------
-const ProviderTable = ({ providers, onEdit, onDelete, isLoading }) => {
+const ProviderTable = ({ providers, onEdit, onDelete, isLoading, onSelectionChange }) => {
+  const handleSelectAll = (e) => {
+    onSelectionChange(providers.map(provider => ({
+      ...provider,
+      selected: e.target.checked
+    })));
+  };
+
+  const handleSelectOne = (id, checked) => {
+    onSelectionChange(providers.map(provider => 
+      provider.id === id ? { ...provider, selected: checked } : provider
+    ));
+  };
+
   return (
     <div className="table-responsive">
       <Table striped hover className="mb-0">
         <thead>
           <tr>
+            <th>
+              <Form.Check 
+                type="checkbox"
+                checked={providers.length > 0 && providers.every(p => p.selected)}
+                onChange={handleSelectAll}
+                disabled={isLoading || providers.length === 0}
+              />
+            </th>
             <th>Name</th>
             <th>Description</th>
             <th>Credit</th>
@@ -197,26 +244,33 @@ const ProviderTable = ({ providers, onEdit, onDelete, isLoading }) => {
         <tbody>
           {isLoading ? (
             <tr>
-              <td colSpan="6" className="text-center py-4">
+              <td colSpan="7" className="text-center py-4">
                 <Spinner animation="border" variant="primary" />
               </td>
             </tr>
           ) : providers.length === 0 ? (
             <tr>
-              <td colSpan="6" className="text-center py-4 text-muted">
+              <td colSpan="7" className="text-center py-4 text-muted">
                 No providers found
               </td>
             </tr>
           ) : (
             providers.map((provider) => (
               <tr key={provider.id}>
+                <td>
+                  <Form.Check 
+                    type="checkbox"
+                    checked={!!provider.selected}
+                    onChange={(e) => handleSelectOne(provider.id, e.target.checked)}
+                  />
+                </td>
                 <td className="fw-semibold">{provider.provider_name}</td>
                 <td className="text-muted">{provider.description || '-'}</td>
                 <td>{provider.credit}</td>
                 <td>
                   <StatusBadge status={provider.credit_control} />
                 </td>
-                <td>{new Date(provider.creation_date).toLocaleDateString()}</td>
+                <td>{formatDate(provider.creationdate)}</td>
                 <td>
                   <ActionButtons
                     onEdit={() => onEdit(provider)}
@@ -238,25 +292,40 @@ const AddProviderModal = ({ show, onHide, onProviderAdded, providerToEdit, setPr
     name: '',
     description: '',
     credit: '',
-    credit_control: 'no'
+    credit_control: 'no',
+    creationdate: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (providerToEdit) {
+      // Formater la date pour l'input de type date (format YYYY-MM-DD)
+      const formatDateForInput = (dateString) => {
+        if (!dateString) return '';
+        try {
+          const date = new Date(dateString);
+          return date.toISOString().split('T')[0];
+        } catch (e) {
+          console.error('Erreur de formatage de date:', e);
+          return '';
+        }
+      };
+
       setFormData({
         name: providerToEdit.provider_name,
         description: providerToEdit.description || '',
         credit: providerToEdit.credit,
-        credit_control: providerToEdit.credit_control === 1 ? 'yes' : 'no'
+        credit_control: providerToEdit.credit_control === 1 ? 'yes' : 'no',
+        creationdate: formatDateForInput(providerToEdit.creationdate)
       });
     } else {
       setFormData({
         name: '',
         description: '',
         credit: '',
-        credit_control: 'no'
+        credit_control: 'no',
+        creationdate: new Date().toISOString().split('T')[0] // Date du jour par défaut
       });
     }
   }, [providerToEdit]);
@@ -327,15 +396,9 @@ const AddProviderModal = ({ show, onHide, onProviderAdded, providerToEdit, setPr
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        {error && (
-          <Alert variant="danger" className="d-flex align-items-center">
-            <BiXCircle className="me-2" />
-            {error}
-          </Alert>
-        )}
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
-            <Form.Label>Name</Form.Label>
+            <Form.Label>Provider Name</Form.Label>
             <Form.Control
               type="text"
               name="name"
@@ -343,28 +406,6 @@ const AddProviderModal = ({ show, onHide, onProviderAdded, providerToEdit, setPr
               onChange={handleChange}
               required
             />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Credit</Form.Label>
-            <Form.Control
-              type="number"
-              name="credit"
-              value={formData.credit}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Reset credits:</Form.Label>
-            <Form.Select
-              name="credit_control"
-              value={formData.credit_control}
-              onChange={handleChange}
-              required
-            >
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
-            </Form.Select>
           </Form.Group>
           <Form.Group className="mb-3">
             <Form.Label>Description</Form.Label>
@@ -375,6 +416,29 @@ const AddProviderModal = ({ show, onHide, onProviderAdded, providerToEdit, setPr
               onChange={handleChange}
               rows={3}
             />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Credit</Form.Label>
+            <Form.Control
+              type="number"
+              name="credit"
+              value={formData.credit}
+              onChange={handleChange}
+              required
+              step="0.01"
+            />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Credit Control</Form.Label>
+            <Form.Select
+              name="credit_control"
+              value={formData.credit_control}
+              onChange={handleChange}
+              required
+            >
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </Form.Select>
           </Form.Group>
           <div className="d-flex justify-content-end">
             <Button 
@@ -409,30 +473,123 @@ const AddProviderModal = ({ show, onHide, onProviderAdded, providerToEdit, setPr
 // ------------------ BatchUpdateModal Component ------------------
 const BatchUpdateModal = ({ show, onHide, onBatchUpdate, providers }) => {
   const [formData, setFormData] = useState({
-    credit_amount: '',
-    credit_percentage: '',
-    credit_control: '',
-    description: ''
+    creationdate: '',
+    description: '',
+    credit: '',
+    credit_control: 'no'
   });
+  const [selectedProviderIds, setSelectedProviderIds] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Get selected providers when modal is shown
+  useEffect(() => {
+    if (show) {
+      const selected = providers.filter(p => p.selected).map(p => p.id);
+      setSelectedProviderIds(selected);
+      
+      if (selected.length === 0) {
+        setError('Please select at least one provider to update');
+      } else {
+        setError('');
+      }
+    }
+  }, [show, providers]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (selectedProviderIds.length === 0) {
+      setError('Please select at least one provider to update');
+      return;
+    }
+    
     setLoading(true);
     setError('');
 
     try {
+      // Prepare the update data
+      const updateData = {};
+      
+      // Only include fields that have values
+      if (formData.creationdate) updateData.creationdate = formData.creationdate;
+      if (formData.description !== undefined) updateData.description = formData.description;
+      if (formData.credit !== '') updateData.credit = formData.credit;
+      if (formData.credit_control) updateData.credit_control = formData.credit_control;
+      
+      // Add provider IDs
+      updateData.providerIds = selectedProviderIds;
+
+      console.log('Sending batch update request:', updateData);
+
       const response = await axios.put(
         '/api/admin/Providers/batchUpdate', 
-        formData
+        updateData,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
       );
 
-      onBatchUpdate();
-      onHide();
+      if (response.data && response.data.success) {
+        let message = `Successfully updated ${response.data.updatedCount} providers`;
+        
+        // Add warning if name was skipped due to duplicates
+        if (response.data.skippedNameUpdate) {
+          message += `\nNote: Could not update provider name to '${formData.name}' as it's already in use.`;
+        }
+        
+        alert(message);
+        onBatchUpdate();
+        onHide();
+      } else {
+        throw new Error(response.data?.error || 'Failed to update providers');
+      }
     } catch (error) {
-      console.error("Error batch updating providers:", error);
-      setError(error.response?.data?.message || 'Failed to batch update providers');
+      console.error("Error batch updating providers:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          data: error.config?.data
+        }
+      });
+      
+      let errorMessage = 'Failed to update providers';
+      let errorDetails = [];
+      
+      if (error.response?.data) {
+        // Handle different types of error responses
+        if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        } else if (error.response.data.error) {
+          errorMessage = error.response.data.error;
+          if (error.response.data.details) {
+            errorDetails.push(error.response.data.details);
+          }
+          if (error.response.data.field) {
+            errorDetails.push(`Field: ${error.response.data.field}`);
+          }
+          if (error.response.data.value) {
+            errorDetails.push(`Value: ${error.response.data.value}`);
+          }
+        } else {
+          errorMessage = JSON.stringify(error.response.data);
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Combine main error with details if any
+      if (errorDetails.length > 0) {
+        errorMessage += '\n' + errorDetails.join('\n');
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -459,37 +616,61 @@ const BatchUpdateModal = ({ show, onHide, onBatchUpdate, providers }) => {
           </Alert>
         )}
         <Alert variant="info" className="d-flex align-items-center">
-          This action will affect all {providers.length} providers
+          This action will affect {providers.filter(p => p.selected).length} selected providers
         </Alert>
         <Form onSubmit={handleSubmit}>
           <Row>
             <Col md={6}>
+              <Form.Text className="text-muted">
+                Note: Provider name cannot be updated in batch mode to prevent duplicates.
+              </Form.Text>
+            </Col>
+            <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Amount to add:</Form.Label>
+                <Form.Label>Creation Date</Form.Label>
                 <Form.Control
-                  type="number"
-                  name="credit_amount"
-                  value={formData.credit_amount}
+                  type="date"
+                  name="creationdate"
+                  value={formData.creationdate}
                   onChange={handleChange}
-                  placeholder="0,0000"
                 />
+                <Form.Text className="text-muted">Leave empty to keep current dates</Form.Text>
+              </Form.Group>
+            </Col>
+          </Row>
+          
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Credit</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="credit"
+                  value={formData.credit}
+                  onChange={handleChange}
+                  placeholder="Enter credit amount"
+                />
+                <Form.Text className="text-muted">
+                  Enter a number (e.g., 100 or 50.50)
+                </Form.Text>
               </Form.Group>
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3">
-                <Form.Label>Set a fixed amount:</Form.Label>
+                <Form.Label>Credit Control</Form.Label>
                 <Form.Select
                   name="credit_control"
                   value={formData.credit_control}
                   onChange={handleChange}
                 >
-                  <option value="">Do not modify</option>
-                  <option value="yes">Activate</option>
-                  <option value="no">Deactivate</option>
+                  <option value="">Keep current settings</option>
+                  <option value="yes">Activate credit control</option>
+                  <option value="no">Deactivate credit control</option>
                 </Form.Select>
               </Form.Group>
             </Col>
           </Row>
+          
           <Form.Group className="mb-3">
             <Form.Label>Description</Form.Label>
             <Form.Control
@@ -497,6 +678,7 @@ const BatchUpdateModal = ({ show, onHide, onBatchUpdate, providers }) => {
               name="description"
               value={formData.description}
               onChange={handleChange}
+              placeholder="Leave empty to keep current descriptions"
               rows={3}
             />
           </Form.Group>
@@ -596,6 +778,10 @@ const Providers = () => {
     setSearchTerm(e.target.value);
   };
 
+  const handleProviderSelection = (updatedProviders) => {
+    setFilteredProviders(updatedProviders);
+  };
+
   const pageCount = Math.ceil(filteredProviders.length / ITEMS_PER_PAGE);
   const paginatedProviders = filteredProviders.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -682,6 +868,7 @@ const Providers = () => {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 isLoading={isLoading}
+                onSelectionChange={handleProviderSelection}
               />
 
               {pageCount > 0 && (
@@ -736,8 +923,14 @@ const Providers = () => {
       <BatchUpdateModal
         show={showBatchModal}
         onHide={() => setShowBatchModal(false)}
-        onBatchUpdate={fetchProviders}
-        providers={providers}
+        onBatchUpdate={() => {
+          fetchProviders();
+          // Clear selections after batch update
+          setFilteredProviders(prev => 
+            prev.map(p => ({ ...p, selected: false }))
+          );
+        }}
+        providers={filteredProviders}
       />
     </div>
   );

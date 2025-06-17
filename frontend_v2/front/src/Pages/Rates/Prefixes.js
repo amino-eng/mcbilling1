@@ -130,24 +130,26 @@ function SearchBar({ searchTerm, onSearchChange }) {
 // Action Buttons Component
 function ActionButtons({ onEdit, onDelete }) {
   return (
-    <div className="d-flex gap-2">
+    <div className="d-flex gap-2 justify-content-end">
       <Button
-        variant="outline-primary"
+        variant="primary"
         size="sm"
         onClick={onEdit}
-        className="action-btn"
-        title="Edit"
+        className="action-btn d-flex align-items-center gap-1"
+        title="Modifier"
       >
         <FaEdit />
+        <span className="d-none d-md-inline">Modifier</span>
       </Button>
       <Button
-        variant="outline-danger"
+        variant="danger"
         size="sm"
         onClick={onDelete}
-        className="action-btn"
-        title="Delete"
+        className="action-btn d-flex align-items-center gap-1"
+        title="Supprimer"
       >
         <FaTrashAlt />
+        <span className="d-none d-md-inline">Supprimer</span>
       </Button>
     </div>
   );
@@ -433,7 +435,6 @@ const PrefixesTable = () => {
       transition: transform 0.2s ease;
     }
     .action-btn:hover .btn-icon {
-      transform: scale(1.2);
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }

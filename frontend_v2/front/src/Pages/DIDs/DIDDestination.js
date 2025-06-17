@@ -24,7 +24,7 @@ const App = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
-  const [isChargement, setIsChargement] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [user, setUser] = useState([]);
   const [sip, setSip] = useState([]);
@@ -66,7 +66,7 @@ const App = () => {
   };
 
   const fetchDIDs = async () => {
-    setIsChargement(true);
+    setIsLoading(true);
     try {
       const response = await fetch(apiUrl);
       const result = await response.json();
@@ -76,13 +76,13 @@ const App = () => {
         setMessage('');
         setErrorMessage('');
       } else {
-        setErrorMessage('Aucun DID trouvé');
+        setErrorMessage('No DIDs found');
       }
     } catch (error) {
-      console.error('Erreur de récupération des DIDs :', error);
-      setErrorMessage('Échec de la récupération des données');
+      console.error('Error fetching DIDs:', error);
+      setErrorMessage('Failed to fetch data');
     } finally {
-      setIsChargement(false);
+      setIsLoading(false);
     }
   };
 
@@ -92,7 +92,7 @@ const App = () => {
         setDidsList(response.data.dids);
       })
       .catch((err) => {
-        console.error('Erreur de récupération de la liste des DIDs :', err);
+        console.error('Error fetching DIDs list:', err);
       });
   };
 
@@ -115,20 +115,20 @@ const App = () => {
 
   const getCallTypeLabel = (callType) => {
     const callTypeMap = {
-      0: 'Appel vers PSTN',
+      0: 'Call to PSTN',
       1: 'SIP',
       2: 'SVI',
-      3: "Carte d'Appel",
-      4: 'Extension Directe',
-      5: 'Rappel CID',
-      6: 'Rappel 0800',
-      7: "File d'attente",
-      8: 'Groupe SIP',
-      9: 'Personnalisé',
-      10: 'Contexte',
-      11: 'IPs Multiples',
+      3: "Calling Card",
+      4: 'Direct Extension',
+      5: 'CID Recall',
+      6: '0800 Recall',
+      7: "Queue",
+      8: 'SIP Group',
+      9: 'Custom',
+      10: 'Context',
+      11: 'Multiple IPs',
     };
-    return callTypeMap[callType] || 'Inconnu';
+    return callTypeMap[callType] || 'Unknown';
   };
 
   const formatTime = (seconds) => {
@@ -141,7 +141,7 @@ const App = () => {
   const handleCSVExport = () => {
     setIsExporting(true);
     try {
-      const headers = ['DID', "Nom d'utilisateur", "Type d'Appel", "Temps Utilisé", "Priorité", "Date de Création"];
+      const headers = ['DID', 'Username', 'Call Type', 'Time Used', 'Priority', 'Creation Date'];
       const csvRows = [
         headers.join(','),
         ...dids.map((did) => [
@@ -163,11 +163,11 @@ const App = () => {
       a.click();
       URL.revokeObjectURL(url);
       
-      setSuccessMessage('CSV exporté avec succès');
+      setSuccessMessage('CSV exported successfully');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
-      console.error('Erreur d\'exportation CSV :', error);
-      setErrorMessage("Échec de l'exportation CSV");
+      console.error('CSV export error:', error);
+      setErrorMessage('CSV export failed');
       setTimeout(() => setErrorMessage(''), 3000);
     } finally {
       setIsExporting(false);
@@ -176,18 +176,18 @@ const App = () => {
 
   const handleDelete = (didNumber) => {
     if (!didNumber) {
-      setErrorMessage('Erreur: Numéro DID manquant');
+      setErrorMessage('Error: Missing DID number');
       return;
     }
     
-    if (window.confirm(`Supprimer le DID ${didNumber} ?`)) {
+    if (window.confirm(`Delete DID ${didNumber}?`)) {
       axios.delete(`http://localhost:5000/api/admin/DIDDestination/deleteByDid/${didNumber}`)
         .then(() => {
-          setSuccessMessage(`DID ${didNumber} supprimé`);
+          setSuccessMessage(`DID ${didNumber} deleted`);
           fetchDIDs();
         })
         .catch(err => {
-          setErrorMessage(`Erreur : ${err.response?.data?.message || 'Échec de la suppression'}`);
+          setErrorMessage(`Error: ${err.response?.data?.message || 'Failed to delete'}`);
         });
     }
   };
@@ -226,7 +226,7 @@ const App = () => {
         formattedData
       )
       .then((response) => {
-        setSuccessMessage('Destination DID ajoutée avec succès!');
+        setSuccessMessage('DID Destination added successfully!');
         setErrorMessage('');
         setIsAdding(false);
         setNewDidData({
@@ -240,8 +240,8 @@ const App = () => {
         fetchDIDs();
       })
       .catch((err) => {
-        console.error('Erreur d\'ajout de la Destination DID :', err);
-        setErrorMessage('Erreur d\'ajout de la Destination DID : ' + err.message);
+        console.error('Error adding DID Destination:', err);
+        setErrorMessage('Error adding DID Destination: ' + err.message);
         setSuccessMessage('');
         setIsAdding(false);
       });
@@ -268,8 +268,8 @@ const App = () => {
       fetchDIDs();
       setEditingDid(null);
     } catch (err) {
-      console.error('Erreur de mise à jour :', err.response?.data);
-      setErrorMessage(err.response?.data?.error || 'Erreur lors de la modification');
+      console.error('Update error:', err.response?.data);
+      setErrorMessage(err.response?.data?.error || 'Error during update');
     }
   };
 
@@ -383,8 +383,8 @@ const App = () => {
               <FaGlobe className="text-primary fs-3" />
             </div>
             <div>
-              <h2 className="fw-bold mb-0 text-white">Destinations DID</h2>
-              <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos destinations DID et règles de routage</p>
+              <h2 className="fw-bold mb-0 text-white">DID Destinations</h2>
+              <p className="text-white-50 mb-0 d-none d-md-block">Manage your DID destinations and routing rules</p>
             </div>
           </div>
         </div>
@@ -411,7 +411,7 @@ const App = () => {
               <div className="icon-container">
                 <FaPlusCircle />
               </div>
-              <span>Ajouter une Destination</span>
+              <span>Add Destination</span>
             </Button>
             <Button 
               variant="outline-primary" 
@@ -422,7 +422,7 @@ const App = () => {
               <div className="icon-container">
                 {isExporting ? <Spinner size="sm" /> : <FaDownload />}
               </div>
-              <span>Exporter</span>
+              <span>Export</span>
             </Button>
           </div>
         </div>
@@ -435,7 +435,7 @@ const App = () => {
       <div className="search-container shadow-sm rounded overflow-hidden">
         <InputGroup>
           <FormControl
-            placeholder="Rechercher DID, Nom d'utilisateur, Type d'appel..."
+            placeholder="Search DID, Username, Call Type..."
             value={searchTerm}
             onChange={onSearchChange}
             className="border-0 py-2"
@@ -452,12 +452,12 @@ const App = () => {
     return status === "Active" ? (
       <Badge bg="success" className="px-3 py-2 rounded-pill d-flex align-items-center gap-1">
         <FaCheckCircle size={10} />
-        <span>Actif</span>
+        <span>Active</span>
       </Badge>
     ) : (
       <Badge bg="secondary" className="px-3 py-2 rounded-pill d-flex align-items-center gap-1">
         <FaTimesCircle size={10} />
-        <span>Inactif</span>
+        <span>Inactive</span>
       </Badge>
     );
   };
@@ -468,11 +468,11 @@ const App = () => {
         <thead className="bg-light">
           <tr>
             <th className="py-3">DID</th>
-            <th className="py-3">Nom d'utilisateur/Utilisateur SIP</th>
-            <th className="py-3">Type d'Appel</th>
-            <th className="py-3">Temps Utilisé</th>
-            <th className="py-3">Priorité</th>
-            <th className="py-3">Date de Création</th>
+            <th className="py-3">Username/SIP User</th>
+            <th className="py-3">Call Type</th>
+            <th className="py-3">Time Used</th>
+            <th className="py-3">Priority</th>
+            <th className="py-3">Creation Date</th>
             <th className="py-3 text-center">Actions</th>
           </tr>
         </thead>
@@ -482,7 +482,7 @@ const App = () => {
               <td colSpan="7" className="text-center py-5">
                 <div className="d-flex flex-column align-items-center gap-3">
                   <FaPhoneAlt size={30} className="text-muted" />
-                  <p className="mb-0 text-muted">Aucun DID trouvé</p>
+                  <p className="mb-0 text-muted">No DIDs found</p>
                 </div>
               </td>
             </tr>
@@ -509,7 +509,7 @@ const App = () => {
                     size="sm" 
                     onClick={() => handleEditClick(did)}
                     className="me-2"
-                    title="Modifier"
+                    title="Edit"
                   >
                     <FaEdit />
                   </Button>
@@ -517,7 +517,7 @@ const App = () => {
                     variant="danger" 
                     size="sm" 
                     onClick={() => handleDelete(did.did)}
-                    title="Supprimer"
+                    title="Delete"
                   >
                     <FaTrashAlt />
                   </Button>
@@ -533,8 +533,8 @@ const App = () => {
   const PaginationComponent = ({ pageCount, currentPage, onPageChange }) => {
     return (
       <ReactPaginate
-        previousLabel={'Précédent'}
-        nextLabel={'Suivant'}
+        previousLabel={'Previous'}
+        nextLabel={'Next'}
         breakLabel={"..."}
         pageCount={pageCount}
         marginPagesDisplayed={2}
@@ -711,7 +711,7 @@ const App = () => {
                             Annuler
                           </Button>
                           <Button variant="primary" onClick={handleAddUser}>
-                            Ajouter une Destination
+                            Add Destination
                           </Button>
                         </div>
                       </Form>
@@ -846,14 +846,14 @@ const App = () => {
 
                 <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
                   <div className="text-muted small">
-                    {!isChargement && (
+                    {!isLoading && (
                       <>
                         <Badge bg="light" text="dark" className="me-2 shadow-sm">
-                          Affichage de {offset + 1} à {Math.min(offset + ITEMS_PER_PAGE, currentDIDs.length + offset)} sur {filteredDids.length} entrées
+                          Displaying {offset + 1} to {Math.min(offset + ITEMS_PER_PAGE, currentDIDs.length + offset)} of {filteredDids.length} entries
                         </Badge>
                         {searchTerm && (
                           <Badge bg="light" text="dark" className="shadow-sm">
-                            Filtré à partir de {dids.length} au total
+                            Filtered from {dids.length} total
                           </Badge>
                         )}
                       </>

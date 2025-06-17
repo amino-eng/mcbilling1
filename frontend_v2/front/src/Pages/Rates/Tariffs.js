@@ -5,18 +5,18 @@ import axios from "axios"
 import "bootstrap/dist/css/bootstrap.min.css"
 import { 
   Table, Spinner, Alert, Form, Button, InputGroup, Modal, 
-  Card, Container, Row, Col, Badge 
+  Card, Container, Row, Col, Badge, Dropdown 
 } from "react-bootstrap"
 import { 
   FaCheckCircle, FaTimesCircle, FaEdit, FaSearch, 
-  FaPlusCircle, FaTrashAlt, FaFileAlt 
+  FaPlusCircle, FaTrashAlt, FaFileAlt, FaFileExport 
 } from "react-icons/fa"
 
 // Constants
 const ITEMS_PER_PAGE = 10
 
 // Header Component
-function TariffsHeader({ onAddClick, tariffs, isExporting = false }) {
+function TariffsHeader({ onAddClick, tariffs, onExport, onImport, isExporting = false, isImporting = false }) {
   return (
     <Card.Header className="d-flex flex-wrap align-items-center p-0 rounded-top overflow-hidden">
       <div className="bg-primary p-3 w-100 position-relative">
@@ -49,7 +49,7 @@ function TariffsHeader({ onAddClick, tariffs, isExporting = false }) {
         <div className="d-flex align-items-center gap-3">
           <Badge bg="primary" className="d-flex align-items-center p-2 ps-3 rounded-pill">
             <span className="me-2 fw-normal">
-Total: <span className="fw-bold">{tariffs.length}</span>
+              Total: <span className="fw-bold">{tariffs.length}</span>
             </span>
             <span
               className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center"
@@ -60,16 +60,56 @@ Total: <span className="fw-bold">{tariffs.length}</span>
           </Badge>
         </div>
         <div className="d-flex gap-2">
-          <Button
-            variant="primary"
-            onClick={onAddClick}
-            className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
-          >
-            <div className="icon-container">
-              <FaPlusCircle />
+          <div className="d-flex gap-2">
+            <div className="d-flex gap-2">
+              <Dropdown>
+                <Dropdown.Toggle 
+                  variant="outline-primary" 
+                  className="d-flex align-items-center gap-2"
+                  disabled={isExporting}
+                >
+                  {isExporting ? (
+                    <>
+                      <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
+                      Exporting...
+                    </>
+                  ) : (
+                    <><FaFileExport /> Export</>
+                  )}
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  <Dropdown.Item onClick={onExport} disabled={isExporting || tariffs.length === 0}>
+                    Export to CSV
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
+              <Button
+                variant="outline-success"
+                className="d-flex align-items-center gap-2"
+                onClick={onImport}
+                disabled={isImporting}
+              >
+                {isImporting ? (
+                  <>
+                    <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
+                    Importing...
+                  </>
+                ) : (
+                  <><FaFileAlt /> Import</>
+                )}
+              </Button>
             </div>
-            <span>Add</span>
-          </Button>
+            <Button
+              variant="primary"
+              onClick={onAddClick}
+              className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+            >
+              <div className="icon-container">
+                <FaPlusCircle />
+              </div>
+              <span>Add Rate</span>
+            </Button>
+          </div>
         </div>
       </div>
     </Card.Header>
@@ -194,6 +234,158 @@ const TariffsTable = () => {
   const [currentTariff, setCurrentTariff] = useState(null)
   const [currentPage, setCurrentPage] = useState(0)
   const [successMessage, setSuccessMessage] = useState("")
+  const [isExporting, setIsExporting] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
+  const [importError, setImportError] = useState("")
+
+  // Export to CSV function
+  const handleImport = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    setImportError("");
+
+    try {
+      const text = await file.text();
+      const rows = text.split('\n').filter(row => row.trim() !== '');
+      
+      if (rows.length < 2) {
+        throw new Error('CSV file is empty or has invalid format');
+      }
+
+      // Parse headers and data rows
+      const headers = rows[0].split(',').map(h => h.replace(/^"|"$/g, '').trim());
+      const dataRows = rows.slice(1);
+
+      // Map CSV data to API format
+      const importedTariffs = dataRows.map(row => {
+        const values = row.split(',').map(v => v.replace(/^"|"$/g, '').trim());
+        const tariff = {};
+        
+        headers.forEach((header, index) => {
+          if (values[index] !== undefined) {
+            // Map CSV headers to API fields
+            const fieldMap = {
+              'Plan ID': 'id_plan',
+              'Prefix ID': 'id_prefix',
+              'Trunk Group ID': 'id_trunk_group',
+              'Prefix': 'prefix',
+              'Destination': 'destination',
+              'Sell Rate': 'sellrate',
+              'Initial Block': 'initblock',
+              'Billing Block': 'billingblock',
+              'Trunk Group': 'trunk_group_name',
+              'Plan': 'plan',
+              'Minimal Time': 'minimal_time_buy',
+              'Additional Time': 'additional_time',
+              'Connection Charge': 'connection_charge',
+              'Included in Offer': 'include_in_offer',
+              'Status': 'status'
+            };
+            
+            const fieldName = fieldMap[header] || header.toLowerCase();
+            tariff[fieldName] = values[index];
+          }
+        });
+        
+        return tariff;
+      });
+
+      // Upload in batches to avoid overwhelming the server
+      const BATCH_SIZE = 10;
+      for (let i = 0; i < importedTariffs.length; i += BATCH_SIZE) {
+        const batch = importedTariffs.slice(i, i + BATCH_SIZE);
+        await Promise.all(batch.map(async (tariff) => {
+          try {
+            await axios.post("http://localhost:5000/api/admin/Tariffs/ajouter", tariff);
+          } catch (error) {
+            console.error(`Error importing tariff:`, error);
+            throw new Error(`Failed to import some rates. Please check the data and try again.`);
+          }
+        }));
+      }
+
+      // Refresh the tariffs list
+      await fetchTariffs();
+      setSuccessMessage(`Successfully imported ${importedTariffs.length} rates`);
+      
+      // Reset file input
+      event.target.value = '';
+    } catch (error) {
+      console.error('Import error:', error);
+      setImportError(error.message || 'An error occurred while importing the CSV file');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleExport = () => {
+    if (filteredTariffs.length === 0) return;
+    
+    setIsExporting(true);
+    
+    try {
+      // Define CSV headers
+      const headers = [
+        'Plan ID',
+        'Prefix ID',
+        'Trunk Group ID',
+        'Prefix',
+        'Destination',
+        'Sell Rate',
+        'Initial Block',
+        'Billing Block',
+        'Trunk Group',
+        'Plan',
+        'Minimal Time',
+        'Additional Time',
+        'Connection Charge',
+        'Included in Offer',
+        'Status'
+      ];
+      
+      // Convert data to CSV rows
+      const csvRows = [
+        headers.join(','),
+        ...filteredTariffs.map(tariff => 
+          [
+            `"${tariff.id_plan || ''}"`,
+            `"${tariff.id_prefix || ''}"`,
+            `"${tariff.id_trunk_group || ''}"`,
+            `"${tariff.prefix || ''}"`,
+            `"${tariff.destination || ''}"`,
+            `"${tariff.sellrate || ''}"`,
+            `"${tariff.initblock || ''}"`,
+            `"${tariff.billingblock || ''}"`,
+            `"${tariff.trunk_group_name || ''}"`,
+            `"${tariff.plan || ''}"`,
+            `"${tariff.minimal_time_buy || ''}"`,
+            `"${tariff.additional_time || ''}"`,
+            `"${tariff.connection_charge || ''}"`,
+            `"${tariff.include_in_offer || ''}"`,
+            `"${tariff.status || ''}"`
+          ].join(',')
+        )
+      ];
+      
+      // Create CSV file and trigger download
+      const csvString = csvRows.join('\r\n');
+      const blob = new Blob(["\uFEFF" + csvString], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'rates_export.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error exporting to CSV:', error);
+      setError('An error occurred while exporting data');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Search modals state
   const [showPlanSearch, setShowPlanSearch] = useState(false)
@@ -318,8 +510,80 @@ const TariffsTable = () => {
     setCurrentPage(selected)
   }
 
+  const handlePageClick = (pageNumber) => {
+    setCurrentPage(pageNumber)
+  }
+
+  // Export to CSV function
+  const exportToCSV = () => {
+    if (filteredTariffs.length === 0) return;
+    
+    setIsExporting(true);
+    
+    try {
+      // Define CSV headers with French translations
+      const headers = [
+        'ID Plan',
+        'ID Préfixe',
+        'ID Groupe de Trunk',
+        'Préfixe',
+        'Destination',
+        'Tarif de vente',
+        'Bloc initial',
+        'Bloc de facturation',
+        'Groupe de trunk',
+        'Forfait',
+        'Temps minimal d\'achat',
+        'Temps additionnel',
+        'Frais de connexion',
+        'Inclus dans l\'offre',
+        'Statut'
+      ];
+      
+      // Convert data to CSV rows
+      const csvRows = [
+        headers.join(','),
+        ...filteredTariffs.map(tariff => 
+          [
+            `"${tariff.id_plan || ''}"`,
+            `"${tariff.id_prefix || ''}"`,
+            `"${tariff.id_trunk_group || ''}"`,
+            `"${tariff.prefix || ''}"`,
+            `"${tariff.destination || ''}"`,
+            `"${tariff.sellrate || ''}"`,
+            `"${tariff.initblock || ''}"`,
+            `"${tariff.billingblock || ''}"`,
+            `"${tariff.trunk_group_name || ''}"`,
+            `"${tariff.plan || ''}"`,
+            `"${tariff.minimal_time_buy || ''}"`,
+            `"${tariff.additional_time || ''}"`,
+            `"${tariff.connection_charge || ''}"`,
+            `"${tariff.include_in_offer || ''}"`,
+            `"${tariff.status || ''}"`
+          ].join(',')
+        )
+      ];
+      
+      // Create CSV file and trigger download
+      const csvString = csvRows.join('\r\n');
+      const blob = new Blob(["\uFEFF" + csvString], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'tarifs_export.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error exporting to CSV:', error);
+      setError('Une erreur est survenue lors de l\'exportation des données');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleDelete = async (id) => {
-    if (!window.confirm("Voulez-vous vraiment supprimer ce tarif ?")) return
+    if (!window.confirm("Are you sure you want to delete this rate?")) return
     try {
       await axios.delete(`http://localhost:5000/api/admin/Tariffs/supprimer/${id}`)
       fetchTariffs()
@@ -342,13 +606,13 @@ const TariffsTable = () => {
       id_plan: formData.id_plan,
       id_prefix: formData.id_prefix,
       id_trunk_group: formData.id_trunk_group,
-      rateinitial: formData.sellrate, // Utiliser le nom de champ correct pour la base de données
+      rateinitial: formData.sellrate, // Use the correct field name for the database
       initblock: formData.initblock,
       billingblock: formData.billingblock,
-      minimal_time_charge: formData.minimal_time_buy, // Changé de minimal_time_buy à minimal_time_charge
-      additional_grace: formData.additional_time, // Changé de additional_time à additional_grace
-      connectcharge: formData.connection_charge, // Changé de connection_charge à connectcharge
-      package_offer: formData.include_in_offer === "Yes" ? 1 : 0, // Changé de include_in_offer à package_offer
+      minimal_time_charge: formData.minimal_time_buy, // Changed from minimal_time_buy to minimal_time_charge
+      additional_grace: formData.additional_time, // Changed from additional_time to additional_grace
+      connectcharge: formData.connection_charge, // Changed from connection_charge to connectcharge
+      package_offer: formData.include_in_offer === "Yes" ? 1 : 0, // Changed from include_in_offer to package_offer
       status: formData.status === "Active" ? 1 : 0,
     }
 
@@ -360,7 +624,7 @@ const TariffsTable = () => {
         setShowModal(false)
       } catch (err) {
         console.error(err)
-        alert("Erreur lors de la mise à jour.")
+        alert("Error while updating.")
       }
     } else {
       // Add new tariff
@@ -370,7 +634,7 @@ const TariffsTable = () => {
         setShowModal(false)
       } catch (err) {
         console.error(err)
-        alert("Erreur lors de l'ajout.")
+        alert("Error while adding.")
       }
     }
   }
@@ -407,16 +671,16 @@ const TariffsTable = () => {
   const fetchTrunkGroups = async () => {
     setLoadingTrunkGroups(true)
     try {
-      // Utiliser les données des tarifs existants comme solution de secours
-      // si l'API ne renvoie pas de données
+      // Use existing rate data as fallback
+      // if the API doesn't return any data
       const res = await axios.get("http://localhost:5000/api/admin/TrunkGroup/afficher")
       console.log("Trunk Groups API Response:", res.data)
 
-      // Si l'API renvoie des données, les utiliser
+      // If the API returns data, use it
       if (res.data && (res.data.trunkGroups || []).length > 0) {
         setTrunkGroupResults(res.data.trunkGroups || [])
       } else {
-        // Sinon, extraire les groupes de trunk uniques des tarifs existants
+        // Otherwise, extract unique trunk groups from existing rates
         console.log("No API results, using existing rate data")
         const uniqueTrunkGroups = []
         const trunkGroupIds = new Set()
@@ -432,11 +696,11 @@ const TariffsTable = () => {
           }
         })
 
-        console.log("Trunk Groups extraits des tarifs:", uniqueTrunkGroups)
+        console.log("Trunk Groups extracted from rates:", uniqueTrunkGroups)
         setTrunkGroupResults(uniqueTrunkGroups)
       }
     } catch (err) {
-      console.error("Erreur API Trunk Groups:", err)
+      console.error("Trunk Groups API Error:", err)
 
       // In case of error, extract trunk groups from existing rates
       console.log("API error, using existing rate data")
@@ -454,7 +718,7 @@ const TariffsTable = () => {
         }
       })
 
-      console.log("Trunk Groups extraits des tarifs (après erreur):", uniqueTrunkGroups)
+      console.log("Trunk Groups extracted from rates (after error):", uniqueTrunkGroups)
       setTrunkGroupResults(uniqueTrunkGroups)
     } finally {
       setLoadingTrunkGroups(false)
@@ -484,7 +748,7 @@ const TariffsTable = () => {
     setFormData((prev) => ({
       ...prev,
       id_trunk_group: trunkGroup.id,
-      // Utiliser le bon nom de propriété selon ce qui est disponible
+      // Use the correct property name based on what's available
       trunk_group_name: trunkGroup.name || trunkGroup.trunk_group_name || "",
     }))
     setShowTrunkGroupSearch(false)
@@ -567,13 +831,24 @@ const TariffsTable = () => {
               <Card className="shadow border-0 overflow-hidden main-card">
                 <TariffsHeader 
                   onAddClick={handleAdd} 
-                  tariffs={tariffs} 
+                  tariffs={filteredTariffs}
+                  onExport={handleExport}
+                  onImport={() => document.getElementById('csv-import').click()}
+                  isExporting={isExporting}
+                  isImporting={isImporting}
+                />
+                <input
+                  type="file"
+                  id="csv-import"
+                  accept=".csv"
+                  style={{ display: 'none' }}
+                  onChange={handleImport}
                 />
                 <Card.Body className="p-4" style={{ animation: "fadeIn 0.5s ease-in-out" }}>
-                  {error && (
+                  {(error || importError) && (
                     <Alert variant="danger" className="d-flex align-items-center mb-4 shadow-sm">
                       <FaTimesCircle className="me-2" />
-                      {error}
+                      {error || importError}
                     </Alert>
                   )}
                   {successMessage && (
@@ -836,7 +1111,7 @@ const TariffsTable = () => {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowPlanSearch(false)}>
-            Fermer
+            Close
           </Button>
         </Modal.Footer>
       </Modal>
@@ -849,7 +1124,7 @@ const TariffsTable = () => {
         <Modal.Body>
           <InputGroup className="mb-3">
             <Form.Control
-              placeholder="Filtrer..."
+              placeholder="Filter..."
               value={destinationSearchTerm}
               onChange={(e) => setDestinationSearchTerm(e.target.value)}
             />
@@ -899,7 +1174,7 @@ const TariffsTable = () => {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowDestinationSearch(false)}>
-            Fermer
+            Close
           </Button>
         </Modal.Footer>
       </Modal>
@@ -912,7 +1187,7 @@ const TariffsTable = () => {
         <Modal.Body>
           <InputGroup className="mb-3">
             <Form.Control
-              placeholder="Filtrer..."
+              placeholder="Filter..."
               value={trunkGroupSearchTerm}
               onChange={(e) => setTrunkGroupSearchTerm(e.target.value)}
             />
@@ -966,7 +1241,7 @@ const TariffsTable = () => {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowTrunkGroupSearch(false)}>
-            Fermer
+            Close
           </Button>
         </Modal.Footer>
       </Modal>

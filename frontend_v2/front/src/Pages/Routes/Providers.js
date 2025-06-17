@@ -672,7 +672,7 @@ const Providers = () => {
                     onClick={() => setShowBatchModal(true)}
                     className="d-flex align-items-center gap-2"
                   >
-                    Mise à jour Groupée
+                    Update all providers
                   </Button>
                 </Col>
               </Row>

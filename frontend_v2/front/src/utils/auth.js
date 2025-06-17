@@ -29,7 +29,7 @@ const makeApiCall = async (endpoint, options) => {
 
 // Login user
 export const login = async (username, password) => {
-  console.log('Fonction de connexion appelée avec:', { username, passwordLength: password?.length });
+  console.log('Login function called with:', { username, passwordLength: password?.length });
   
   try {
     // Make sure we're sending the credentials in the correct format
@@ -38,7 +38,7 @@ export const login = async (username, password) => {
       data: { username, password }
     });
     
-    console.log('Réponse de connexion:', response.data);
+    console.log('Login response:', response.data);
     
     if (response.data.token) {
       // Store user details in localStorage
@@ -52,31 +52,31 @@ export const login = async (username, password) => {
       // Dispatch an event to notify the app about the authentication change
       window.dispatchEvent(new Event('auth-change'));
     } else {
-      console.warn('Connexion réussie mais aucun jeton n\'a été retourné');
+      console.warn('Login successful but no token was returned');
     }
     
     return response.data;
   } catch (error) {
-    console.error('Erreur de la fonction de connexion:', error.message);
+    console.error('Error in login function:', error.message);
     throw error;
   }
 };
 
 // Logout user
 export const logout = () => {
-  // Supprimer les détails de l\'utilisateur du localStorage
+  // Remove user details from localStorage
   localStorage.removeItem('isAuthenticated');
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   
-  // Supprimer l\'en-tête d\'autorisation
+  // Remove authorization header
   axios.defaults.headers.common['Authorization'] = '';
   
   // Dispatch an event to notify the app about the authentication change
   window.dispatchEvent(new Event('auth-change'));
 };
 
-// Définir l\'en-tête d\'autorisation
+// Set authorization header
 export const setAuthHeader = (token) => {
   if (token) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -85,18 +85,18 @@ export const setAuthHeader = (token) => {
   }
 };
 
-// Obtenir l\'utilisateur actuel
+// Get current user
 export const getCurrentUser = () => {
   const user = localStorage.getItem('user');
   return user ? JSON.parse(user) : null;
 };
 
-// Vérifier si l\'utilisateur est authentifié
+// Check if user is authenticated
 export const isAuthenticated = () => {
   return localStorage.getItem('isAuthenticated') === 'true';
 };
 
-// Initialiser l\'état d\'authentification depuis le localStorage
+// Initialize authentication state from localStorage
 export const initAuth = () => {
   const token = localStorage.getItem('token');
   if (token) {

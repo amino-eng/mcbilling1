@@ -104,41 +104,43 @@ const CDRTable = () => {
 
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/admin/users");
-        const userMap = response.data.reduce((acc, user) => {
-          acc[user.id] = user.username;
+        const response = await axios.get("http://localhost:5000/api/admin/users/affiche");
+        const usersData = response.data.users || [];
+        const userMap = usersData.reduce((acc, user) => {
+          acc[user.id] = user.username || '';
           return acc;
         }, {});
         setUsers(userMap);
       } catch (error) {
         console.error("Error while fetching user data:", error);
+        // Set empty users object to prevent undefined errors
+        setUsers({});
       }
     };
 
     const fetchTrunks = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/admin/trunks");
-        const trunkMap = response.data.reduce((acc, trunk) => {
-          acc[trunk.id] = trunk.name;
-          return acc;
-        }, {});
+        const response = await axios.get("http://localhost:5000/api/admin/Trunks/afficher");
+        const trunksData = response.data?.trunks || [];
+        const trunkMap = {};
+        
+        if (Array.isArray(trunksData)) {
+          trunksData.forEach(trunk => {
+            trunkMap[trunk.id] = trunk.trunkcode || trunk.name || '';
+          });
+        }
+        
         setTrunks(trunkMap);
       } catch (error) {
         console.error("Error while fetching trunk data:", error);
+        // Set empty trunks object to prevent undefined errors
+        setTrunks({});
       }
     };
 
+    // pkg_trunks data is already included in the CDR data from the backend
     const fetchPkgTrunks = async () => {
-      try {
-        const response = await axios.get("http://localhost:5000/api/admin/pkg_trunks");
-        const pkgTrunkMap = response.data.reduce((acc, pkgTrunk) => {
-          acc[pkgTrunk.id] = pkgTrunk.trunkcode;
-          return acc;
-        }, {});
-        setPkgTrunks(pkgTrunkMap);
-      } catch (error) {
-        console.error("Error while fetching pkg_trunk data:", error);
-      }
+      setPkgTrunks({}); // Not needed as we'll use the data from the CDR response
     };
 
     Promise.all([fetchCDRData(), fetchUsers(), fetchTrunks(), fetchPkgTrunks()]).finally(() => {

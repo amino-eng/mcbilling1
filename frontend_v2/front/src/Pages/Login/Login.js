@@ -42,21 +42,21 @@ const Login = () => {
     // Basic validation
     if (!username && !password) {
       setErrorType('both');
-      setError('Veuillez saisir votre nom d\'utilisateur et votre mot de passe');
+      setError('Please enter your username and password');
       setLoading(false);
       return;
     }
 
     if (!username) {
       setErrorType('username');
-      setError('Veuillez saisir votre nom d\'utilisateur');
+      setError('Please enter your username');
       setLoading(false);
       return;
     }
 
     if (!password) {
       setErrorType('password');
-      setError('Veuillez saisir votre mot de passe');
+      setError('Please enter your password');
       setLoading(false);
       return;
     }
@@ -73,7 +73,7 @@ const Login = () => {
       });
 
       const errorData = err.response?.data || {};
-      const errorMessage = errorData.error || 'Échec de la connexion. Veuillez réessayer.';
+      const errorMessage = errorData.error || 'Login failed. Please try again.';
       
       // Set error type based on response
       if (errorData.errorType === 'access_denied') {
@@ -85,7 +85,7 @@ const Login = () => {
         setErrorType('auth_error');
       } else if (err.message.includes('Network Error')) {
         setErrorType('network_error');
-        setError('Impossible de se connecter au serveur. Veuillez vérifier votre connexion réseau.');
+        setError('Unable to connect to the server. Please check your network connection.');
         return;
       }
       
@@ -103,13 +103,13 @@ const Login = () => {
             <span className="logo-icon">MC</span>
           </div>
           <h1>MCBILLING</h1>
-          <p>Tableau de bord d'administration</p>
+          <p>Administration Dashboard</p>
         </div>
         
         <div className={`login-form-container ${showAccessDenied ? 'access-denied' : ''}`}>
           <div className="login-header">
-            <h2>Bienvenue</h2>
-            <p>Veuillez vous connecter pour continuer</p>
+            <h2>Welcome</h2>
+            <p>Please sign in to continue</p>
           </div>
           
           {error && (
@@ -123,7 +123,7 @@ const Login = () => {
                 <FaUser className="input-icon" />
                 <input
                   type="text"
-                  placeholder="Nom d'utilisateur"
+                  placeholder="Username"
                   value={username}
                   onChange={handleUsernameChange}
                   className="form-control"
@@ -138,7 +138,7 @@ const Login = () => {
                 <FaLock className="input-icon" />
                 <input
                   type="password"
-                  placeholder="Mot de passe"
+                  placeholder="Password"
                   value={password}
                   onChange={handlePasswordChange}
                   className="form-control"
@@ -157,7 +157,7 @@ const Login = () => {
                 <span className="loading-spinner"></span>
               ) : (
                 <>
-                  <span>Se connecter</span>
+                  <span>Sign In</span>
                   <FaSignInAlt />
                 </>
               )}
@@ -166,7 +166,7 @@ const Login = () => {
         </div>
         
         <div className="login-footer">
-          <p>&copy; {year} MCBILLING. Tous droits réservés.</p>
+          <p>&copy; {year} MCBILLING. All rights reserved.</p>
         </div>
       </div>
     </div>

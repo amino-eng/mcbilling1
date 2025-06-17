@@ -555,60 +555,96 @@ function Dashboard() {
   const fetchCallStats = async () => {
     setLoading(prev => ({ ...prev, callStats: true }));
     try {
-      // Fetch failed CDR data
-      let failedData = [];
-      try {
-        const failedResponse = await axios.get("http://localhost:5000/api/admin/CdrFailed/affiche");
-        console.log('Failed CDR Response:', failedResponse.data);
-        failedData = failedResponse.data?.cdr_failed || [];
-        console.log('Number of failed calls:', failedData.length);
-      } catch (error) {
-        console.error("Error fetching failed CDR data:", error);
-      }
-
-      // Fetch successful CDR data
-      const successResponse = await axios.get("http://localhost:5000/api/admin/CDR/affiche");
-      console.log('CDR Response:', successResponse.data);
+      // Fetch all CDR data (both successful and failed)
+      const [successResponse, failedResponse] = await Promise.all([
+        axios.get("http://localhost:5000/api/admin/CDR/affiche"),
+        axios.get("http://localhost:5000/api/admin/CdrFailed/affiche")
+      ]);
       
-      if (!successResponse.data || !Array.isArray(successResponse.data.cdr)) {
-        console.error('Invalid CDR data format:', successResponse.data);
-        throw new Error('Invalid CDR data format');
+      console.log('CDR Response:', successResponse.data);
+      console.log('Failed CDR Response:', failedResponse?.data);
+
+      // Process successful CDR data
+      let successData = [];
+      let uniqueCalls = [];
+      const seenCallIds = new Set();
+      
+      if (successResponse.data && Array.isArray(successResponse.data.cdr)) {
+        console.log('Raw CDR data count:', successResponse.data.cdr.length);
+        
+        // First, filter out duplicates based on call ID
+        uniqueCalls = successResponse.data.cdr.filter(call => {
+          if (!call.id) return false; // Skip if no ID
+          if (seenCallIds.has(call.id)) {
+            console.log('Found duplicate call ID:', call.id);
+            return false;
+          }
+          seenCallIds.add(call.id);
+          return true;
+        });
+        
+        console.log('Unique calls after deduplication:', uniqueCalls.length);
+        
+        // Now filter successful calls from unique calls
+        successData = uniqueCalls.filter(call => {
+          const hasSessionTime = parseFloat(call.sessiontime) > 0;
+          const isAnswered = call.disposition === 'ANSWERED';
+          const isTerminatedNormally = call.terminatecauseid === '16' || call.terminatecauseid === 16;
+          
+          // Log the first few calls for debugging
+          if (successData.length < 3) {
+            console.log('Call details:', {
+              id: call.id,
+              sessiontime: call.sessiontime,
+              disposition: call.disposition,
+              terminatecauseid: call.terminatecauseid,
+              isSuccessful: hasSessionTime || isAnswered || isTerminatedNormally
+            });
+          }
+          
+          return hasSessionTime || isAnswered || isTerminatedNormally;
+        });
       }
 
-      // Filter successful calls
-      const successData = successResponse.data.cdr.filter(call => {
-        console.log('Call details:', {
-          terminatecauseid: call.terminatecauseid,
-          sessiontime: call.sessiontime,
-          real_sessiontime: call.real_sessiontime,
-          sessionbill: call.sessionbill,
-          calledstation: call.calledstation,
-          callerid: call.callerid
-        });
-        // Consider a call successful if it has sessiontime > 0
-        return call.sessiontime > 0;
-      });
+      // Process failed CDR data
+      let failedData = [];
+      if (failedResponse?.data?.cdr_failed && Array.isArray(failedResponse.data.cdr_failed)) {
+        failedData = failedResponse.data.cdr_failed;
+      }
 
       // Calculate statistics
-      const totalCalls = successData.length + failedData.length;
       const successfulCalls = successData.length;
       const failedCalls = failedData.length;
+      const totalCalls = successfulCalls + failedCalls;
       
-      // Calculate total duration, buyprice and sellprice
-      const totalDuration = successData.reduce((sum, call) => sum + (call.sessiontime || 0), 0);
-      const totalBuyPrice = successData.reduce((sum, call) => sum + (parseFloat(call.buyprice) || 0), 0);
-      const totalSellPrice = successData.reduce((sum, call) => sum + (parseFloat(call.sessionbill) || 0), 0);
-      const averageDuration = successfulCalls > 0 ? totalDuration / successfulCalls : 0;
+      console.log('Total calls from API:', totalCalls);
+
+      // Calculate total duration, buy price and sell price
+      let totalDuration = 0;
+      let totalBuyPrice = 0;
+      let totalSellPrice = 0;
+
+      // Process successful calls
+      for (const call of successData) {
+        totalDuration += parseFloat(call.sessiontime || 0);
+        totalBuyPrice += parseFloat(call.buycost || 0);
+        totalSellPrice += parseFloat(call.sessionbill || 0);
+      }
       
-      console.log('Call Stats:', {
-        totalCalls,
-        successfulCalls,
-        failedCalls,
-        totalDuration,
-        totalBuyPrice,
-        totalSellPrice
-      });
+      // Process failed calls
+      for (const call of failedData) {
+        totalBuyPrice += parseFloat(call.buycost || 0);
+        totalSellPrice += parseFloat(call.sessionbill || 0);
+      }
       
+      // Round to 4 decimal places to avoid floating point precision issues
+      totalBuyPrice = parseFloat(totalBuyPrice.toFixed(4));
+      totalSellPrice = parseFloat(totalSellPrice.toFixed(4));
+      
+      console.log('Total buy price:', totalBuyPrice);
+      console.log('Total sell price:', totalSellPrice);
+      console.log('Total duration:', totalDuration);
+
       // Update call stats
       setCallStats({
         totalCalls,
@@ -618,7 +654,7 @@ function Dashboard() {
         totalBuyPrice,
         totalSellPrice
       });
-      
+
       // Update call distribution data
       setCallDistributionData({
         labels: ['Successful', 'Failed'],
@@ -1062,7 +1098,11 @@ function Dashboard() {
                 </div>
               </div>
               <div className="mt-3">
-                <h2 className="text-success mb-1">{callStats.totalBuyPrice.toFixed(2)}</h2>
+                <h2 className="text-success mb-1">
+                  {callStats.totalBuyPrice !== undefined && callStats.totalBuyPrice !== null 
+                    ? callStats.totalBuyPrice.toFixed(2) 
+                    : '0.00'}
+                </h2>
                 <div className="progress" style={dashboardStyles.progressBar}>
                   <div className="progress-bar bg-success" style={{width: '100%'}}></div>
                 </div>
@@ -1090,7 +1130,11 @@ function Dashboard() {
                 </div>
               </div>
               <div className="mt-3">
-                <h2 className="text-purple mb-1">{callStats.totalSellPrice.toFixed(2)}</h2>
+                <h2 className="text-purple mb-1">
+                  {callStats.totalSellPrice !== undefined && callStats.totalSellPrice !== null 
+                    ? callStats.totalSellPrice.toFixed(2) 
+                    : '0.00'}
+                </h2>
                 <div className="progress" style={dashboardStyles.progressBar}>
                   <div className="progress-bar bg-purple" style={{width: '100%'}}></div>
                 </div>

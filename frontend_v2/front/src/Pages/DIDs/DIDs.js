@@ -497,12 +497,23 @@ function DIDsPage() {
     setCurrentPage(0);
   }, [searchTerm, dids]);
 
-  // Clear messages after timeout
+  // Clear messages after timeout with smooth fade out
   const clearMessages = () => {
-    setTimeout(() => {
-      setSuccessMessage('');
-      setErrorMessage('');
+    const timer = setTimeout(() => {
+      const successAlert = document.querySelector('.alert-success');
+      const errorAlert = document.querySelector('.alert-danger');
+      
+      if (successAlert) {
+        successAlert.style.opacity = '0';
+        setTimeout(() => setSuccessMessage(''), 300);
+      }
+      if (errorAlert) {
+        errorAlert.style.opacity = '0';
+        setTimeout(() => setErrorMessage(''), 300);
+      }
     }, 5000);
+    
+    return () => clearTimeout(timer);
   };
 
   // Handlers
@@ -526,16 +537,25 @@ function DIDsPage() {
     
     axios.post('http://localhost:5000/api/admin/DIDs/ajouter', didData)
       .then((response) => {
-        fetchDIDs();
-        setNewDid(DEFAULT_NEW_DID);
-        setShowAddModal(false);
-        setSuccessMessage('DID added successfully!');
-        setErrorMessage('');
-        clearMessages();
+        if (response.data.success) {
+          fetchDIDs();
+          setNewDid(DEFAULT_NEW_DID);
+          setShowAddModal(false);
+          setSuccessMessage(response.data.message || '✅ DID successfully created');
+          setErrorMessage('');
+          clearMessages();
+        } else {
+          setErrorMessage(`❌ ${response.data.error || 'Failed to create DID'}: ${response.data.message || 'Unknown error'}`);
+          setSuccessMessage('');
+        }
       })
       .catch((error) => {
         console.error('Error adding DID:', error);
-        setErrorMessage(`Error adding DID: ${error.response?.data?.message || error.message}`);
+        const errorMsg = error.response?.data?.message || 
+                        error.response?.data?.error || 
+                        error.message || 
+                        'Failed to create DID';
+        setErrorMessage(`❌ ${errorMsg}`);
         setSuccessMessage('');
       })
       .finally(() => {
@@ -562,16 +582,25 @@ function DIDsPage() {
     console.log('Updating DID data:', didData);
     
     axios.put(`http://localhost:5000/api/admin/DIDs/modifier/${editDid.id}`, didData)
-      .then(() => {
-        fetchDIDs();
-        setShowEditModal(false);
-        setSuccessMessage('DID updated successfully!');
-        setErrorMessage('');
-        clearMessages();
+      .then((response) => {
+        if (response.data.success) {
+          fetchDIDs();
+          setShowEditModal(false);
+          setSuccessMessage(response.data.message || '✅ DID successfully updated');
+          setErrorMessage('');
+          clearMessages();
+        } else {
+          setErrorMessage(`❌ ${response.data.error || 'Failed to update DID'}: ${response.data.message || 'Unknown error'}`);
+          setSuccessMessage('');
+        }
       })
       .catch((error) => {
         console.error('Error updating DID:', error);
-        setErrorMessage(`Error updating DID: ${error.response?.data?.message || error.message}`);
+        const errorMsg = error.response?.data?.message || 
+                        error.response?.data?.error || 
+                        error.message || 
+                        'Failed to update DID';
+        setErrorMessage(`❌ ${errorMsg}`);
         setSuccessMessage('');
       })
       .finally(() => {
@@ -580,17 +609,26 @@ function DIDsPage() {
   };
 
   const handleDeleteDid = (didId) => {
-    if (window.confirm('Are you sure you want to delete this DID?')) {
+    if (window.confirm('⚠️ Confirm Deletion\n\nAre you sure you want to permanently delete this DID? This action cannot be undone.')) {
       axios.delete(`http://localhost:5000/api/admin/DIDs/supprimer/${didId}`)
-        .then(() => {
-          fetchDIDs();
-          setSuccessMessage('DID deleted successfully!');
-          setErrorMessage('');
-          clearMessages();
+        .then((response) => {
+          if (response.data.success) {
+            fetchDIDs();
+            setSuccessMessage(response.data.message || '✅ DID successfully removed');
+            setErrorMessage('');
+            clearMessages();
+          } else {
+            setErrorMessage(`❌ ${response.data.error || 'Failed to delete DID'}: ${response.data.message || 'Unknown error'}`);
+            setSuccessMessage('');
+          }
         })
         .catch((error) => {
           console.error('Error deleting DID:', error);
-          setErrorMessage(`Error deleting DID: ${error.response?.data?.message || error.message}`);
+          const errorMsg = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          'Failed to delete DID';
+          setErrorMessage(`❌ ${errorMsg}`);
           setSuccessMessage('');
         });
     }
@@ -644,8 +682,116 @@ function DIDsPage() {
     }
   };
 
+  // Animation styles
+  const alertStyle = {
+    transition: 'all 0.3s ease-in-out',
+    transform: 'translateY(-10px)',
+    opacity: 0,
+    animation: 'slideIn 0.3s ease-out forwards',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+    border: 'none',
+    borderRadius: '8px',
+    marginBottom: '1rem',
+    padding: '1rem 1.5rem',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem'
+  };
+
+  const successAlertStyle = {
+    ...alertStyle,
+    backgroundColor: '#f0fdf4',
+    color: '#166534',
+    borderLeft: '4px solid #22c55e'
+  };
+
+  const errorAlertStyle = {
+    ...alertStyle,
+    backgroundColor: '#fef2f2',
+    color: '#991b1b',
+    borderLeft: '4px solid #ef4444'
+  };
+
+  const closeButtonStyle = {
+    marginLeft: 'auto',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: 'inherit',
+    opacity: '0.7',
+    transition: 'opacity 0.2s',
+    padding: '0.25rem',
+    borderRadius: '4px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  };
+
   return (
     <div className="container-fluid py-4">
+      {/* Global styles for alerts */}
+      <style jsx global>{`
+        @keyframes slideIn {
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        
+        .alert-close-btn:hover {
+          opacity: 1;
+          background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .alert-message {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        
+        .alert-icon {
+          font-size: 1.25rem;
+          display: flex;
+          align-items: center;
+        }
+      `}</style>
+      
+      {/* Alert Messages */}
+      <div className="position-fixed top-4 end-4" style={{ zIndex: 1100, maxWidth: '400px' }}>
+        {successMessage && (
+          <div style={successAlertStyle} className="alert-success">
+            <div className="alert-message">
+              <span className="alert-icon">✅</span>
+              <span>{successMessage.replace(/^✅\s*/, '')}</span>
+            </div>
+            <button 
+              onClick={() => setSuccessMessage('')} 
+              style={closeButtonStyle}
+              className="alert-close-btn"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        )}
+        {errorMessage && (
+          <div style={errorAlertStyle} className="alert-danger">
+            <div className="alert-message">
+              <span className="alert-icon">❌</span>
+              <span>{errorMessage.replace(/^❌\s*/, '')}</span>
+            </div>
+            <button 
+              onClick={() => setErrorMessage('')} 
+              style={closeButtonStyle}
+              className="alert-close-btn"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+        )}
+      </div>
+      
       <Card>
         <DIDsHeader onAddClick={() => setShowAddModal(true)} dids={pagedDids} isExporting={isExporting} />
         <Card.Body>

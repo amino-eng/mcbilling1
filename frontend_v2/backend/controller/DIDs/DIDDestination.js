@@ -197,6 +197,27 @@ exports.add = (req, res) => {
     });
 };
 
+// Get SIP users by user ID
+exports.getSipUsersByUserId = (req, res) => {
+  const userId = req.params.userId;
+  
+  const query = `
+    SELECT id, name 
+    FROM pkg_sip 
+    WHERE id_user = ? 
+    ORDER BY name ASC
+  `;
+  
+  connection.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Error fetching SIP users:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    res.json({ sipUsers: results });
+  });
+};
+
 // Mettre à jour un DID destination
 exports.update = (req, res) => {
   const { did, username, destinationType, priority, destination } = req.body;

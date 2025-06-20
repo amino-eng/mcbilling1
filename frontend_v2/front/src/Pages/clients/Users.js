@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState, useMemo } from "react"
 import axios from "axios"
 import { 
   Table, 
@@ -126,7 +126,31 @@ const SearchBar = ({ searchTerm, onSearchChange }) => (
   </div>
 )
 
-const UsersTable = ({ users, selectedColumns, onEdit, onDelete, isLoading }) => (
+// Helper function to get status display text
+const getStatusDisplay = (status) => {
+  switch(String(status)) {
+    case '1': return 'Active';
+    case '0': return 'Inactive';
+    case '2': return 'Pending';
+    case '3': return 'Blocked';
+    case '4': return 'Blocked In Out';
+    default: return 'Unknown';
+  }
+}
+
+// Helper function to get status badge color
+const getStatusBadgeColor = (status) => {
+  switch(String(status)) {
+    case '1': return 'success';
+    case '0': return 'secondary';
+    case '2': return 'warning';
+    case '3': return 'danger';
+    case '4': return 'danger';
+    default: return 'light';
+  }
+}
+
+const UsersTable = ({ users, selectedColumns, onEdit, onDelete, isLoading, onStatusFilterChange, statusFilter }) => (
   <div
     className="table-responsive shadow-sm table-container"
     style={{
@@ -197,7 +221,67 @@ const UsersTable = ({ users, selectedColumns, onEdit, onDelete, isLoading }) => 
                   paddingBottom: "15px",
                 }}
               >
-                {col}
+                {col === 'active' ? (
+                  <div className="d-flex align-items-center gap-2">
+                    <span>Status</span>
+                    <Dropdown>
+                      <Dropdown.Toggle 
+                        variant="outline-secondary" 
+                        size="sm" 
+                        className="p-0 px-1 border-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <FaFilter className="text-muted" />
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu>
+                        <Dropdown.Item 
+                          active={statusFilter === 'all'}
+                          onClick={() => onStatusFilterChange('all')}
+                        >
+                          Tous les statuts
+                        </Dropdown.Item>
+                        <Dropdown.Divider />
+                        <Dropdown.Item 
+                          active={statusFilter === '1'}
+                          onClick={() => onStatusFilterChange('1')}
+                        >
+                          <Badge bg="success" className="me-2">•</Badge>
+                          Actif
+                        </Dropdown.Item>
+                        <Dropdown.Item 
+                          active={statusFilter === '0'}
+                          onClick={() => onStatusFilterChange('0')}
+                        >
+                          <Badge bg="secondary" className="me-2">•</Badge>
+                          Inactif
+                        </Dropdown.Item>
+                        <Dropdown.Item 
+                          active={statusFilter === '2'}
+                          onClick={() => onStatusFilterChange('2')}
+                        >
+                          <Badge bg="warning" className="me-2">•</Badge>
+                          En attente
+                        </Dropdown.Item>
+                        <Dropdown.Item 
+                          active={statusFilter === '3'}
+                          onClick={() => onStatusFilterChange('3')}
+                        >
+                          <Badge bg="danger" className="me-2">•</Badge>
+                          Bloqué
+                        </Dropdown.Item>
+                        <Dropdown.Item 
+                          active={statusFilter === '4'}
+                          onClick={() => onStatusFilterChange('4')}
+                        >
+                          <Badge bg="danger" className="me-2">•</Badge>
+                          Bloqué Entrant/Sortant
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    </Dropdown>
+                  </div>
+                ) : (
+                  col
+                )}
               </th>
             ))}
             <th
@@ -228,7 +312,13 @@ const UsersTable = ({ users, selectedColumns, onEdit, onDelete, isLoading }) => 
             >
               {selectedColumns.map((col, idx) => (
                 <td key={idx} className="py-3 px-4">
-                  {user[col]}
+                  {col === 'active' ? (
+                    <Badge bg={getStatusBadgeColor(user[col])} className="text-capitalize">
+                      {getStatusDisplay(user[col])}
+                    </Badge>
+                  ) : (
+                    user[col]
+                  )}
                 </td>
               ))}
               <td className="py-3 px-4 text-center">
@@ -295,11 +385,15 @@ function Users() {
   const [filteredUsers, setFilteredUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [editingCredit, setEditingCredit] = useState(null)
+  const [creditValue, setCreditValue] = useState("")
+  const [sortConfig, setSortConfig] = useState({ key: 'credit', direction: 'asc' })
 
   // États pour la recherche et les colonnes
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedColumns, setSelectedColumns] = useState(["username", "credit", "active", "creationdate"])
+  const [selectedColumns, setSelectedColumns] = useState(["username", "credit", "active", "sip_count", "creationdate"])
   const [dropdownVisibility, setDropdownVisibility] = useState({})
+  const [statusFilter, setStatusFilter] = useState("all") // 'all', '1' (Active), '0' (Inactive), '2' (Pending), '3' (Blocked), '4' (Blocked In Out)
 
   // États pour la pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -496,6 +590,55 @@ function Users() {
     return "Strong"
   }
 
+  // Fonction pour formater la date
+  const formatDate = (dateString) => {
+    if (!dateString) return ''
+    const options = { year: 'numeric', month: '2-digit', day: '2-digit' }
+    return new Date(dateString).toLocaleDateString('fr-FR', options)
+  }
+
+  // Fonction pour rendre le champ de crédit éditable
+  const renderCreditCell = (user) => {
+    if (editingCredit === user.id) {
+      return (
+        <div className="d-flex align-items-center">
+          <input
+            type="text"
+            className="form-control form-control-sm me-2"
+            style={{ width: '80px' }}
+            value={creditValue}
+            onChange={handleCreditChange}
+            onKeyDown={(e) => handleKeyDown(e, user.id)}
+            autoFocus
+          />
+          <button 
+            className="btn btn-sm btn-success me-1"
+            onClick={() => saveCredit(user.id)}
+          >
+            <FaCheckCircle />
+          </button>
+          <button 
+            className="btn btn-sm btn-danger"
+            onClick={cancelEditing}
+          >
+            <FaTimesCircle />
+          </button>
+        </div>
+      );
+    }
+    
+    return (
+      <div 
+        className="d-flex align-items-center justify-content-between"
+        onClick={() => startEditingCredit(user)}
+        style={{ cursor: 'pointer', minHeight: '38px' }}
+      >
+        <span>{user.credit || '0.00'}</span>
+        <FaEdit className="text-muted ms-2" />
+      </div>
+    );
+  };
+
   // Fetch plans
   const fetchPlan = () => {
     axios
@@ -531,24 +674,133 @@ function Users() {
     fetchPlan()
   }, [])
 
-  // Search handling
-  const handleSearchChange = (e) => {
-    const term = e.target.value.toLowerCase()
-    setSearchTerm(term)
-
-    const filtered = users.filter((user) => {
-      return Object.values(user).some((value) => {
-        return String(value).toLowerCase().includes(term)
-      })
-    })
-    setFilteredUsers(filtered)
+  // Handle status filter change
+  const handleStatusFilterChange = (status) => {
+    setStatusFilter(status)
     setCurrentPage(1)
   }
+
+  // Apply all filters (search and status)
+  const applyFilters = (usersList, searchTerm, status) => {
+    let filtered = [...usersList]
+
+    // Apply status filter
+    if (status !== "all") {
+      filtered = filtered.filter(user => String(user.active) === status)
+    }
+
+    // Apply search term filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase()
+      filtered = filtered.filter(user => {
+        return Object.entries(user).some(([key, value]) => {
+          // Skip filtering on certain fields like 'id' or other non-searchable fields
+          if (['id', 'active'].includes(key)) return false
+          // Convert value to string safely
+          const stringValue = value !== null && value !== undefined ? String(value) : ''
+          return stringValue.toLowerCase().includes(term)
+        })
+      })
+    }
+
+    return filtered
+  }
+
+  // Update filtered users when search term or status filter changes
+  useEffect(() => {
+    const filtered = applyFilters(users, searchTerm, statusFilter)
+    setFilteredUsers(filtered)
+  }, [users, searchTerm, statusFilter])
+
+  // Search handling
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value.toLowerCase())
+  }
+
+  // Fonction pour trier les utilisateurs
+  const requestSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Trier les utilisateurs
+  const sortedUsers = useMemo(() => {
+    let sortableItems = [...filteredUsers];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [filteredUsers, sortConfig]);
+
+  // Fonction pour démarrer l'édition du crédit
+  const startEditingCredit = (user) => {
+    setEditingCredit(user.id);
+    setCreditValue(user.credit || '');
+  };
+
+  // Fonction pour sauvegarder le crédit modifié
+  const saveCredit = async (userId) => {
+    try {
+      const response = await axios.put(`http://localhost:5000/api/admin/users/update-credit/${userId}`, {
+        credit: parseFloat(creditValue) || 0
+      });
+      
+      if (response.data.success) {
+        // Mettre à jour l'utilisateur dans la liste
+        const updatedUsers = users.map(user => 
+          user.id === userId ? { ...user, credit: parseFloat(creditValue) || 0 } : user
+        );
+        
+        setUsers(updatedUsers);
+        setFilteredUsers(updatedUsers);
+        setEditingCredit(null);
+        showNotification('Crédit mis à jour avec succès', 'success');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du crédit:', error);
+      showNotification('Erreur lors de la mise à jour du crédit', 'danger');
+    }
+  };
+
+  // Fonction pour annuler l'édition
+  const cancelEditing = () => {
+    setEditingCredit(null);
+    setCreditValue('');
+  };
+
+  // Fonction pour gérer les changements dans le champ de crédit
+  const handleCreditChange = (e) => {
+    const value = e.target.value;
+    // Valider que la valeur est un nombre ou vide
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      setCreditValue(value);
+    }
+  };
+
+  // Fonction pour gérer la touche Entrée
+  const handleKeyDown = (e, userId) => {
+    if (e.key === 'Enter') {
+      saveCredit(userId);
+    } else if (e.key === 'Escape') {
+      cancelEditing();
+    }
+  };
 
   // Pagination
   const indexOfLastUser = currentPage * itemsPerPage
   const indexOfFirstUser = indexOfLastUser - itemsPerPage
-  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser)
+  const currentUsers = sortedUsers.slice(indexOfFirstUser, indexOfLastUser)
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber)
   const nextPage = () => {
@@ -678,7 +930,7 @@ function Users() {
       id_group: newUser.group,
       id_plan: newUser.plan,
       language: newUser.language,
-      active: activeStatus,
+      active: activeStatus, // Use the mapped numeric value
       email: newUser.Email,
       numberOfSipUsers: newUser.numberOfSipUsers, // Ensure this is correct
       numberOfIax: newUser.numberOfIax,
@@ -1184,7 +1436,7 @@ function Users() {
                     <div className="d-flex align-items-center gap-2">
                       <span className="text-muted">Columns:</span>
                       <Dropdown>
-                        <Dropdown.Toggle variant="light" id="dropdown-columns" className="d-flex align-items-center gap-2">
+                        <Dropdown.Toggle variant="light" id="dropdown-columns" className="p-0 px-1 border-0">
                           <FaFilter size={14} /> Filter
                         </Dropdown.Toggle>
                         <Dropdown.Menu>
@@ -1942,7 +2194,6 @@ function Users() {
                           {selectedColumns.map((col, index) => (
                             <th
                               key={index}
-                              onClick={() => toggleDropdown(col)}
                               className="py-3 px-4"
                               style={{
                                 position: "relative",
@@ -1955,14 +2206,119 @@ function Users() {
                                 paddingTop: "15px",
                                 paddingBottom: "15px",
                               }}
+                              onClick={() => (['credit', 'sip_count', 'username', 'creationdate'].includes(col)) ? requestSort(col) : null}
                             >
-                              {col} <FaChevronDown style={{ marginLeft: "5px" }} />
+                              {col === 'active' ? (
+                                <div className="d-flex align-items-center gap-2">
+                                  <span>Status</span>
+                                  <Dropdown>
+                                    <Dropdown.Toggle 
+                                      variant="outline-secondary" 
+                                      size="sm" 
+                                      className="p-0 px-1 border-0"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        toggleDropdown('statusFilter')
+                                      }}
+                                    >
+                                      <FaFilter className="text-muted" />
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu show={dropdownVisibility['statusFilter']} onClick={(e) => e.stopPropagation()}>
+                                      <Dropdown.Header>Filter by status</Dropdown.Header>
+                                      <Dropdown.Item 
+                                        active={statusFilter === 'all'}
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleStatusFilterChange('all')
+                                        }}
+                                      >
+                                        All statuses
+                                      </Dropdown.Item>
+                                      <Dropdown.Divider />
+                                      <Dropdown.Item 
+                                        active={statusFilter === '1'}
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleStatusFilterChange('1')
+                                        }}
+                                      >
+                                        <Badge bg="success" className="me-2">•</Badge>
+                                        Active
+                                      </Dropdown.Item>
+                                      <Dropdown.Item 
+                                        active={statusFilter === '0'}
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleStatusFilterChange('0')
+                                        }}
+                                      >
+                                        <Badge bg="secondary" className="me-2">•</Badge>
+                                        Inactive
+                                      </Dropdown.Item>
+                                      <Dropdown.Item 
+                                        active={statusFilter === '2'}
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleStatusFilterChange('2')
+                                        }}
+                                      >
+                                        <Badge bg="warning" className="me-2">•</Badge>
+                                        Pending
+                                      </Dropdown.Item>
+                                      <Dropdown.Item 
+                                        active={statusFilter === '3'}
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleStatusFilterChange('3')
+                                        }}
+                                      >
+                                        <Badge bg="danger" className="me-2">•</Badge>
+                                        Bloqué
+                                      </Dropdown.Item>
+                                      <Dropdown.Item 
+                                        active={statusFilter === '4'}
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleStatusFilterChange('4')
+                                        }}
+                                      >
+                                        <Badge bg="danger" className="me-2">•</Badge>
+                                        Blocked In/Out
+                                      </Dropdown.Item>
+                                    </Dropdown.Menu>
+                                  </Dropdown>
+                                  <FaChevronDown className="ms-1" />
+                                </div>
+                              ) : ['credit', 'sip_count', 'username', 'creationdate'].includes(col) ? (
+                                <div className="d-flex align-items-center">
+                                  <span>
+                                    {col === 'credit' ? 'Crédit' : 
+                                     col === 'sip_count' ? 'SIP Count' : 
+                                     col === 'creationdate' ? 'Date de création' :
+                                     'Nom d\'utilisateur'}
+                                  </span>
+                                  <span className="ms-1">
+                                    {sortConfig.key === col ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                                  </span>
+                                </div>
+                              ) : (
+                                <div>
+                                  {col}
+                                  <FaChevronDown className="ms-1" onClick={() => toggleDropdown(col)} />
+                                </div>
+                              )}
                               {dropdownVisibility[col] && (
                                 <Dropdown.Menu show style={{ position: "absolute" }}>
                                   {availableColumns.map(
                                     (item) =>
                                       !selectedColumns.includes(item) && (
-                                        <Dropdown.Item key={item} onClick={() => handleColumnChange(item)}>
+                                        <Dropdown.Item 
+                                          key={item} 
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleColumnChange(item)
+                                          }}
+                                        >
                                           {item}
                                         </Dropdown.Item>
                                       ),
@@ -1999,7 +2355,47 @@ function Users() {
                           >
                             {selectedColumns.map((col, idx) => (
                               <td key={idx} className="py-3 px-4">
-                                {col === "creationdate" && user[col] ? (
+                                {col === "credit" ? (
+                                  <div 
+                                    className="d-flex align-items-center justify-content-between"
+                                    style={{ minWidth: '100px' }}
+                                  >
+                                    {editingCredit === user.id ? (
+                                      <div className="d-flex align-items-center">
+                                        <input
+                                          type="text"
+                                          className="form-control form-control-sm me-2"
+                                          style={{ width: '80px' }}
+                                          value={creditValue}
+                                          onChange={handleCreditChange}
+                                          onKeyDown={(e) => handleKeyDown(e, user.id)}
+                                          autoFocus
+                                        />
+                                        <button 
+                                          className="btn btn-sm btn-success me-1"
+                                          onClick={() => saveCredit(user.id)}
+                                        >
+                                          <FaCheckCircle />
+                                        </button>
+                                        <button 
+                                          className="btn btn-sm btn-danger"
+                                          onClick={cancelEditing}
+                                        >
+                                          <FaTimesCircle />
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <div 
+                                        className="d-flex align-items-center justify-content-between w-100"
+                                        onClick={() => startEditingCredit(user)}
+                                        style={{ cursor: 'pointer', minHeight: '38px' }}
+                                      >
+                                        <span>{user.credit || '0.00'}</span>
+                                        <FaEdit className="text-muted ms-2" />
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : col === "creationdate" && user[col] ? (
                                   new Date(user[col]).toLocaleString()
                                 ) : col === "active" ? (
                                   <Badge

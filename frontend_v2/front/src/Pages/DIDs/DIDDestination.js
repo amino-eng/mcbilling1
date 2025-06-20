@@ -28,6 +28,7 @@ const App = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [user, setUser] = useState([]);
   const [sip, setSip] = useState([]);
+  const [filteredSipUsers, setFilteredSipUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [didsList, setDidsList] = useState([]);
   const apiUrl = 'http://localhost:5000/api/admin/DIDDestination/affiche';
@@ -45,14 +46,67 @@ const App = () => {
 
   const [editingDid, setEditingDid] = useState(null);
 
-  const fetchSipUser = () => {
-    axios.get("http://localhost:5000/api/admin/SIPUsers/nom")
+  const fetchSipUsersByUserId = (userId) => {
+    if (!userId) {
+      setFilteredSipUsers([]);
+      return;
+    }
+    
+    axios.get(`http://localhost:5000/api/admin/DIDDestination/getSipUsersByUserId/${userId}`)
       .then((response) => {
-        setSip(response.data.users);
+        setFilteredSipUsers(response.data.sipUsers || []);
       })
       .catch((err) => {
-        console.error('Erreur de récupération de l\'utilisateur SIP :', err);
+        console.error('Erreur lors de la récupération des utilisateurs SIP:', err);
+        setFilteredSipUsers([]);
       });
+  };
+
+  const handleAddClick = () => {
+    setNewDidData({
+      did: '',
+      username: '',
+      status: 'Active',
+      priority: 1,
+      destinationType: 1,
+      sipUser: '',
+    });
+    setSip([]); // Reset SIP users list
+    setEditingDid(null);
+    setIsAdding(true);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    // If the username changes, we need to fetch the SIP users for that user
+    if (name === 'username') {
+      setNewDidData(prev => ({
+        ...prev,
+        [name]: value,
+        sipUser: '' // Reset SIP user when user changes
+      }));
+      
+      // Find the user ID from the username
+      const selectedUser = user.find(u => u.username === value);
+      if (selectedUser) {
+        // Fetch SIP users for the selected user
+        fetchSipUsersByUserId(selectedUser.id);
+      } else {
+        setFilteredSipUsers([]);
+      }
+    } else if (name === 'sipUser') {
+      setNewDidData(prev => ({
+        ...prev,
+        [name]: value,
+        destination: value // Update destination when SIP user changes
+      }));
+    } else {
+      setNewDidData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const fetchUser = () => {
@@ -192,41 +246,63 @@ const App = () => {
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    if (name === 'sipUser') {
-      setNewDidData({
-        ...newDidData,
-        destination: value,
-        [name]: value
-      });
-    } else {
-      setNewDidData({
-        ...newDidData,
-        [name]: value
-      });
-    }
-  };
-  
+  const renderSipUserSelect = () => (
+    <Form.Group className="mb-3" controlId="formSipUser">
+      <Form.Label>Utilisateur SIP</Form.Label>
+      <Form.Control
+        as="select"
+        name="sipUser"
+        value={newDidData.sipUser}
+        onChange={handleInputChange}
+        className="shadow-sm"
+        disabled={!newDidData.username}
+      >
+        <option value="">
+          {newDidData.username 
+            ? 'Sélectionner un utilisateur SIP' 
+            : 'Veuillez d\'abord sélectionner un utilisateur'}
+        </option>
+        {filteredSipUsers.map((sipUser) => (
+          <option key={sipUser.id} value={sipUser.name}>
+            {sipUser.name} {sipUser.callerid ? `(${sipUser.callerid})` : ''}
+          </option>
+        ))}
+      </Form.Control>
+    </Form.Group>
+  );
+
   const handleAddUser = () => {
+    if (!newDidData.did) {
+      setErrorMessage('Veuillez sélectionner un DID');
+      return;
+    }
+    if (!newDidData.username) {
+      setErrorMessage('Veuillez sélectionner un utilisateur');
+      return;
+    }
+    if (!newDidData.sipUser) {
+      setErrorMessage('Veuillez sélectionner un utilisateur SIP');
+      return;
+    }
+
     const formattedData = {
       did: newDidData.did,
       username: newDidData.username,
       priority: newDidData.priority,
       destinationType: newDidData.destinationType,
-      destination: newDidData.destination,
+      destination: newDidData.sipUser, // Use the selected SIP user as destination
     };
 
     console.log('Formatted data being sent to API:', formattedData);
 
-    setIsAdding(true);
+    setIsLoading(true);
     axios
       .post(
         'http://localhost:5000/api/admin/DIDDestination/add',
         formattedData
       )
       .then((response) => {
-        setSuccessMessage('DID Destination added successfully!');
+        setSuccessMessage('Destination DID ajoutée avec succès !');
         setErrorMessage('');
         setIsAdding(false);
         setNewDidData({
@@ -237,39 +313,60 @@ const App = () => {
           destinationType: 1,
           sipUser: '',
         });
+        setFilteredSipUsers([]);
         fetchDIDs();
       })
       .catch((err) => {
-        console.error('Error adding DID Destination:', err);
-        setErrorMessage('Error adding DID Destination: ' + err.message);
+        console.error("Erreur lors de l'ajout de la destination DID:", err);
+        setErrorMessage("Erreur lors de l'ajout de la destination DID: " + (err.response?.data?.error || err.message));
         setSuccessMessage('');
-        setIsAdding(false);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   };
 
   const handleUpdate = async () => {
+    if (!editingDid.did) {
+      setErrorMessage('Veuillez sélectionner un DID');
+      return;
+    }
+    if (!editingDid.username) {
+      setErrorMessage('Veuillez sélectionner un utilisateur');
+      return;
+    }
+    if (!editingDid.sipUser) {
+      setErrorMessage('Veuillez sélectionner un utilisateur SIP');
+      return;
+    }
+
     try {
       // Prepare data matching backend expectations
       const updateData = {
         did: editingDid.did,
-        username: editingDid.username || editingDid.sipUser || '',
+        username: editingDid.username,
         destinationType: editingDid.destinationType || 1,
         priority: editingDid.priority || 1,
-        destination: editingDid.destination || ''
+        destination: editingDid.sipUser // Use the selected SIP user as destination
       };
       
       console.log('Sending update data:', updateData);
       
+      setIsLoading(true);
       const response = await axios.put(
         'http://localhost:5000/api/admin/DIDDestination/update', 
         updateData
       );
-      setSuccessMessage(response.data.message);
+      
+      setSuccessMessage('Destination DID mise à jour avec succès !');
+      setErrorMessage('');
       fetchDIDs();
       setEditingDid(null);
     } catch (err) {
-      console.error('Update error:', err.response?.data);
-      setErrorMessage(err.response?.data?.error || 'Error during update');
+      console.error('Erreur lors de la mise à jour de la destination DID:', err);
+      setErrorMessage('Erreur lors de la mise à jour de la destination DID: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -296,8 +393,8 @@ const App = () => {
   useEffect(() => {
     fetchDIDs();
     fetchUser();
-    fetchSipUser();
     fetchDIDsList();
+    // Don't fetch SIP users here, we'll fetch them when a user is selected
   }, []);
 
   useEffect(() => {
@@ -694,10 +791,15 @@ const App = () => {
                                 value={newDidData.sipUser}
                                 onChange={handleInputChange}
                                 className="shadow-sm"
+                                disabled={!newDidData.username}
                               >
-                                <option value="">Sélectionner un utilisateur SIP</option>
-                                {sip.map((sipUser) => (
-                                  <option key={sipUser.id} value={sipUser.id}>
+                                <option value="">
+                                  {newDidData.username 
+                                    ? 'Sélectionner un utilisateur SIP' 
+                                    : 'Veuillez d\'abord sélectionner un utilisateur'}
+                                </option>
+                                {filteredSipUsers.map((sipUser) => (
+                                  <option key={sipUser.id} value={sipUser.name}>
                                     {sipUser.name}
                                   </option>
                                 ))}
@@ -742,7 +844,21 @@ const App = () => {
                                 <Form.Control
                                   as="select"
                                   value={editingDid.username}
-                                  onChange={(e) => setEditingDid({...editingDid, username: e.target.value})}
+                                  onChange={(e) => {
+                                    const selectedUser = user.find(u => u.username === e.target.value);
+                                    setEditingDid({
+                                      ...editingDid, 
+                                      username: e.target.value,
+                                      sipUser: '' // Reset SIP user when user changes
+                                    });
+                                    
+                                    if (selectedUser) {
+                                      // Fetch SIP users for the selected user
+                                      fetchSipUsersByUserId(selectedUser.id);
+                                    } else {
+                                      setFilteredSipUsers([]);
+                                    }
+                                  }}
                                 >
                                   <option value="">Sélectionner un nom d'utilisateur</option>
                                   {user.map((u) => (
@@ -790,22 +906,27 @@ const App = () => {
                               </Form.Group>
                               
                               <Form.Group className="mb-3" controlId="formSipUser">
-                              <Form.Label>Utilisateur SIP</Form.Label>
-                              <Form.Control
-                                as="select"
-                                name="sipUser"
-                                value={newDidData.sipUser}
-                                onChange={handleInputChange}
-                                className="shadow-sm"
-                              >
-                                <option value="">Sélectionner un utilisateur SIP</option>
-                                {sip.map((sipUser) => (
-                                  <option key={sipUser.id} value={sipUser.id}>
-                                    {sipUser.name}
+                                <Form.Label>Utilisateur SIP</Form.Label>
+                                <Form.Control
+                                  as="select"
+                                  name="sipUser"
+                                  value={editingDid.sipUser || ''}
+                                  onChange={(e) => setEditingDid({...editingDid, sipUser: e.target.value, destination: e.target.value})}
+                                  className="shadow-sm"
+                                  disabled={!editingDid.username}
+                                >
+                                  <option value="">
+                                    {editingDid.username 
+                                      ? 'Sélectionner un utilisateur SIP' 
+                                      : 'Veuillez d\'abord sélectionner un utilisateur'}
                                   </option>
-                                ))}
-                              </Form.Control>
-                            </Form.Group>
+                                  {filteredSipUsers.map((sipUser) => (
+                                    <option key={sipUser.id} value={sipUser.name}>
+                                      {sipUser.name}
+                                    </option>
+                                  ))}
+                                </Form.Control>
+                              </Form.Group>
                               
 
                               <Form.Group className="mb-3">

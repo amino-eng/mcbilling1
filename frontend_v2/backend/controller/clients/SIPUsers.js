@@ -34,6 +34,20 @@ function logErrorToFile(error, context = {}) {
   errorLogStream.write(JSON.stringify(logEntry, null, 2) + '\n\n');
 }
 
+// Get all prefixes from pkg_prefix table
+exports.getPrefixes = (req, res) => {
+  const query = 'SELECT id, prefix FROM pkg_prefix ORDER BY prefix ASC';
+  
+  connection.query(query, (error, results) => {
+    if (error) {
+      console.error('Error fetching prefixes:', error);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    res.json({ prefixes: results });
+  });
+};
+
 const getAgent = (agentId) => {
   return new Promise((resolve, reject) => {
     const query = `SELECT * FROM pkg_user WHERE id = ?`; 
@@ -90,34 +104,101 @@ exports.afficherSIPUsers = async (req, res) => {
 
 // Add SIP User
 exports.ajouterSIPUser = (req, res) => {
-  let { id_user, name, accountcode, host, status = '1' } = req.body;
-  console.log(req.body);
-status=1
-  // // Validate required fields
-  // if (!id_user || !name || !accountcode || !host || (status === undefined)) {
-  //   return res.status(400).json({ error: "id_user, name, accountcode, host and status are required." });
-  // }
+  const {
+    id_user, name, accountcode, host, status = '1', callerid, 
+    alias, codecs, sip_group, block_call_reg, record_call, techprefix,
+    nat, directmedia, qualify, context, dtmfmode, insecure, deny, permit,
+    type, allowtransfer, fakeRing, callLimit, moh, addparameter, forwardType,
+    dial_timeout, enableVoicemail, email, voicemail_email, voicemail_password
+  } = req.body;
+  
+  console.log("Received request to add SIP user:", req.body);
 
-  const query = `
-    INSERT INTO pkg_sip (id_user, name, accountcode, host, status) 
-    VALUES (?, ?, ?, ?, ?)
-  `;
-
-  console.log("Incoming data:", { id_user, name, accountcode, host, status });
-
-  // Convert status to an integer
-  const statusValue = parseInt(status, 10);
-  if (isNaN(statusValue)) {
-    return res.status(400).json({ error: "Status must be a valid number." });
-  }
-
-  // Execute the query
-  connection.query(query, [id_user, name, accountcode, host, statusValue], (error, results) => {
-    if (error) {
-      console.error("Database error while adding SIP user:", error);
-      return res.status(500).json({ error: "Database error", details: error.message });
+  // First, get the user's password
+  const getUserQuery = "SELECT password FROM pkg_user WHERE id = ?";
+  
+  connection.query(getUserQuery, [id_user], (err, userResults) => {
+    if (err) {
+      console.error("Error fetching user password:", err);
+      return res.status(500).json({ error: "Database error while fetching user data" });
     }
-    res.status(201).json({ message: "Record added successfully" });
+
+    if (userResults.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const userPassword = userResults[0].password;
+
+    // Check if SIP user with the same name already exists
+    const checkQuery = "SELECT id FROM pkg_sip WHERE name = ?";
+    
+    connection.query(checkQuery, [name], (checkErr, checkResults) => {
+      if (checkErr) {
+        console.error("Error checking for existing SIP user:", checkErr);
+        return res.status(500).json({ error: "Error checking for existing SIP user" });
+      }
+
+      if (checkResults.length > 0) {
+        return res.status(409).json({ 
+          error: "SIP user with this name already exists",
+          details: `A SIP user with the name '${name}' already exists. Please choose a different name.`
+        });
+      }
+      
+      // Handle techprefix - convert to integer or null
+      const safeTechPrefix = techprefix !== null && techprefix !== undefined && techprefix !== '' ? parseInt(techprefix, 10) : null;
+    
+      // Convert string 'yes'/'no' to 1/0 for boolean fields
+      const recordCallInt = record_call === 'yes' ? 1 : 0;
+      const blockCallRegInt = block_call_reg === 'yes' ? 1 : 0;
+      const allowtransferInt = allowtransfer === 'yes' ? 1 : 0;
+      const directMediaInt = directmedia === 'yes' ? 1 : 0;
+      const qualifyInt = qualify === 'yes' ? 1 : 0;
+      const enableVoicemailInt = enableVoicemail === 'yes' ? 1 : 0;
+
+      // Now create the SIP user with all fields
+      const query = `
+        INSERT INTO pkg_sip (
+          id_user, name, accountcode, host, status, secret, callerid, 
+          alias, allow, sip_group, block_call_reg, record_call, techprefix,
+          nat, directmedia, qualify, context, dtmfmode, insecure, deny, permit,
+          type, allowtransfer, calllimit, addparameter, dial_timeout
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      const params = [
+        id_user, name, accountcode || '', host, status, userPassword, callerid || '',
+        alias || '', codecs || '', sip_group || '', blockCallRegInt, recordCallInt, safeTechPrefix,
+        nat || '', directMediaInt, qualifyInt, context || 'default', dtmfmode || 'RFC2833', 
+        insecure || 'no', deny || '', permit || '', type || 'friend', allowtransferInt, 
+        callLimit || 0, addparameter || '', dial_timeout || 60
+      ];
+
+      console.log("Creating SIP user with data:", { params });
+
+      // Convert status to an integer
+      const statusValue = parseInt(status, 10);
+      if (isNaN(statusValue)) {
+        return res.status(400).json({ error: "Status must be a valid number." });
+      }
+
+      // Execute the query with all fields
+      connection.query(query, params, (error, results) => {
+        if (error) {
+          console.error("Database error while adding SIP user:", error);
+          return res.status(500).json({ 
+            error: "Database error", 
+            details: error.message,
+            sql: error.sql,
+            code: error.code
+          });
+        }
+        return res.status(201).json({ 
+          message: "SIP user added successfully",
+          id: results.insertId 
+        });
+      });
+    }); // Close the check query
   });
 };
 
@@ -148,18 +229,41 @@ exports.getSIPUserDetails = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const query = `SELECT * FROM pkg_sip WHERE id = ?`;
-    connection.query(query, [id], (err, result) => {
+    // First get the SIP user details
+    const sipQuery = `SELECT * FROM pkg_sip WHERE id = ?`;
+    connection.query(sipQuery, [id], async (err, sipResult) => {
       if (err) {
         console.error("Database error:", err);
         return res.status(500).json({ error: "Database error" });
       }
 
-      if (result.length === 0) {
+      if (sipResult.length === 0) {
         return res.status(404).json({ message: "SIP user not found" });
       }
 
-      res.json({ sipUser: result[0] });
+      const sipUser = sipResult[0];
+      
+      // Get the user's password from pkg_user table
+      const userQuery = `SELECT password FROM pkg_user WHERE id = ? ORDER BY password ASC`;
+      connection.query(userQuery, [sipUser.id_user], (userErr, userResults) => {
+        if (userErr) {
+          console.error("Error fetching user password:", userErr);
+          // Continue even if we can't get the password
+          return res.json({ sipUser });
+        }
+
+        // Add the password to the SIP user object
+        if (userResults.length > 0) {
+          sipUser.secret = userResults[0].password;
+        }
+        
+        // Ensure callerid and techprefix are always strings, not NULL
+        if (sipUser.callerid === null) sipUser.callerid = '';
+        if (sipUser.techprefix === null) sipUser.techprefix = '';
+        
+        console.log('SIP User details with secret:', JSON.stringify(sipUser, null, 2));
+        res.json({ sipUser });
+      });
     });
   } catch (error) {
     console.error("Error fetching SIP user details:", error);
@@ -238,51 +342,81 @@ exports.modifierSIPUser = (req, res) => {
     email, voicemail_email, voicemail_password
   } = req.body;
 
-  // Vérifier si l'ID est présent
-  if (!id) {
-    return res.status(400).json({ error: "ID est requis" });
-  }
-
-  // Map codecs array to a comma-separated string for the 'allow' field
-  const allowValue = Array.isArray(codecs) ? codecs.join(',') : '';
+  // First, check if a SIP user with the same name already exists (excluding the current user)
+  const checkDuplicateQuery = 'SELECT id FROM pkg_sip WHERE name = ? AND id != ?';
   
-  // Convert string 'yes'/'no' to 1/0 for boolean fields
-  const recordCallInt = record_call === 'yes' ? 1 : 0;
-  const blockCallRegInt = block_call_reg === 'yes' ? 1 : 0;
-  const allowtransferInt = allowtransfer === 'yes' ? 1 : 0;
-  const directMediaInt = directmedia === 'yes' ? 1 : 0;
-  const qualifyInt = qualify === 'yes' ? 1 : 0;
+  connection.query(checkDuplicateQuery, [name, id], (checkErr, checkResults) => {
+    if (checkErr) {
+      console.error('Error checking for duplicate SIP user:', checkErr);
+      return res.status(500).json({ 
+        error: 'Database error while checking for duplicate SIP user',
+        details: checkErr.message 
+      });
+    }
+    
+    if (checkResults.length > 0) {
+      return res.status(409).json({ 
+        error: 'SIP user with this name already exists',
+        details: `A SIP user with the name '${name}' already exists. Please choose a different name.`
+      });
+    }
 
-  // Requête SQL pour mettre à jour l'utilisateur SIP avec uniquement les colonnes existantes
-  const query = `
-    UPDATE pkg_sip 
-    SET 
-      id_user = ?, name = ?, accountcode = ?, host = ?, 
-      status = ?, allow = ?, sippasswd = ?, callerid = ?, 
-      alias = ?, sip_group = ?,
-      block_call_reg = ?, record_call = ?, techprefix = ?,
-      nat = ?, directmedia = ?, qualify = ?, context = ?,
-      dtmfmode = ?, insecure = ?, deny = ?, permit = ?,
-      type = ?, allowtransfer = ?, calllimit = ?,
-      addparameter = ?, dial_timeout = ?
-    WHERE id = ?
-  `;
+    // Vérifier si l'ID est présent
+    if (!id) {
+      return res.status(400).json({ error: "ID est requis" });
+    }
 
-  // Paramètres de la requête (seulement ceux qui correspondent aux colonnes existantes)
-  const params = [
-    id_user, name, accountcode, host, 
-    status, allowValue, sippasswd, callerid, 
-    alias, sip_group,
-    blockCallRegInt, recordCallInt, techprefix, 
-    nat, directMediaInt, qualifyInt, context, 
-    dtmfmode, insecure, deny, permit,
-    type, allowtransferInt, callLimit,
-    addparameter, dial_timeout,
-    id // ID de l'utilisateur à mettre à jour
-  ];
+    // Map codecs array to a comma-separated string for the 'allow' field
+    const allowValue = Array.isArray(codecs) ? codecs.join(',') : (codecs || '');
+  
+    // Ensure callerid is a string and not null/undefined
+    const safeCallerId = callerid !== null && callerid !== undefined ? String(callerid) : '';
+    // Convert empty string to null for techprefix to avoid integer conversion errors
+    const safeTechPrefix = techprefix !== null && techprefix !== undefined && techprefix !== '' ? parseInt(techprefix, 10) : null;
+  
+    console.log('Processing update with values:', {
+      callerid: { value: callerid, type: typeof callerid, safe: safeCallerId },
+      techprefix: { value: techprefix, type: typeof techprefix, safe: safeTechPrefix },
+      codecs: { value: codecs, type: typeof codecs, allowValue }
+    });
+  
+    // Convert string 'yes'/'no' to 1/0 for boolean fields
+    const recordCallInt = record_call === 'yes' ? 1 : 0;
+    const blockCallRegInt = block_call_reg === 'yes' ? 1 : 0;
+    const allowtransferInt = allowtransfer === 'yes' ? 1 : 0;
+    const directMediaInt = directmedia === 'yes' ? 1 : 0;
+    const qualifyInt = qualify === 'yes' ? 1 : 0;
 
-  // Execute the query with better error handling
-  connection.query(query, params, (error, result) => {
+    // Requête SQL pour mettre à jour l'utilisateur SIP avec uniquement les colonnes existantes
+    const query = `
+      UPDATE pkg_sip 
+      SET 
+        id_user = ?, name = ?, accountcode = ?, host = ?, 
+        status = ?, allow = ?, secret = ?, callerid = ?, 
+        alias = ?, sip_group = ?,
+        block_call_reg = ?, record_call = ?, techprefix = ?,
+        nat = ?, directmedia = ?, qualify = ?, context = ?,
+        dtmfmode = ?, insecure = ?, deny = ?, permit = ?,
+        type = ?, allowtransfer = ?, calllimit = ?,
+        addparameter = ?, dial_timeout = ?
+      WHERE id = ?
+    `;
+
+    // Paramètres de la requête (seulement ceux qui correspondent aux colonnes existantes)
+    const params = [
+      id_user, name, accountcode, host, 
+      status, allowValue, sippasswd, safeCallerId, 
+      alias, sip_group,
+      blockCallRegInt, recordCallInt, safeTechPrefix, 
+      nat, directMediaInt, qualifyInt, context, 
+      dtmfmode, insecure, deny, permit,
+      type, allowtransferInt, callLimit,
+      addparameter, dial_timeout,
+      id // ID de l'utilisateur à mettre à jour
+    ];
+
+    // Execute the query with better error handling
+    connection.query(query, params, (error, result) => {
     if (error) {
       // Log the error to file
       logErrorToFile(error, {
@@ -310,13 +444,14 @@ exports.modifierSIPUser = (req, res) => {
       });
     }
 
-    // Vérifier si l'utilisateur a été trouvé et mis à jour
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Utilisateur non trouvé" });
-    }
+      // Vérifier si l'utilisateur a été trouvé et mis à jour
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
 
-    // Réponse de succès
-    res.status(200).json({ message: "Utilisateur SIP modifié avec succès" });
+      // Réponse de succès
+      res.status(200).json({ message: "Utilisateur SIP modifié avec succès" });
+    });
   });
 };
 

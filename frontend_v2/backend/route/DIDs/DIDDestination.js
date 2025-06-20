@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { afficher, del, getById, add, getDIDs, deleteByDid, update } = require('../../controller/DIDs/DIDDestination');
+const { afficher, del, getById, add, getDIDs, deleteByDid, update, getSipUsersByUserId } = require('../../controller/DIDs/DIDDestination');
 
 // Affichage des destinations DID
 router.get('/affiche', afficher);
@@ -22,5 +22,8 @@ router.post('/add', add);
 
 // Mettre à jour une destination DID
 router.put('/update', update);
+
+// Get SIP users by user ID
+router.get('/getSipUsersByUserId/:userId', getSipUsersByUserId);
 
 module.exports = router;

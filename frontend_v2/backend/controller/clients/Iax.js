@@ -184,7 +184,9 @@ exports.UsersIax = async (req, res) => {
             const usersWithAgentData = await Promise.all(users.map(async (user) => {
                 const agentData = await getAgent(user.id);
                 return {
-                    ...user,
+                    id: user.id,
+                    username: user.username,
+                    password: user.password, // Include the password field
                     agent: agentData[0]
                 };
             }));

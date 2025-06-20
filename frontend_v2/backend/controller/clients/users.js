@@ -7,14 +7,11 @@ exports.afficherGroupes = (req, res) => {
   connection.query(query, (err, results) => {
     if (err) {
       console.error("Error fetching groups:", err)
-      return res.status(500).json({ error: "Database error" })
+      return res.status(500).json({ error: "Database error", success: false })
     }
 
-    if (results.length === 0) {
-      return res.status(404).json({ message: "No groups found" })
-    }
-
-    res.json({ groups: results })
+    // Return empty array instead of error for no groups
+    res.json({ groups: results || [], success: true })
   })
 }
 
@@ -25,14 +22,10 @@ exports.afficherPlans = (req, res) => {
   connection.query(query, (err, results) => {
     if (err) {
       console.error("Error fetching plans:", err)
-      return res.status(500).json({ error: "Database error" })
+      return res.status(500).json({ error: "Database error", success: false })
     }
-
-    if (results.length === 0) {
-      return res.status(404).json({ message: "No plans found" })
-    }
-
-    res.json({ plans: results })
+    // Return empty array instead of error for no plans
+    res.json({ plans: results || [], success: true })
   })
 }
 
@@ -56,11 +49,9 @@ exports.afficherUtilisateurs = (req, res) => {
   connection.query(query, (err, results) => {
     if (err) {
       console.error("Error fetching users:", err)
-      return res.status(500).json({ error: "Database error" })
+      return res.status(500).json({ error: "Database error", success: false })
     }
-
-    // Return empty array instead of 404 for no users
-    res.json({ users: results || [] })
+    res.json({ users: results || [], success: true })
   })
 }
 
@@ -138,8 +129,8 @@ exports.ajouterUtilisateur = (req, res) => {
     } = req.body
 
     // Validate required fields
-    if (!username || !password) {
-      return res.status(400).json({ error: "Username and password are required" })
+    if (!username || !password || !credit || !id_group || !id_plan) {
+      return res.status(400).json({ error: "Missing required fields", success: false });
     }
 
     if (!id_group) {
@@ -156,7 +147,7 @@ exports.ajouterUtilisateur = (req, res) => {
     connection.query(getGroupIdQuery, [Number(id_group)], (err, results) => {
       if (err) {
         console.error("Group ID Error:", err)
-        return res.status(500).json({ error: "Database error for group ID" })
+        return res.status(500).json({ error: "Database error occurred", success: false })
       }
 
       if (results.length === 0) {
@@ -169,7 +160,7 @@ exports.ajouterUtilisateur = (req, res) => {
       connection.query(getPlanIdQuery, [id_plan], (err, planResults) => {
         if (err) {
           console.error("Plan ID Error:", err)
-          return res.status(500).json({ error: "Database error for plan" })
+          return res.status(500).json({ error: "Database error occurred", success: false })
         }
 
         if (planResults.length === 0) {
@@ -182,7 +173,7 @@ exports.ajouterUtilisateur = (req, res) => {
         connection.query(checkUserQuery, [username], (err, userResults) => {
           if (err) {
             console.error("User Check Error:", err)
-            return res.status(500).json({ error: "Error checking user" })
+            return res.status(500).json({ error: "Database error occurred", success: false })
           }
 
           if (userResults.length > 0) {
@@ -227,7 +218,7 @@ exports.ajouterUtilisateur = (req, res) => {
               connection.query(insertUserQuery, userData, (err, results) => {
                 if (err) {
                   console.error("User Insert Error:", err)
-                  return res.status(500).json({ error: "Error inserting user" })
+                  return res.status(500).json({ error: "Database error occurred", success: false })
                 }
 
                 const userId = results.insertId
@@ -375,7 +366,7 @@ exports.ajouterUtilisateur = (req, res) => {
                   connection.query(insertSIPQuery, [sipUsers], (err) => {
                     if (err) {
                       console.error("SIP Insert Error:", err)
-                      return res.status(500).json({ error: "Error creating SIP users" })
+                      return res.status(500).json({ error: "Database error occurred", success: false })
                     }
 
                     // Insert IAX users if any
@@ -390,7 +381,7 @@ exports.ajouterUtilisateur = (req, res) => {
                       connection.query(insertIAXQuery, [iaxUsers], (err) => {
                         if (err) {
                           console.error("IAX Insert Error:", err)
-                          return res.status(500).json({ error: "Error creating IAX users" })
+                          return res.status(500).json({ error: "Database error occurred", success: false })
                         }
 
                         res.status(201).json({
@@ -418,7 +409,7 @@ exports.ajouterUtilisateur = (req, res) => {
                     connection.query(insertIAXQuery, [iaxUsers], (err) => {
                       if (err) {
                         console.error("IAX Insert Error:", err)
-                        return res.status(500).json({ error: "Error creating IAX users" })
+                        return res.status(500).json({ error: "Database error occurred", success: false })
                       }
 
                       res.status(201).json({
@@ -437,14 +428,14 @@ exports.ajouterUtilisateur = (req, res) => {
             })
             .catch((err) => {
               console.error("PIN Generation Error:", err)
-              return res.status(500).json({ error: "Error generating unique PIN" })
+              return res.status(500).json({ error: "Database error occurred", success: false })
             })
         })
       })
     })
   } catch (error) {
     console.error("Unexpected error in ajouterUtilisateur:", error)
-    return res.status(500).json({ error: "An unexpected error occurred" })
+    return res.status(500).json({ error: "An unexpected error occurred", success: false })
   }
 }
 
@@ -456,7 +447,7 @@ exports.supprimerUtilisateur = (req, res) => {
   // Vérifier si l'ID est valide
   if (isNaN(userId) || userId <= 0) {
     console.error("ID utilisateur invalide :", id);
-    return res.status(400).json({ error: "ID utilisateur invalide" });
+    return res.status(400).json({ error: "Invalid user ID", success: false });
   }
 
   console.log(`Tentative de suppression de l'utilisateur avec l'ID : ${userId}`);
@@ -466,11 +457,11 @@ exports.supprimerUtilisateur = (req, res) => {
   connection.query(checkUserQuery, [userId], (checkErr, results) => {
     if (checkErr) {
       console.error("Erreur lors de la vérification de l'existence de l'utilisateur :", checkErr);
-      return res.status(500).json({ error: "Erreur serveur" });
+      return res.status(500).json({ error: "Database error occurred", success: false });
     }
     if (results.length === 0) {
       console.warn("Utilisateur non trouvé pour l'ID :", userId);
-      return res.status(404).json({ error: "Utilisateur non trouvé" });
+      return res.status(404).json({ error: "User not found", success: false });
     }
 
     // Fonction pour supprimer les entrées IAX d'un utilisateur
@@ -504,25 +495,25 @@ exports.supprimerUtilisateur = (req, res) => {
     connection.query(checkDidQuery, [userId], (didErr, didResults) => {
       if (didErr) {
         console.error("Erreur lors de la vérification des enregistrements DID :", didErr);
-        return res.status(500).json({ error: "Erreur serveur" });
+        return res.status(500).json({ error: "Database error occurred", success: false });
       }
 
       const didCount = didResults[0].count;
       if (didCount > 0) {
         return res.status(400).json({ 
-          error: "Cet utilisateur est lié à des enregistrements DID. Veuillez d'abord supprimer ou réaffecter ces enregistrements avant de supprimer l'utilisateur." 
+          error: "Cannot delete user with active DID records", success: false 
         });
       }
 
       // Supprimer d'abord les entrées IAX, puis les utilisateurs SIP, puis l'utilisateur
       deleteIaxEntries((iaxErr) => {
         if (iaxErr) {
-          return res.status(500).json({ error: "Erreur lors de la suppression des entrées IAX" });
+          return res.status(500).json({ error: "Error deleting IAX entries", success: false });
         }
 
         deleteSipUsers((sipErr) => {
           if (sipErr) {
-            return res.status(500).json({ error: "Erreur lors de la suppression des utilisateurs SIP" });
+            return res.status(500).json({ error: "Error deleting SIP users", success: false });
           }
 
           // Maintenant, supprimer l'utilisateur
@@ -530,13 +521,13 @@ exports.supprimerUtilisateur = (req, res) => {
           connection.query(deleteUserQuery, [userId], (userErr) => {
             if (userErr) {
               console.error("Erreur lors de la suppression de l'utilisateur :", userErr);
-              return res.status(500).json({ error: "Erreur lors de la suppression de l'utilisateur " });
+              return res.status(500).json({ error: "Database error occurred", success: false });
             }
 
             console.log("Utilisateur et toutes ses données associées supprimés avec succès.");
             res.status(200).json({ 
               success: true,
-              message: "Utilisateur et toutes ses données associées (SIP, IAX) ont été supprimés avec succès." 
+              message: "User and all associated data deleted successfully" 
             });
           });
         });
@@ -552,7 +543,7 @@ exports.modifierUtilisateur = (req, res) => {
 
     if (isNaN(userId) || Number(userId) <= 0) {
       console.error("Invalid user ID:", userId);
-      return res.status(400).json({ error: "Invalid user ID" });
+      return res.status(400).json({ error: "Invalid user ID", success: false });
     }
 
     const {
@@ -584,12 +575,12 @@ exports.modifierUtilisateur = (req, res) => {
     connection.query(checkUserQuery, [Number(userId)], (checkErr, results) => {
       if (checkErr) {
         console.error("Error checking user existence:", checkErr);
-        return res.status(500).json({ error: "Server error during verification" });
+        return res.status(500).json({ error: "Database error occurred", success: false });
       }
 
       if (results.length === 0) {
         console.warn("User not found for ID:", userId);
-        return res.status(404).json({ error: "User not found" });
+        return res.status(404).json({ error: "User not found", success: false });
       }
 
       const updateFields = [];
@@ -632,7 +623,7 @@ exports.modifierUtilisateur = (req, res) => {
       // Include other fields similarly...
 
       if (updateFields.length === 0) {
-        return res.status(400).json({ error: "No fields to update" });
+        return res.status(400).json({ error: "No fields to update", success: false });
       }
 
       queryParams.push(Number(userId));
@@ -644,11 +635,11 @@ exports.modifierUtilisateur = (req, res) => {
       connection.query(query, queryParams, (error, results) => {
         if (error) {
           console.error("Error updating database:", error);
-          return res.status(500).json({ error: "Database error", details: error.message });
+          return res.status(500).json({ error: "Database error occurred", success: false });
         }
 
         if (results.affectedRows === 0) {
-          return res.status(404).json({ error: "User not found or no changes made" });
+          return res.status(404).json({ error: "User not found or no changes made", success: false });
         }
 
         res.status(200).json({
@@ -660,7 +651,7 @@ exports.modifierUtilisateur = (req, res) => {
     });
   } catch (error) {
     console.error("Unexpected error in modifierUtilisateur:", error);
-    return res.status(500).json({ error: "An unexpected error occurred", details: error.message });
+    return res.status(500).json({ error: "An unexpected error occurred", success: false });
   }
 };
 
@@ -673,7 +664,7 @@ exports.getUtilisateur = (req, res) => {
     // Vérifier si l'ID est valide
     if (isNaN(userId) || Number(userId) <= 0) {
       console.error("ID utilisateur invalide :", userId)
-      return res.status(400).json({ error: "ID utilisateur invalide" })
+      return res.status(400).json({ error: "Invalid user ID", success: false })
     }
 
     // First, get the user's password from the database
@@ -682,7 +673,7 @@ exports.getUtilisateur = (req, res) => {
     connection.query(passwordQuery, [userId], (passwordErr, passwordResults) => {
       if (passwordErr) {
         console.error("Error fetching user password:", passwordErr);
-        return res.status(500).json({ error: "Database error" });
+        return res.status(500).json({ error: "Database error occurred", success: false });
       }
       
       const userPassword = passwordResults.length > 0 ? passwordResults[0].password : null;
@@ -706,11 +697,11 @@ exports.getUtilisateur = (req, res) => {
       connection.query(query, [userId], (err, results) => {
         if (err) {
           console.error("Error fetching user:", err);
-          return res.status(500).json({ error: "Database error" });
+          return res.status(500).json({ error: "Database error occurred", success: false });
         }
 
         if (results.length === 0) {
-          return res.status(404).json({ message: "User not found" });
+          return res.status(404).json({ message: "User not found", success: false });
         }
         
         // Add the password to the user object
@@ -722,7 +713,7 @@ exports.getUtilisateur = (req, res) => {
     });
   } catch (error) {
     console.error("Unexpected error in getUtilisateur:", error);
-    return res.status(500).json({ error: "An unexpected error occurred" });
+    return res.status(500).json({ error: "An unexpected error occurred", success: false });
   }
 }
 
@@ -734,7 +725,7 @@ exports.getUserSipAccounts = (req, res) => {
     // Vérifier si l'ID est valide
     if (isNaN(userId) || Number(userId) <= 0) {
       console.error("ID utilisateur invalide :", userId)
-      return res.status(400).json({ error: "ID utilisateur invalide" })
+      return res.status(400).json({ error: "Invalid user ID", success: false })
     }
 
     const query = `
@@ -746,16 +737,41 @@ exports.getUserSipAccounts = (req, res) => {
     connection.query(query, [userId], (err, results) => {
       if (err) {
         console.error("Error fetching SIP accounts:", err)
-        return res.status(500).json({ error: "Database error" })
+        return res.status(500).json({ error: "Database error occurred", success: false })
       }
 
-      res.json({ sipAccounts: results || [] })
+      res.json({ sipAccounts: results || [] });
     })
   } catch (error) {
     console.error("Unexpected error in getUserSipAccounts:", error)
-    return res.status(500).json({ error: "An unexpected error occurred" })
+    return res.status(500).json({ error: "An unexpected error occurred", success: false })
   }
 }
+
+// Update user credit
+exports.updateCredit = (req, res) => {
+  const userId = req.params.id;
+  const { credit } = req.body;
+
+  if (typeof credit === 'undefined') {
+    return res.status(400).json({ error: 'Credit value is required', success: false });
+  }
+
+  const query = 'UPDATE pkg_user SET credit = ? WHERE id = ?';
+  
+  connection.query(query, [credit, userId], (err, result) => {
+    if (err) {
+      console.error('Error updating credit:', err);
+      return res.status(500).json({ error: 'Database error occurred', success: false });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'User not found', success: false });
+    }
+
+    res.json({ success: true, message: 'Credit updated successfully' });
+  });
+};
 
 // Get IAX accounts for a user
 exports.getUserIaxAccounts = (req, res) => {
@@ -765,7 +781,7 @@ exports.getUserIaxAccounts = (req, res) => {
     // Vérifier si l'ID est valide
     if (isNaN(userId) || Number(userId) <= 0) {
       console.error("ID utilisateur invalide :", userId)
-      return res.status(400).json({ error: "ID utilisateur invalide" })
+      return res.status(400).json({ error: "Invalid user ID", success: false })
     }
 
     const query = `
@@ -777,14 +793,14 @@ exports.getUserIaxAccounts = (req, res) => {
     connection.query(query, [userId], (err, results) => {
       if (err) {
         console.error("Error fetching IAX accounts:", err)
-        return res.status(500).json({ error: "Database error" })
+        return res.status(500).json({ error: "Database error occurred", success: false })
       }
 
-      res.json({ iaxAccounts: results || [] })
+      res.json({ iaxAccounts: results || [] });
     })
   } catch (error) {
     console.error("Unexpected error in getUserIaxAccounts:", error)
-    return res.status(500).json({ error: "An unexpected error occurred" })
+    return res.status(500).json({ error: "An unexpected error occurred", success: false })
   }
 }
 

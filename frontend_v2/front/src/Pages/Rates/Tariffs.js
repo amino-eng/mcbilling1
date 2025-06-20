@@ -9,8 +9,10 @@ import {
 } from "react-bootstrap"
 import { 
   FaCheckCircle, FaTimesCircle, FaEdit, FaSearch, 
-  FaPlusCircle, FaTrashAlt, FaFileAlt, FaFileExport 
+  FaPlusCircle, FaTrashAlt, FaFileAlt, FaFileExport, FaExclamationTriangle
 } from "react-icons/fa"
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Constants
 const ITEMS_PER_PAGE = 10
@@ -237,6 +239,8 @@ const TariffsTable = () => {
   const [isExporting, setIsExporting] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const [importError, setImportError] = useState("")
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [tariffToDelete, setTariffToDelete] = useState(null)
 
   // Export to CSV function
   const handleImport = async (event) => {
@@ -582,14 +586,41 @@ const TariffsTable = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this rate?")) return
+  const handleDeleteClick = (id) => {
+    const tariff = tariffs.find(t => t.id === id);
+    setTariffToDelete(tariff);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!tariffToDelete) return;
+    
     try {
-      await axios.delete(`http://localhost:5000/api/admin/Tariffs/supprimer/${id}`)
+      await axios.delete(`http://localhost:5000/api/admin/Tariffs/supprimer/${tariffToDelete.id}`)
       fetchTariffs()
+      toast.success('Rate deleted successfully!', {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
     } catch (err) {
       console.error(err)
-      alert("Erreur lors de la suppression.")
+      toast.error('Failed to delete rate. Please try again.', {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+    } finally {
+      setShowDeleteModal(false);
+      setTariffToDelete(null);
     }
   }
 
@@ -601,41 +632,73 @@ const TariffsTable = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
+    // Validate required fields
+    if (!formData.id_plan || !formData.id_prefix || !formData.id_trunk_group || !formData.sellrate) {
+      toast.error('Please fill in all required fields', {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      return;
+    }
+
     // Prepare data for submission
     const submitData = {
       id_plan: formData.id_plan,
       id_prefix: formData.id_prefix,
       id_trunk_group: formData.id_trunk_group,
-      rateinitial: formData.sellrate, // Use the correct field name for the database
+      rateinitial: formData.sellrate,
       initblock: formData.initblock,
       billingblock: formData.billingblock,
-      minimal_time_charge: formData.minimal_time_buy, // Changed from minimal_time_buy to minimal_time_charge
-      additional_grace: formData.additional_time, // Changed from additional_time to additional_grace
-      connectcharge: formData.connection_charge, // Changed from connection_charge to connectcharge
-      package_offer: formData.include_in_offer === "Yes" ? 1 : 0, // Changed from include_in_offer to package_offer
+      minimal_time_charge: formData.minimal_time_buy,
+      additional_grace: formData.additional_time,
+      connectcharge: formData.connection_charge,
+      package_offer: formData.include_in_offer === "Yes" ? 1 : 0,
       status: formData.status === "Active" ? 1 : 0,
     }
 
-    if (currentTariff) {
-      // Update existing tariff
-      try {
+    try {
+      if (currentTariff) {
+        // Update existing tariff
         await axios.put(`http://localhost:5000/api/admin/Tariffs/modifier/${currentTariff.id}`, submitData)
         fetchTariffs()
         setShowModal(false)
-      } catch (err) {
-        console.error(err)
-        alert("Error while updating.")
-      }
-    } else {
-      // Add new tariff
-      try {
+        toast.success('Rate updated successfully!', {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      } else {
+        // Add new tariff
         await axios.post("http://localhost:5000/api/admin/Tariffs/ajouter", submitData)
         fetchTariffs()
         setShowModal(false)
-      } catch (err) {
-        console.error(err)
-        alert("Error while adding.")
+        toast.success('Rate added successfully!', {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
       }
+    } catch (err) {
+      console.error(err)
+      const errorMessage = err.response?.data?.error || 'An error occurred. Please try again.';
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     }
   }
 
@@ -822,6 +885,17 @@ const TariffsTable = () => {
 
   return (
     <div>
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
       <style>{customStyles}</style>
 
       <div className="dashboard-main">
@@ -870,7 +944,7 @@ const TariffsTable = () => {
                   <TariffsTableComponent
                     tariffs={pagedTariffs}
                     onEdit={handleEdit}
-                    onDelete={handleDelete}
+                    onDelete={handleDeleteClick}
                     isLoading={loading}
                   />
 
@@ -1242,6 +1316,36 @@ const TariffsTable = () => {
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowTrunkGroupSearch(false)}>
             Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title className="text-danger">
+            <FaExclamationTriangle className="me-2" />
+            Confirm Deletion
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Are you sure you want to delete this rate?</p>
+          {tariffToDelete && (
+            <div className="alert alert-warning mt-3">
+              <strong>Plan:</strong> {tariffToDelete.plan || 'N/A'}<br />
+              <strong>Destination:</strong> {tariffToDelete.destination || 'N/A'}<br />
+              <strong>Prefix:</strong> {tariffToDelete.prefix || 'N/A'}<br />
+              <strong>Rate:</strong> {tariffToDelete.sell_price || 'N/A'}
+            </div>
+          )}
+          <p className="text-muted">This action cannot be undone.</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleConfirmDelete}>
+            <FaTrashAlt className="me-1" /> Delete
           </Button>
         </Modal.Footer>
       </Modal>

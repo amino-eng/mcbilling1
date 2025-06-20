@@ -5,18 +5,23 @@ import axios from "axios"
 import { Table, Button, Modal, Form, Dropdown, Alert, Card, Container, Row, Col, Badge, Spinner } from "react-bootstrap"
 import ReactPaginate from "react-paginate"
 import { CSVLink } from "react-csv"
-import {
-  FaCheckCircle,
-  FaTimesCircle,
-  FaEdit,
-  FaSearch,
-  FaDownload,
-  FaPlusCircle,
-  FaTrashAlt,
-  FaPhoneAlt,
-  FaUsers,
-  FaCog,
-  FaSignOutAlt,
+import { 
+  FaCheckCircle, 
+  FaTimesCircle, 
+  FaEdit, 
+  FaSearch, 
+  FaDownload, 
+  FaPlusCircle, 
+  FaTrashAlt, 
+  FaPhoneAlt, 
+  FaUsers, 
+  FaCog, 
+  FaSignOutAlt, 
+  FaFileImport, 
+  FaExclamationTriangle, 
+  FaInfoCircle,
+  FaTimes,
+  FaCheck
 } from "react-icons/fa"
 
 // Constants
@@ -30,8 +35,8 @@ const DEFAULT_NEW_CALLER_ID = {
   status: "1",
 }
 
-// Header with Export & Add
-function CallerIDHeader({ onAddClick, callerIds, isExporting }) {
+// Header with Export, Import & Add
+function CallerIDHeader({ onAddClick, onImportClick, callerIds, isExporting }) {
   const csvData = [
     ["Caller ID", "Name", "User", "Description", "Status"],
     ...callerIds.map((caller) => [
@@ -97,6 +102,16 @@ function CallerIDHeader({ onAddClick, callerIds, isExporting }) {
               <FaPlusCircle />
             </div>
             <span>Add Caller ID</span>
+          </Button>
+          <Button
+            variant="primary"
+            onClick={onImportClick}
+            className="d-flex align-items-center gap-2 fw-semibold btn-hover-effect"
+          >
+            <div className="icon-container">
+              <FaFileImport />
+            </div>
+            <span>Import CSV</span>
           </Button>
           <CSVLink
             data={csvData}
@@ -569,15 +584,49 @@ export default function CallerIDPage() {
   const [usernames, setUsernames] = useState([])
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [callerToDelete, setCallerToDelete] = useState(null)
+  const [deleteError, setDeleteError] = useState("")
+  const [isDeleting, setIsDeleting] = useState(false)
   const [newCallerId, setNewCallerId] = useState(DEFAULT_NEW_CALLER_ID)
   const [editCallerId, setEditCallerId] = useState(DEFAULT_NEW_CALLER_ID)
-  const [error, setError] = useState("")
-  const [successMessage, setSuccessMessage] = useState("")
-  const [searchTerm, setSearchTerm] = useState("")
-  const [currentPage, setCurrentPage] = useState(0)
+  const [notifications, setNotifications] = useState([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isImporting, setIsImporting] = useState(false)
+  const [importFile, setImportFile] = useState(null)
+  const [importModalShow, setImportModalShow] = useState(false)
+  const [currentPage, setCurrentPage] = useState(0)
+  const [searchTerm, setSearchTerm] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isExporting, setIsExporting] = useState(false)
+  const [importError, setImportError] = useState("")
+  const [importSuccess, setImportSuccess] = useState("")
+
+  // Add a new notification
+  const addNotification = (message, type = 'success', duration = 5000) => {
+    const id = Date.now()
+    const notification = { id, message, type }
+    
+    setNotifications(prev => [...prev, notification])
+    
+    // Auto-remove notification after duration
+    if (duration > 0) {
+      setTimeout(() => {
+        removeNotification(id)
+      }, duration)
+    }
+    
+    return id
+  }
+  
+  // Remove a notification by id
+  const removeNotification = (id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id))
+  }
+  
+  // Clear all notifications
+  const clearNotifications = () => {
+    setNotifications([])
+  }
 
   // Fetch data
   useEffect(() => {
@@ -591,7 +640,7 @@ export default function CallerIDPage() {
         setCallerIds(callerRes.data.callerid)
         setUsernames(userRes.data.users)
       } catch (e) {
-        setError("Error loading data. Please refresh the page.")
+        addNotification("Error loading data. Please refresh the page.", 'error')
         console.error("Error fetching data:", e)
       } finally {
         setIsLoading(false)
@@ -600,13 +649,21 @@ export default function CallerIDPage() {
     fetchData()
   }, [])
 
-  // Filtered and paginated data
+  // Filter caller IDs based on search term
   const filteredCallerIds = callerIds.filter(
     (caller) =>
-      caller.cid?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      caller.callerid?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       caller.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      caller.username?.toLowerCase().includes(searchTerm.toLowerCase()),
+      caller.username?.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  // Handle search
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value)
+    setCurrentPage(0)
+  }
+
+  // Paginate caller IDs
   const pageCount = Math.ceil(filteredCallerIds.length / ITEMS_PER_PAGE)
   const pagedCallerIds = filteredCallerIds.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE)
 
@@ -615,18 +672,20 @@ export default function CallerIDPage() {
     setCurrentPage(0)
   }, [searchTerm])
 
-  // Clear messages after timeout
-  const clearMessages = () => {
-    setTimeout(() => {
-      setSuccessMessage("")
-      setError("")
-    }, 5000)
+  // Success and error helpers
+  const showSuccess = (message, duration = 5000) => {
+    return addNotification(message, 'success', duration)
+  }
+  
+  const showError = (message, duration = 5000) => {
+    return addNotification(message, 'error', duration)
   }
 
   // Handlers
-  async function handleAddCallerId() {
+  const handleAddCallerId = async (e) => {
+    e?.preventDefault();
     if (!newCallerId.callerid || !newCallerId.username || !newCallerId.name) {
-      setError("Please fill in all required fields.")
+      addNotification("Please fill in all required fields.", 'error')
       return
     }
 
@@ -635,67 +694,94 @@ export default function CallerIDPage() {
       await axios.post("http://localhost:5000/api/admin/CallerId/ajouter", newCallerId)
       setShowAddModal(false)
       setNewCallerId(DEFAULT_NEW_CALLER_ID)
-      setSuccessMessage("Caller ID added successfully.")
-      clearMessages()
-
+      showSuccess("✅ Caller ID added successfully")
       // Refresh list
       const res = await axios.get("http://localhost:5000/api/admin/CallerId/affiche")
       setCallerIds(res.data.callerid)
     } catch (err) {
       console.error("Error adding caller ID:", err)
-      setError("Error adding caller ID.")
-      clearMessages()
+      addNotification(`❌ ${err.response?.data?.message || 'Error adding Caller ID'}`)
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  async function handleEditCallerId() {
+  const handleEditCallerId = async (e) => {
+    e?.preventDefault();
     if (!editCallerId.callerid || !editCallerId.username || !editCallerId.name) {
-      setError("Please fill in all required fields.")
-      return
+      addNotification("Please fill in all required fields.", 'error');
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
-      await axios.put(`http://localhost:5000/api/admin/CallerId/modifier/${editCallerId.id}`, {
+      // Convert the activated status to a string
+      const activatedStatus = editCallerId.activated ? "1" : "0";
+      
+      // Prepare the update data
+      const updateData = {
         cid: editCallerId.callerid,
-        id_user: editCallerId.username,
+        id_user: editCallerId.username, // username contains the user ID
         name: editCallerId.name,
-        description: editCallerId.description,
-        activated: editCallerId.status,
-      })
+        description: editCallerId.description || "",
+        activated: activatedStatus
+      };
 
-      setShowEditModal(false)
-      setEditCallerId(DEFAULT_NEW_CALLER_ID)
-      setSuccessMessage("Caller ID updated successfully.")
-      clearMessages()
+      console.log('Updating Caller ID with data:', updateData);
 
-      const res = await axios.get("http://localhost:5000/api/admin/CallerId/affiche")
-      setCallerIds(res.data.callerid)
+      const response = await axios.put(
+        `http://localhost:5000/api/admin/CallerId/modifier/${editCallerId.id}`,
+        updateData
+      );
+
+      console.log('Update response:', response.data);
+
+      setShowEditModal(false);
+      setEditCallerId(DEFAULT_NEW_CALLER_ID);
+      showSuccess("✅ Caller ID updated successfully");
+      
+      // Refresh the caller IDs list
+      const res = await axios.get("http://localhost:5000/api/admin/CallerId/affiche");
+      setCallerIds(res.data.callerid);
     } catch (err) {
-      console.error("Error editing caller ID:", err)
-      setError("Error editing caller ID.")
-      clearMessages()
+      console.error("Error editing caller ID:", err);
+      const errorMessage = err.response?.data?.error || 
+                         err.response?.data?.message || 
+                         err.message || 
+                         'Error updating Caller ID';
+      addNotification(`❌ ${errorMessage}`);
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }
 
-  async function handleDeleteCallerId(id) {
-    if (!window.confirm("Are you sure you want to delete this Caller ID?")) return
+  // Open delete confirmation modal
+  const confirmDelete = (id) => {
+    const caller = callerIds.find((c) => c.id === id)
+    setCallerToDelete(caller)
+    setDeleteError("")
+    setShowDeleteModal(true)
+  }
+
+  // Handle actual deletion
+  const handleDeleteCallerId = async () => {
+    if (!callerToDelete) return
+
+    setIsDeleting(true)
+    setDeleteError("")
 
     try {
-      await axios.delete(`http://localhost:5000/api/admin/CallerId/delete/${id}`)
-      setSuccessMessage("Caller ID deleted successfully.")
-      clearMessages()
-
+      await axios.delete(`http://localhost:5000/api/admin/CallerId/delete/${callerToDelete.id}`)
+      showSuccess(`Caller ID ${callerToDelete.cid} has been successfully deleted.`)
+      setShowDeleteModal(false)
+      // Refresh list
       const res = await axios.get("http://localhost:5000/api/admin/CallerId/affiche")
       setCallerIds(res.data.callerid)
     } catch (err) {
       console.error("Error deleting caller ID:", err)
-      setError("Erreur lors de la suppression.")
-      clearMessages()
+      addNotification(`Failed to delete Caller ID ${callerToDelete.cid}. Please try again.`, 'error')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -710,6 +796,67 @@ export default function CallerIDPage() {
       status: caller.activated.toString(),
     })
     setShowEditModal(true)
+  }
+
+  // Handle page change
+  const handlePageClick = (data) => {
+    setCurrentPage(data.selected)
+  }
+
+  // Handle file selection for import
+  const handleFileChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      if (file.type === "text/csv" || file.name.endsWith(".csv")) {
+        setImportFile(file)
+        addNotification("File selected successfully.", 'success')
+      } else {
+        addNotification("Please select a valid CSV file.", 'error')
+      }
+    }
+  }
+
+  // Fetch caller IDs from the server
+  const fetchCallerIds = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/admin/CallerId/affiche")
+      setCallerIds(res.data.callerid)
+    } catch (err) {
+      console.error("Error fetching caller IDs:", err)
+      addNotification("Error while fetching caller IDs.", 'error')
+    }
+  }
+
+  // Handle import submission
+  const handleImportSubmit = async () => {
+    if (!importFile) {
+      addNotification("Please select a file to import.", 'error')
+      return
+    }
+
+    const formData = new FormData()
+    formData.append("file", importFile)
+
+    setIsImporting(true)
+    addNotification("Importing file...", 'success')
+
+    try {
+      const response = await axios.post("/api/callerid/import", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+
+      showSuccess(`Caller IDs imported successfully.`)
+      fetchCallerIds()
+      setImportModalShow(false)
+    } catch (error) {
+      console.error("Error importing CSV:", error)
+      addNotification(`Error while importing file: ${error.response?.data?.message || 'Unknown error'}`, 'error')
+    } finally {
+      setIsImporting(false)
+    }
   }
 
   return (
@@ -856,22 +1003,46 @@ export default function CallerIDPage() {
               <Card className="shadow border-0 overflow-hidden main-card">
                 <CallerIDHeader
                   onAddClick={() => setShowAddModal(true)}
+                  onImportClick={() => setImportModalShow(true)}
                   callerIds={callerIds}
-                  isExporting={isExporting}
+                  isExporting={false}
                 />
                 <Card.Body className="p-4" style={{ animation: "fadeIn 0.5s ease-in-out" }}>
-                  {error && (
-                    <Alert variant="danger" className="d-flex align-items-center mb-4 shadow-sm">
-                      <FaTimesCircle className="me-2" />
-                      {error}
-                    </Alert>
-                  )}
-                  {successMessage && (
-                    <Alert variant="success" className="d-flex align-items-center mb-4 shadow-sm">
-                      <FaCheckCircle className="me-2" />
-                      {successMessage}
-                    </Alert>
-                  )}
+                  {/* Toast Notifications */}
+                  <div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 11 }}>
+                    <div className="d-flex flex-column">
+                      {notifications.map((notification) => (
+                        <div 
+                          key={notification.id}
+                          className={`toast show mb-2 ${notification.type === 'success' ? 'bg-success' : 'bg-danger'}`}
+                          role="alert"
+                          style={{ minWidth: '300px' }}
+                        >
+                          <div className="d-flex">
+                            <div className="toast-body text-white d-flex align-items-center">
+                              {notification.type === 'success' ? 
+                                <FaCheckCircle className="me-2" /> : 
+                                <FaTimesCircle className="me-2" />
+                              }
+                              {notification.message}
+                            </div>
+                            <button 
+                              type="button" 
+                              className="btn-close btn-close-white me-2 m-auto" 
+                              onClick={() => removeNotification(notification.id)}
+                              aria-label="Close"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Legacy message containers (kept for any direct state updates) */}
+                  <div style={{ display: 'none' }}>
+                    {importError && <div>{importError}</div>}
+                    {importSuccess && <div>{importSuccess}</div>}
+                  </div>
 
                   <Row className="mb-4">
                     <Col md={6} lg={4}>
@@ -882,7 +1053,7 @@ export default function CallerIDPage() {
                   <CallerIdTable
                     callerIds={pagedCallerIds}
                     onEdit={openEditModal}
-                    onDelete={handleDeleteCallerId}
+                    onDelete={confirmDelete}
                     isLoading={isLoading}
                   />
 
@@ -891,12 +1062,14 @@ export default function CallerIDPage() {
                       {!isLoading && (
                         <>
                           <Badge bg="light" text="dark" className="me-2 shadow-sm">
-                            <span className="fw-semibold">{pagedCallerIds.length}</span> sur {filteredCallerIds.length}{" "}
+                            <span className="fw-semibold">{pagedCallerIds.length}</span> out of{" "}
+                            {filteredCallerIds.length} Caller IDs
+                            <span className="fw-semibold">{pagedCallerIds.length}</span> out of {filteredCallerIds.length}{" "}
                             Caller IDs
                           </Badge>
                           {searchTerm && (
                             <Badge bg="light" text="dark" className="shadow-sm">
-                              Filtrés de {callerIds.length} au total
+                              Filtered from {callerIds.length} total
                             </Badge>
                           )}
                         </>
@@ -904,7 +1077,7 @@ export default function CallerIDPage() {
                     </div>
                     <PaginationSection
                       pageCount={pageCount}
-                      onPageChange={({ selected }) => setCurrentPage(selected)}
+                      onPageChange={handlePageClick}
                       currentPage={currentPage}
                     />
                   </div>
@@ -918,8 +1091,8 @@ export default function CallerIDPage() {
       <CallerIdModal
         show={showAddModal}
         onHide={() => setShowAddModal(false)}
-        title="Ajouter Caller ID"
-        onSubmit={handleAddCallerId}
+        title="Add Caller ID"
+        onSubmit={(e) => handleAddCallerId(e)}
         callerId={newCallerId}
         usernames={usernames}
         onUsernameChange={(username) => setNewCallerId((prev) => ({ ...prev, username }))}
@@ -931,13 +1104,137 @@ export default function CallerIDPage() {
         show={showEditModal}
         onHide={() => setShowEditModal(false)}
         title="Edit Caller ID"
-        onSubmit={handleEditCallerId}
+        onSubmit={(e) => handleEditCallerId(e)}
         callerId={editCallerId}
         usernames={usernames}
         onUsernameChange={(username) => setEditCallerId((prev) => ({ ...prev, username }))}
         onInputChange={(e, field) => setEditCallerId((prev) => ({ ...prev, [field]: e.target.value }))}
         isSubmitting={isSubmitting}
       />
+
+      {/* Delete Confirmation Modal */}
+      <Modal 
+        show={showDeleteModal} 
+        onHide={() => !isDeleting && setShowDeleteModal(false)}
+        centered
+        backdrop="static"
+      >
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="text-danger d-flex align-items-center">
+            <FaExclamationTriangle className="me-2" />
+            Confirm Deletion
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="py-4">
+          {deleteError && (
+            <Alert variant="danger" className="d-flex align-items-center">
+              <FaTimesCircle className="me-2" />
+              {deleteError}
+            </Alert>
+          )}
+          <p className="mb-1">
+            You're about to delete the following Caller ID:
+          </p>
+          <div className="bg-light p-3 rounded mb-3">
+            <div className="d-flex align-items-center mb-2">
+              <strong className="me-2">ID:</strong>
+              <span>{callerToDelete?.id}</span>
+            </div>
+            <div className="d-flex align-items-center">
+              <strong className="me-2">Number:</strong>
+              <span className="text-primary fw-bold">{callerToDelete?.cid}</span>
+            </div>
+          </div>
+          <p className="text-muted small d-flex align-items-center mt-3">
+            <FaInfoCircle className="me-2" />
+            This action cannot be undone. Are you sure you want to continue?
+          </p>
+        </Modal.Body>
+        <Modal.Footer className="border-0 pt-0">
+          <Button
+            variant="outline-secondary"
+            onClick={() => setShowDeleteModal(false)}
+            disabled={isDeleting}
+            className="px-4"
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleDeleteCallerId}
+            disabled={isDeleting}
+            className="px-4"
+          >
+            {isDeleting ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Deleting...
+              </>
+            ) : (
+              <>
+                <FaTrashAlt className="me-2" />
+                Delete Permanently
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Import CSV Modal */}
+      <Modal show={importModalShow} onHide={() => setImportModalShow(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Import Caller IDs</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Upload a CSV file containing Caller IDs to import.</p>
+          <p className="small text-muted mb-3">
+            The file should contain the following columns: Caller ID, Name, User, Description, Status
+          </p>
+          
+          <Form.Group controlId="formFile" className="mb-3">
+            <Form.Label>Select CSV File</Form.Label>
+            <Form.Control 
+              type="file" 
+              accept=".csv" 
+              onChange={handleFileChange}
+            />
+            {importFile && (
+              <div className="mt-2">
+                <strong>Selected file:</strong> {importFile.name}
+              </div>
+            )}
+          </Form.Group>
+
+          {importError && <Alert variant="danger">{importError}</Alert>}
+          {importSuccess && <Alert variant="success">{importSuccess}</Alert>}
+
+          <div className="mt-3">
+            <a 
+              href="/templates/callerid_template.csv" 
+              download="callerid_template.csv"
+              className="btn btn-sm btn-outline-secondary me-2"
+            >
+              Download Template
+            </a>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button 
+            variant="secondary" 
+            onClick={() => setImportModalShow(false)}
+            disabled={isImporting}
+          >
+            Cancel
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={handleImportSubmit}
+            disabled={isImporting || !importFile}
+          >
+            {isImporting ? 'Importing...' : 'Import'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   )
 }

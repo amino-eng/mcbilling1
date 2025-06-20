@@ -10,7 +10,8 @@ const {
     getUtilisateur,
     getUserSipAccounts,
     getUserIaxAccounts,
-    getUserPassword
+    getUserPassword,
+    updateCredit
 } = require("../../controller/clients/users");
 
 // Afficher tous les utilisateurs avec leurs informations associées
@@ -43,5 +44,8 @@ router.delete("/supprimer/:id", supprimerUtilisateur);
 
 // Modifier un utilisateur
 router.put("/modifier/:id", modifierUtilisateur);
+
+// Mettre à jour le crédit d'un utilisateur
+router.put("/update-credit/:id", updateCredit);
 
 module.exports = router;

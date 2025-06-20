@@ -29,14 +29,44 @@ const SIPUsers = () => {
   const [sipUsers, setSipUsers] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  const [formData, setFormData] = useState({
+  const [selectedUser, setSelectedUser] = useState("");
+  const [users, setUsers] = useState([]);
+  const [callerIds, setCallerIds] = useState([]);
+  const [isLoadingCallerIds, setIsLoadingCallerIds] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [prefixes, setPrefixes] = useState([]);
+  const [isLoadingPrefixes, setIsLoadingPrefixes] = useState(false);
+
+  // Toast notifications state
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastVariant, setToastVariant] = useState("success");
+
+  // Show toast notification
+  const showToastMessage = (message, variant = "success") => {
+    setToastMessage(message);
+    setToastVariant(variant);
+    setShowToast(true);
+  };
+
+  const initialFormState = {
     id_user: "",
+    name: "",
+    accountcode: "",
+    host: "dynamic",
+    status: "1",
     callerid: "",
     alias: "",
-    name: "",
-    disable: "no",
+    disallow: "all",
     codecs: ['g729', 'ulaw', 'opus', 'gsm', 'alaw'],
-    host: "",
     sip_group: "",
     block_call_reg: "no",
     record_call: "no",
@@ -62,33 +92,10 @@ const SIPUsers = () => {
     voicemail_email: "",
     voicemail_password: "",
     sippasswd: "",
-    accountcode: "",
-    status: "",
-    allow: "",
-  });
-  const [selectedUser, setSelectedUser] = useState("");
-  const [users, setUsers] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [editingId, setEditingId] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
-  const [isExporting, setIsExporting] = useState(false);
-
-  // Toast notifications state
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastVariant, setToastVariant] = useState("success");
-
-  // Show toast notification
-  const showToastMessage = (message, variant = "success") => {
-    setToastMessage(message);
-    setToastVariant(variant);
-    setShowToast(true);
+    allow: ""
   };
+
+  const [formData, setFormData] = useState(initialFormState);
 
   const fetchUsers = () => {
     axios
@@ -135,90 +142,175 @@ const SIPUsers = () => {
       // Fetch complete SIP user data from the backend
       const response = await axios.get(`http://localhost:5000/api/admin/SIPUsers/${user.id}/details`);
       const sipUser = response.data.sipUser;
+      console.log('Received SIP user data from backend:', JSON.stringify(sipUser, null, 2));
       
-      setFormData({
-        id_user: sipUser.id_user || "",
-        name: sipUser.name || "",
-        accountcode: sipUser.accountcode || "",
-        host: sipUser.host || "",
-        status: sipUser.status?.toString() || "",
-        allow: sipUser.allow || "",
+      // Create a new form data object with all default values
+      const newFormData = {
+        id_user: "",
+        name: "",
+        accountcode: "",
+        host: "dynamic",
+        status: "1",
+        callerid: "",
+        alias: "",
+        disallow: "all",
+        codecs: ['g729', 'ulaw', 'opus', 'gsm', 'alaw'],
+        sip_group: "",
+        block_call_reg: "no",
+        record_call: "no",
+        techprefix: "",
+        nat: "",
+        directmedia: "no",
+        qualify: "no",
+        context: "",
+        dtmfmode: "RFC2833",
+        insecure: "no",
+        deny: "",
+        permit: "",
+        type: "friend",
+        allowtransfer: "no",
+        fakeRing: "no",
+        callLimit: 0,
+        moh: "",
+        addparameter: "",
+        forwardType: "undefined",
+        dial_timeout: 60,
+        enableVoicemail: "no",
+        email: "",
+        voicemail_email: "",
+        voicemail_password: "",
+        sippasswd: ""
+      };
+
+      // Update with values from the API response
+      const formData = {
+        ...newFormData,
+        ...sipUser,  // This will override any matching fields from newFormData
+        // Handle special cases
+        status: sipUser.status?.toString() || "1",
+        codecs: sipUser.allow ? sipUser.allow.split(',').filter(Boolean) : [...newFormData.codecs],
+        block_call_reg: sipUser.block_call_reg === 1 ? "yes" : "no",
+        record_call: sipUser.record_call === 1 ? "yes" : "no",
+        directmedia: sipUser.directmedia === 1 ? "yes" : "no",
+        qualify: sipUser.qualify === 1 ? "yes" : "no",
+        allowtransfer: sipUser.allowtransfer === 1 ? "yes" : "no",
+        callLimit: sipUser.call_limit || sipUser.callLimit || 0,
+        sippasswd: sipUser.secret || sipUser.sippasswd || "",
+        // Ensure callerid and techprefix are properly set
         callerid: sipUser.callerid || "",
-        alias: sipUser.alias || "",
-        disable: sipUser.disable || "no",
-        codecs: sipUser.codecs ? sipUser.codecs.split(",") : ['g729', 'ulaw', 'opus', 'gsm', 'alaw'],
-        sip_group: sipUser.sip_group || "",
-        block_call_reg: sipUser.block_call_reg || "no",
-        record_call: sipUser.record_call || "no",
-        techprefix: sipUser.techprefix || "",
-        nat: sipUser.nat || "",
-        directmedia: sipUser.directmedia || "no",
-        qualify: sipUser.qualify || "no",
-        context: sipUser.context || "",
-        dtmfmode: sipUser.dtmfmode || "RFC2833",
-        insecure: sipUser.insecure || "no",
-        deny: sipUser.deny || "",
-        permit: sipUser.permit || "",
-        type: sipUser.type || "friend",
-        allowtransfer: sipUser.allowtransfer || "no",
-        fakeRing: sipUser.fakeRing || "no",
-        callLimit: sipUser.callLimit || 0,
-        moh: sipUser.moh || "",
-        addparameter: sipUser.addparameter || "",
-        forwardType: sipUser.forwardType || "undefined",
-        dial_timeout: sipUser.dial_timeout || 60,
-        enableVoicemail: sipUser.enableVoicemail || "no",
-        email: sipUser.email || "",
-        voicemail_email: sipUser.voicemail_email || "",
-        voicemail_password: sipUser.voicemail_password || "",
-        sippasswd: sipUser.sippasswd || "",
+        techprefix: sipUser.techprefix || ""
+      };
+      
+      console.log('Setting form data with:', {
+        callerid: formData.callerid,
+        techprefix: formData.techprefix,
+        calleridType: typeof formData.callerid,
+        techprefixType: typeof formData.techprefix
       });
+      
+      console.log("Setting form data for edit:", formData);
+      console.log("SIP Password in form data:", formData.sippasswd);
+      setFormData(formData);
       setShowEdit(true);
     } catch (error) {
       console.error("Error preparing edit form:", error);
+      showToastMessage(
+        `Error loading SIP user data: ${error.response?.data?.error || error.message}`,
+        "danger"
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Helper function to generate a secure password
+  const generateSecurePassword = () => {
+    const length = 12;
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let password = "";
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * charset.length);
+      password += charset[randomIndex];
+    }
+    return password;
+  }
+
   const resetForm = () => {
-    setFormData({
-      id_user: "",
-      callerid: "",
-      alias: "",
-      name: "",
-      disable: "no",
-      codecs: ['g729', 'ulaw', 'opus', 'gsm', 'alaw'],
-      host: "",
-      sip_group: "",
-      block_call_reg: "no",
-      record_call: "no",
-      techprefix: "",
-      nat: "",
-      directmedia: "no",
-      qualify: "no",
-      context: "",
-      dtmfmode: "RFC2833",
-      insecure: "no",
-      deny: "",
-      permit: "",
-      type: "friend",
-      allowtransfer: "no",
-      fakeRing: "no",
-      callLimit: 0,
-      moh: "",
-      addparameter: "",
-      forwardType: "undefined",
-      dial_timeout: 60,
-      enableVoicemail: "no",
-      email: "",
-      voicemail_email: "",
-      voicemail_password: "",
-      accountcode: "",
-      status: "",
-      allow: "",
-    });
-    setShowPassword(false);
+    setFormData(initialFormState);
+    setSelectedUser("");
+  };
+
+  const fetchUserPassword = async (userId, setPasswordDirectly = false) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/admin/users/user/${userId}/password`);
+      if (response.data && response.data.password) {
+        if (setPasswordDirectly) {
+          setFormData(prev => ({
+            ...prev,
+            sippasswd: response.data.password
+          }));
+        }
+        return response.data.password;
+      }
+      return '';
+    } catch (error) {
+      console.error("Error fetching user password:", error);
+      if (setPasswordDirectly) {
+        showToastMessage("Error retrieving user password", "danger");
+      }
+      return '';
+    }
+  };
+
+  const handleUserChange = async (e) => {
+    const selectedUserId = e.target.value;
+    const selectedUser = users.find(user => user.id == selectedUserId);
+    
+    // Mettre à jour l'utilisateur sélectionné
+    setSelectedUser(selectedUserId);
+    
+    // Réinitialiser les Caller IDs lors du changement d'utilisateur
+    setCallerIds([]);
+    
+    if (selectedUserId && selectedUser) {
+      try {
+        setIsLoadingCallerIds(true);
+        
+        // Récupérer les Caller IDs et le mot de passe en parallèle
+        const [callerIdsResponse, password] = await Promise.all([
+          axios.get(`http://localhost:5000/api/admin/CallerId/user/${selectedUserId}`),
+          fetchUserPassword(selectedUserId)
+        ]);
+        
+        setCallerIds(callerIdsResponse.data.callerIds || []);
+        
+        // Mettre à jour les champs du formulaire
+        setFormData({
+          ...formData,
+          id_user: selectedUserId,
+          name: selectedUser.username || "",
+          accountcode: selectedUser.username || "",
+          callerid: "", // Réinitialiser le Caller ID
+          sippasswd: password || "" // Définir le mot de passe
+        });
+        
+      } catch (error) {
+        console.error("Error retrieving data:", error);
+        showToastMessage("Error retrieving user data", "danger");
+      } finally {
+        setIsLoadingCallerIds(false);
+      }
+    } else {
+      // Reset the form if no user is selected
+      setFormData({
+        ...formData,
+        id_user: "",
+        name: "",
+        accountcode: "",
+        callerid: "",
+        sippasswd: ""
+      });
+    }
   };
 
   const handleChange = (e) => {
@@ -235,71 +327,151 @@ const SIPUsers = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // const requiredFields = ["id_user", "name", "accountcode", "host", "status"];
-    // for (const field of requiredFields) {
-    //   if (!formData[field] && formData[field] !== 0) {
-    //     alert(`${field} is required!`);
-    //     return;
-    //   }
-    // }
     
-    const dataToSubmit = {
-      id_user: selectedUser,
-      name: formData.name,
-      accountcode: formData.accountcode || "",
-      host: formData.host,
-      status: formData.status || "",
-      callerid: formData.callerid,
-      alias: formData.alias,
-      disable: formData.disable,
-      codecs: formData.codecs.join(","),
-      sip_group: formData.sip_group,
-      block_call_reg: formData.block_call_reg,
-      record_call: formData.record_call,
-      techprefix: formData.techprefix,
-      nat: formData.nat,
-      directmedia: formData.directmedia,
-      qualify: formData.qualify,
-      context: formData.context,
-      dtmfmode: formData.dtmfmode,
-      insecure: formData.insecure,
-      deny: formData.deny,
-      permit: formData.permit,
-      type: formData.type,
-      allowtransfer: formData.allowtransfer,
-      fakeRing: formData.fakeRing,
-      callLimit: formData.callLimit,
-      moh: formData.moh,
-      addparameter: formData.addparameter,
-      forwardType: formData.forwardType,
-      dial_timeout: formData.dial_timeout,
-      enableVoicemail: formData.enableVoicemail,
-      email: formData.email,
-      voicemail_email: formData.voicemail_email,
-      voicemail_password: formData.voicemail_password,
-      sippasswd: formData.sippasswd,
-    };
-
     try {
-      await axios.post("http://localhost:5000/api/admin/SIPUsers/ajouter", dataToSubmit);
-      setShowAdd(false);
-      resetForm();
-      fetchSIPUsers();
-      showToastMessage("SIP user added successfully!");
+      // First, get the user's password
+      const userResponse = await axios.get(`http://localhost:5000/api/admin/users/user/${selectedUser}/password`);
+      const userPassword = userResponse.data?.password;
+      
+      if (!userPassword) {
+        throw new Error("Impossible de récupérer le mot de passe de l'utilisateur");
+      }
+      
+      const dataToSubmit = {
+        id_user: selectedUser,
+        name: formData.name,
+        accountcode: formData.accountcode || "",
+        host: formData.host,
+        status: formData.status || "1",
+        callerid: formData.callerid || "",
+        alias: formData.alias || "",
+        disable: formData.disable || "no",
+        codecs: Array.isArray(formData.codecs) ? formData.codecs.join(",") : formData.codecs,
+        sip_group: formData.sip_group || "",
+        block_call_reg: formData.block_call_reg || "no",
+        record_call: formData.record_call || "no",
+        techprefix: formData.techprefix || "",
+        nat: formData.nat || "",
+        directmedia: formData.directmedia || "no",
+        qualify: formData.qualify || "no",
+        context: formData.context || "",
+        dtmfmode: formData.dtmfmode || "RFC2833",
+        insecure: formData.insecure || "no",
+        deny: formData.deny || "",
+        permit: formData.permit || "",
+        type: formData.type || "friend",
+        allowtransfer: formData.allowtransfer || "no",
+        fakeRing: formData.fakeRing || "no",
+        callLimit: formData.callLimit || 0,
+        moh: formData.moh || "",
+        addparameter: formData.addparameter || "",
+        forwardType: formData.forwardType || "undefined",
+        dial_timeout: formData.dial_timeout || 60,
+        enableVoicemail: formData.enableVoicemail || "no",
+        email: formData.email || "",
+        voicemail_email: formData.voicemail_email || "",
+        voicemail_password: formData.voicemail_password || "",
+        secret: userPassword // Set the secret to the user's password
+      };
+      
+      console.log("Submitting SIP user data:", dataToSubmit);
+      
+      // Submit the data
+      const response = await axios.post(
+        "http://localhost:5000/api/admin/SIPUsers/ajouter", 
+        dataToSubmit,
+        { 
+          validateStatus: (status) => status < 500, // Don't throw for 4xx errors
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      // Check for error status codes
+      if (response.status >= 200 && response.status < 300) {
+        // Success case
+        setShowAdd(false);
+        resetForm();
+        fetchSIPUsers();
+        showToastMessage("SIP user added successfully!");
+      } else {
+        // Handle error responses
+        const errorMessage = response.data?.details || 
+                             response.data?.error || 
+                             'Failed to add SIP user';
+        showToastMessage(`Error: ${errorMessage}`, 'danger');
+      }
     } catch (error) {
-      console.error("Error adding data:", error.response ? error.response.data : error.message);
-      const errorMessage = error.response?.data?.error || error.message;
+      console.error("Error adding SIP user:", error.response ? error.response.data : error);
+      
+      let errorMessage = error.message;
+      
+      // Handle duplicate SIP user error (status 409)
+      if (error.response?.status === 409) {
+        errorMessage = error.response.data.details || "A SIP user with this name already exists. Please choose a different name.";
+      } 
+      // Handle other error responses
+      else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+        if (error.response.data.details) {
+          errorMessage += `: ${error.response.data.details}`;
+        }
+      }
+      
       showToastMessage(`Error: ${errorMessage}`, "danger");
     }
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    
     try {
-      console.log("Sending update request with data:", formData);
+      // First, get the user's password
+      const userResponse = await axios.get(`http://localhost:5000/api/admin/users/user/${formData.id_user}/password`);
+      const userPassword = userResponse.data?.password;
+      
+      if (!userPassword) {
+        throw new Error("Impossible de récupérer le mot de passe de l'utilisateur");
+      }
+      
+      // Prepare data for backend
+      const dataToUpdate = {
+        ...formData,
+        // Use the user's password as the SIP secret
+        secret: userPassword,
+        // Map frontend field names to backend field names
+        sippasswd: userPassword, // Also set sippasswd to the same value for backward compatibility
+        // Ensure codecs are sent as comma-separated string
+        allow: formData.codecs?.join(','),
+        // Convert string 'yes'/'no' to 1/0 for boolean fields
+        block_call_reg: formData.block_call_reg === 'yes' ? 1 : 0,
+        record_call: formData.record_call === 'yes' ? 1 : 0,
+        directmedia: formData.directmedia === 'yes' ? 1 : 0,
+        qualify: formData.qualify === 'yes' ? 1 : 0,
+        allowtransfer: formData.allowtransfer === 'yes' ? 1 : 0,
+        // Ensure numeric fields are properly typed
+        status: formData.status ? parseInt(formData.status, 10) : 1,
+        callLimit: formData.callLimit ? parseInt(formData.callLimit, 10) : 0,
+        dial_timeout: formData.dial_timeout ? parseInt(formData.dial_timeout, 10) : 60,
+        // Explicitly include and ensure string type for callerid and techprefix
+        callerid: formData.callerid !== null && formData.callerid !== undefined ? String(formData.callerid) : "",
+        techprefix: formData.techprefix !== null && formData.techprefix !== undefined ? String(formData.techprefix) : ""
+      };
+      
+      console.log('Update data with processed fields:', {
+        callerid: dataToUpdate.callerid,
+        techprefix: dataToUpdate.techprefix,
+        calleridType: typeof dataToUpdate.callerid,
+        techprefixType: typeof dataToUpdate.techprefix
+      });
+
+      console.log("Sending update request with data:", dataToUpdate);
+      
       const response = await axios.put(
         `http://localhost:5000/api/admin/SIPUsers/modifier/${editingId}`, 
-        formData,
+        dataToUpdate,
         { 
           headers: { 'Content-Type': 'application/json' },
           validateStatus: () => true // This will prevent axios from throwing errors on HTTP error status
@@ -314,12 +486,28 @@ const SIPUsers = () => {
         resetForm();
         fetchSIPUsers();
         showToastMessage("SIP user updated successfully!");
+      } else if (response.status === 409) {
+        // Handle duplicate SIP user error
+        const errorMessage = response.data?.details || 
+                             response.data?.error || 
+                             'A SIP user with this name already exists. Please choose a different name.';
+        showToastMessage(`Error: ${errorMessage}`, "danger");
       } else {
         console.error("Update failed with status", response.status, ":", response.data);
-        // Show complete error details in alert
-        const errorDetails = response.data?.details || {};
+        let errorMessage = 'Failed to update SIP user';
+        
+        // Try to extract more specific error message
+        if (response.data?.error) {
+          errorMessage = response.data.error;
+          if (response.data.details) {
+            errorMessage += `: ${response.data.details}`;
+          }
+        } else if (response.data?.message) {
+          errorMessage = response.data.message;
+        }
+        
         showToastMessage(
-          `Error: ${response.data?.error || 'Failed to update SIP user'}`,
+          `Error: ${errorMessage}`,
           "danger"
         );
       }
@@ -330,16 +518,26 @@ const SIPUsers = () => {
         status: error.response?.status,
         stack: error.stack
       });
+      
+      let errorMessage = error.message;
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
       showToastMessage(
-        `Error: ${error.response?.data?.error || error.message}`,
+        `Error: ${errorMessage}`,
         "danger"
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const exportToCSV = () => {
     const csvRows = [];
-    const headers = ["ID", "Nom", "Code de Compte", "Hôte", "Statut"];
+    const headers = ["ID", "Name", "Account Code", "Host", "Status"];
     csvRows.push(headers.join(","));
     sipUsers.forEach((user) => {
       const row = [
@@ -362,8 +560,24 @@ const SIPUsers = () => {
   };
 
   useEffect(() => {
-    fetchSIPUsers();
     fetchUsers();
+    fetchSIPUsers();
+    
+    // Fetch prefixes
+    const fetchPrefixes = async () => {
+      setIsLoadingPrefixes(true);
+      try {
+        const response = await axios.get('http://localhost:5000/api/admin/SIPUsers/prefixes');
+        setPrefixes(response.data.prefixes || []);
+      } catch (error) {
+        console.error('Error fetching prefixes:', error);
+        showToastMessage('Error loading prefixes', 'danger');
+      } finally {
+        setIsLoadingPrefixes(false);
+      }
+    };
+    
+    fetchPrefixes();
   }, []);
 
   const filteredUsers = sipUsers.filter((user) =>
@@ -389,14 +603,14 @@ const SIPUsers = () => {
       <>
         <Form onSubmit={isEdit ? handleUpdate : handleSubmit}>
           <Tabs defaultActiveKey="general" className="mb-3">
-            <Tab eventKey="general" title="Général">
+            <Tab eventKey="general" title="General">
               <Form.Group>
-                <Form.Label>User ID</Form.Label>
+                <Form.Label>Username</Form.Label>
                 <select
                   className="form-select"
                   value={isEdit ? formData.id_user : selectedUser}
                   onChange={(e) =>
-                    isEdit ? setFormData({ ...formData, id_user: e.target.value }) : setSelectedUser(e.target.value)
+                    isEdit ? setFormData({ ...formData, id_user: e.target.value }) : handleUserChange(e)
                   }
                 >
                   <option value="">Select a user</option>
@@ -408,7 +622,7 @@ const SIPUsers = () => {
                 </select>
               </Form.Group>
               <Form.Group>
-                <Form.Label>Name</Form.Label>
+                <Form.Label>SIP user</Form.Label>
                 <Form.Control type="text" name="name" value={formData.name} onChange={handleChange} />
               </Form.Group>
               <Form.Group controlId="formPassword">
@@ -426,16 +640,32 @@ const SIPUsers = () => {
                   </Button>
                 </div>
               </Form.Group>
-              <Form.Group>
-                <Form.Label>ID Appelant</Form.Label>
-                <Form.Control type="text" name="callerid" value={formData.callerid} onChange={handleChange} />
-              </Form.Group>
+              {/* CallerID dropdown removed - using direct input field instead */}
               <Form.Group>
                 <Form.Label>Alias</Form.Label>
-                <Form.Control type="text" name="alias" value={formData.alias} onChange={handleChange} />
+                <Form.Control 
+                  type="text" 
+                  name="alias" 
+                  value={formData.alias || ''} 
+                  onChange={handleChange} 
+                  placeholder="Optionnel"
+                />
               </Form.Group>
               <Form.Group>
-                <Form.Label>Disable</Form.Label>
+                <Form.Label>Caller ID</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  name="callerid" 
+                  value={formData.callerid || ''} 
+                  onChange={handleChange} 
+                  placeholder=''
+                />
+                <Form.Text className="text-muted">
+                  {``}
+                </Form.Text>
+              </Form.Group>
+              <Form.Group>
+                <Form.Label>Disallow</Form.Label>
                 <Form.Control as="select" name="disable" value={formData.disable} onChange={handleChange}>
                   <option value="no">No</option>
                   <option value="all">All</option>
@@ -474,21 +704,28 @@ const SIPUsers = () => {
                 </div>
               </Form.Group>
               <Form.Group>
-                <Form.Label>Hôte</Form.Label>
+                <Form.Label>Host</Form.Label>
                 <Form.Control type="text" name="host" value={formData.host} onChange={handleChange} required />
               </Form.Group>
               <Form.Group>
-                <Form.Label>SIP Group</Form.Label>
+                <Form.Label>Group</Form.Label>
                 <Form.Control
                   type="text"
                   name="sip_group"
                   value={formData.sip_group}
                   onChange={handleChange}
-                  required
+                  placeholder="Optionnel"
                 />
               </Form.Group>
               <Form.Group>
-                <Form.Label>Block Call Recording</Form.Label>
+                <Form.Label>Video Support</Form.Label>
+                <Form.Control as="select" name="block_call_reg" value={formData.block_call_reg} onChange={handleChange}>
+                  <option value="no">Non</option>
+                  <option value="yes">Oui</option>
+                </Form.Control>
+              </Form.Group>
+              <Form.Group>
+                <Form.Label>Block Call RegEx</Form.Label>
                 <Form.Control as="select" name="block_call_reg" value={formData.block_call_reg} onChange={handleChange}>
                   <option value="no">Non</option>
                   <option value="yes">Oui</option>
@@ -502,15 +739,37 @@ const SIPUsers = () => {
                 </Form.Control>
               </Form.Group>
               <Form.Group>
-                <Form.Label>Technical Prefix</Form.Label>
-                <Form.Control
-                  type="text"
+                <Form.Label>Tech Prefix</Form.Label>
+                <Form.Select
                   name="techprefix"
-                  value={formData.techprefix}
+                  value={formData.techprefix || ''}
                   onChange={handleChange}
-                  required
+                  disabled={isLoadingPrefixes}
+                >
+                  <option value="">Select a prefix (optional)</option>
+                  {isLoadingPrefixes ? (
+                    <option disabled>Loading prefixes...</option>
+                  ) : (
+                    prefixes.map((prefix) => (
+                      <option key={prefix.id} value={prefix.prefix}>
+                        {prefix.prefix}
+                      </option>
+                    ))
+                  )}
+                </Form.Select>
+              </Form.Group>
+              <Form.Group>
+                <Form.Label>Description</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  name="Description" 
+                  value={formData.Description} 
+                  onChange={handleChange}
+                  placeholder="Optionnel"
                 />
               </Form.Group>
+              <Form.Group></Form.Group>
+
             </Tab>
             <Tab eventKey="nat" title="NAT">
               <Form.Group>
@@ -655,7 +914,7 @@ const SIPUsers = () => {
   // Header Component
   const SIPUserHeader = () => {
     const csvData = [
-      ["Nom", "Code de Compte", "Hôte", "Statut"],
+      ["Name", "Account Code", "Host", "Status"],
       ...sipUsers.map((user) => [
         user.name,
         user.accountcode,
@@ -1082,6 +1341,30 @@ const SIPUsers = () => {
       `}</style>
       
       <div className="dashboard-main">
+        {/* Toast Notifications */}
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 1090,
+          minWidth: '300px'
+        }}>
+          <Toast 
+            show={showToast} 
+            onClose={() => setShowToast(false)}
+            delay={5000} 
+            autohide
+            className={`bg-${toastVariant} text-white`}
+          >
+            <Toast.Header className={`bg-${toastVariant} text-white`} closeButton>
+              <strong className="me-auto">
+                {toastVariant === 'danger' ? 'Error' : 'Success'}
+              </strong>
+            </Toast.Header>
+            <Toast.Body>{toastMessage}</Toast.Body>
+          </Toast>
+        </div>
+        
         <Container fluid className="px-4 py-4">
           <Row className="justify-content-center">
             <Col xs={12} lg={11}>

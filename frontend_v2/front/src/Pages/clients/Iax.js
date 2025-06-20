@@ -214,6 +214,7 @@ const IaxTable = () => {
     const [hiddenColumns, setHiddenColumns] = useState([
         'IAX Password', 'Context', 'CallerID', 'Codec', 'NAT', 'Qualify', 'Dtmfmode', 'Insecure', 'Type', 'IP',
     ]);
+    const [sortConfig, setSortConfig] = useState({ key: 'user_name', direction: 'asc' });
     const [showAddModal, setShowAddModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [newEntry, setNewEntry] = useState({
@@ -247,6 +248,30 @@ const IaxTable = () => {
     const [totalPages, setTotalPages] = useState(0);
     const [showPassword, setShowPassword] = useState(false);
 
+    // Fonction pour trier les données
+    const sortData = (data, { key, direction }) => {
+        if (!key) return data;
+        
+        return [...data].sort((a, b) => {
+            if (a[key] < b[key]) {
+                return direction === 'asc' ? -1 : 1;
+            }
+            if (a[key] > b[key]) {
+                return direction === 'asc' ? 1 : -1;
+            }
+            return 0;
+        });
+    };
+
+    // Gérer le clic sur l'en-tête de colonne pour le tri
+    const requestSort = (key) => {
+        let direction = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
     // Filtrer les données selon le terme de recherche et le champ sélectionné
     useEffect(() => {
         const performSearch = (term, field) => {
@@ -267,10 +292,14 @@ const IaxTable = () => {
             });
         };
 
-        const filtered = performSearch(searchTerm, searchField);
+        let filtered = performSearch(searchTerm, searchField);
+        
+        // Appliquer le tri
+        filtered = sortData(filtered, sortConfig);
+        
         setFilteredData(filtered);
         setTotalPages(Math.ceil(filtered.length / itemsPerPage));
-    }, [searchTerm, searchField, data, itemsPerPage]);
+    }, [searchTerm, searchField, data, itemsPerPage, sortConfig]);
 
     const fetchIax = async () => {
         try {
@@ -603,7 +632,8 @@ const IaxTable = () => {
         setNewEntry(prev => ({
             ...prev,
             id_user: selectedUserId,
-            user_name: selectedUser ? selectedUser.username : ''
+            user_name: selectedUser ? selectedUser.username : '',
+            secret: selectedUser ? selectedUser.password : '' // Auto-fill the password field
         }));
     };
 
@@ -778,14 +808,38 @@ const IaxTable = () => {
                                             <thead className="bg-light">
                                                 <tr>
                                                     {columns.map(column => !hiddenColumns.includes(column) && (
-                                                        <th key={column} className="py-3">{
-                                                        column === 'Nom d\'utilisateur' ? 'Username' :
-                                                        column === 'IAX User' ? 'IAX User' :
-                                                        column === 'IAX Pass' ? 'IAX Password' :
-                                                        column === 'Host' ? 'Host' :
-                                                        column === 'Type' ? 'Type' :
-                                                        column === 'Context' ? 'Context' : column
-                                                    }</th>
+                                                        <th 
+                                                        key={column} 
+                                                        className="py-3"
+                                                        style={column === 'IAX User' ? { 
+                                                            cursor: 'pointer',
+                                                            userSelect: 'none',
+                                                            position: 'relative',
+                                                            paddingRight: '20px'
+                                                        } : {}}
+                                                        onClick={column === 'IAX User' ? () => requestSort('user_name') : undefined}
+                                                    >
+                                                        {column === 'Nom d\'utilisateur' ? 'Username' :
+                                                         column === 'IAX User' ? (
+                                                            <div className="d-flex align-items-center justify-content-between">
+                                                                <span>IAX User</span>
+                                                                {sortConfig.key === 'user_name' && (
+                                                                    <span className="ms-2" style={{
+                                                                        display: 'inline-block',
+                                                                        transition: 'transform 0.2s',
+                                                                        transform: sortConfig.direction === 'asc' ? 'rotate(0deg)' : 'rotate(180deg)'
+                                                                    }}>
+                                                                        ▲
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                         ) :
+                                                         column === 'IAX Pass' ? 'IAX Password' :
+                                                         column === 'Host' ? 'Host' :
+                                                         column === 'Type' ? 'Type' :
+                                                         column === 'Context' ? 'Context' : column
+                                                        }
+                                                    </th>
                                                     ))}
                                                     <th className="text-end">Actions</th>
                                                 </tr>
@@ -888,7 +942,7 @@ const IaxTable = () => {
                                             name="secret"
                                             value={newEntry.secret}
                                             onChange={handleInputChange}
-                                            placeholder="Leave empty to generate automatically"
+                                            placeholder=""
                                         />
                                         <Button 
                                             variant="outline-secondary" 

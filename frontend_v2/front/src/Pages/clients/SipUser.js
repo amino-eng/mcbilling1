@@ -282,7 +282,13 @@ const SIPUsers = () => {
           fetchUserPassword(selectedUserId)
         ]);
         
-        setCallerIds(callerIdsResponse.data.callerIds || []);
+        const userCallerIds = callerIdsResponse.data.callerIds || [];
+        setCallerIds(userCallerIds);
+        
+        // Utiliser le premier Caller ID disponible ou le nom d'utilisateur par défaut
+        const defaultCallerId = userCallerIds.length > 0 
+          ? userCallerIds[0].callerid 
+          : `"${selectedUser.username}" <${selectedUser.username}>`;
         
         // Mettre à jour les champs du formulaire
         setFormData({
@@ -290,7 +296,7 @@ const SIPUsers = () => {
           id_user: selectedUserId,
           name: selectedUser.username || "",
           accountcode: selectedUser.username || "",
-          callerid: "", // Réinitialiser le Caller ID
+          callerid: defaultCallerId, // Définir automatiquement le Caller ID
           sippasswd: password || "" // Définir le mot de passe
         });
         
@@ -653,15 +659,27 @@ const SIPUsers = () => {
               </Form.Group>
               <Form.Group>
                 <Form.Label>Caller ID</Form.Label>
-                <Form.Control 
-                  type="text" 
-                  name="callerid" 
-                  value={formData.callerid || ''} 
-                  onChange={handleChange} 
-                  placeholder=''
-                />
+                <div className="input-group">
+                  <Form.Control 
+                    type="text" 
+                    name="callerid" 
+                    value={formData.callerid || ''} 
+                    onChange={handleChange}
+                    placeholder="Caller ID will be set automatically when user is selected"
+                    readOnly={!!selectedUser}
+                  />
+                  {selectedUser && (
+                    <Button 
+                      variant="outline-secondary" 
+                      onClick={() => setFormData({...formData, callerid: ''})}
+                      title="Clear and edit manually"
+                    >
+                      <FaEdit />
+                    </Button>
+                  )}
+                </div>
                 <Form.Text className="text-muted">
-                  {``}
+                  {selectedUser ? `Caller ID for ${users.find(u => u.id === selectedUser)?.username}` : 'Select a user to set Caller ID'}
                 </Form.Text>
               </Form.Group>
               <Form.Group>
@@ -740,23 +758,16 @@ const SIPUsers = () => {
               </Form.Group>
               <Form.Group>
                 <Form.Label>Tech Prefix</Form.Label>
-                <Form.Select
+                <Form.Control
+                  type="text"
                   name="techprefix"
                   value={formData.techprefix || ''}
                   onChange={handleChange}
-                  disabled={isLoadingPrefixes}
-                >
-                  <option value="">Select a prefix (optional)</option>
-                  {isLoadingPrefixes ? (
-                    <option disabled>Loading prefixes...</option>
-                  ) : (
-                    prefixes.map((prefix) => (
-                      <option key={prefix.id} value={prefix.prefix}>
-                        {prefix.prefix}
-                      </option>
-                    ))
-                  )}
-                </Form.Select>
+                  placeholder="Enter tech prefix (optional)"
+                />
+                <Form.Text className="text-muted">
+                  Enter the tech prefix if required
+                </Form.Text>
               </Form.Group>
               <Form.Group>
                 <Form.Label>Description</Form.Label>

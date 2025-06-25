@@ -3,21 +3,37 @@ const connection = require("../../config/dataBase");
 // Get user call statistics
 exports.getUserCallStats = (req, res) => {
   try {
+    const { startDate, endDate } = req.query;
+    
+    let whereClause = '';
+    const params = [];
+    
+    if (startDate && endDate) {
+      whereClause = 'WHERE cdr.day BETWEEN ? AND ? ';
+      params.push(startDate, endDate);
+    }
+    
     const query = `
       SELECT 
         u.username,
         COALESCE(SUM(cdr.nbcall), 0) as total_calls,
         COALESCE(SUM(cdr.nbcall - cdr.nbcall_fail), 0) as answered_calls,
         COALESCE(SUM(cdr.nbcall_fail), 0) as failed_calls,
-        COALESCE(SUM(cdr.sessiontime), 0) as total_duration
+        COALESCE(SUM(cdr.sessiontime), 0) as total_duration,
+        COALESCE(SUM(cdr.sessionbill), 0) as sell_price,
+        COALESCE(SUM(cdr.buycost), 0) as buy_price,
+        COALESCE(SUM(cdr.lucro), 0) as revenue
       FROM pkg_user u
       LEFT JOIN pkg_cdr_summary_day_user cdr ON u.id = cdr.id_user
+      ${whereClause}
       GROUP BY u.id, u.username
-      ORDER BY total_calls DESC
-      LIMIT 5  -- Top 5 users by call volume
+      ORDER BY revenue DESC
+      LIMIT 5  -- Top 5 users by revenue
     `;
+    
+    console.log('Executing query with params:', { query, params });
 
-    connection.query(query, (err, results) => {
+    connection.query(query, params, (err, results) => {
       if (err) {
         console.error("Error fetching user call stats:", err);
         return res.status(500).json({ error: "Database error" });

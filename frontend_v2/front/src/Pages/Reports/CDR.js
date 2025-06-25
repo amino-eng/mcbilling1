@@ -312,44 +312,44 @@ const CDRTable = () => {
   const exportToCSV = () => {
     const selectedCount = Object.values(selectedRows).filter(Boolean).length;
     
-    // Si des éléments sont sélectionnés, on les exporte tous, sinon on exporte tout
+    // If items are selected, export them, otherwise export all
     const recordsToExport = selectedCount > 0 
       ? filteredRecords.filter(cdr => selectedRows[cdr.id])
       : filteredRecords;
 
     if (recordsToExport.length === 0) {
-      alert("Veuillez sélectionner au moins une ligne à exporter.");
+      alert("Please select at least one row to export.");
       return;
     }
     
-    // Afficher une alerte avec le nombre d'éléments qui seront exportés
+    // Show confirmation with number of items to be exported
     if (selectedCount > 0) {
-      if (!window.confirm(`Voulez-vous exporter les ${selectedCount} éléments sélectionnés ?`)) {
+      if (!window.confirm(`Do you want to export the ${selectedCount} selected items?`)) {
         return;
       }
     } else {
-      if (!window.confirm(`Voulez-vous exporter tous les ${filteredRecords.length} éléments ?`)) {
+      if (!window.confirm(`Do you want to export all ${filteredRecords.length} items?`)) {
         return;
       }
     }
 
     const headers = Object.entries({
       Date: 'Date',
-      utilisateurSip: 'Utilisateur SIP',
-      idAppelant: 'ID Appelant',
-      numero: 'Numéro',
+      utilisateurSip: 'SIP User',
+      idAppelant: 'Caller ID',
+      numero: 'Number',
       Destination: 'Destination',
-      duree: 'Durée',
-      realDuree: 'Durée Réelle',
-      nomUtilisateur: 'Nom Utilisateur',
+      duree: 'Duration',
+      realDuree: 'Real Duration',
+      nomUtilisateur: 'Username',
       trunk: 'Trunk',
       Type: 'Type',
-      prixAchat: 'Prix Achat',
-      prixVente: 'Prix Vente',
-      idUnique: 'ID Unique',
+      prixAchat: 'Buy Price',
+      prixVente: 'Sell Price',
+      idUnique: 'Unique ID',
       Plan: 'Plan',
-      campagne: 'Campagne',
-      serveur: 'Serveur'
+      campagne: 'Campaign',
+      serveur: 'Server'
     })
       .filter(([key]) => visibleColumns[key])
       .map(([_, value]) => value)
@@ -358,13 +358,13 @@ const CDRTable = () => {
     const csvContent = recordsToExport
       .map(cdr => {
         return [
-          visibleColumns.Date ? `"${new Date(cdr.starttime).toLocaleString('fr-FR')}"` : null,
+          visibleColumns.Date ? `"${new Date(cdr.starttime).toLocaleString('en-US')}"` : null,
           visibleColumns.utilisateurSip ? `"${cdr.src || ''}"` : null,
           visibleColumns.idAppelant ? `"${cdr.callerid || ''}"` : null,
           visibleColumns.numero ? `"${cdr.calledstation || ''}"` : null,
           visibleColumns.Destination ? `"${cdr.id_prefix || ''}"` : null,
-          visibleColumns.duree ? `"${cdr.sessiontime} secondes"` : null,
-          visibleColumns.realDuree ? `"${cdr.real_sessiontime} secondes"` : null,
+          visibleColumns.duree ? `"${cdr.sessiontime} seconds"` : null,
+          visibleColumns.realDuree ? `"${cdr.real_sessiontime} seconds"` : null,
           visibleColumns.nomUtilisateur ? `"${cdr.username || ''}"` : null,
           visibleColumns.trunk ? `"${cdr.trunkcode || ''}"` : null,
           visibleColumns.Type ? `"${cdr.type || ''}"` : null,
@@ -372,14 +372,14 @@ const CDRTable = () => {
           visibleColumns.prixVente ? `"${cdr.sessionbill || '0'} €"` : null,
           visibleColumns.idUnique ? `"${cdr.uniqueid || ''}"` : null,
           visibleColumns.Plan ? `"${cdr.id_plan || ''}"` : null,
-          visibleColumns.campagne ? `"${cdr.id_campaign || 'vide'}"` : null,
+          visibleColumns.campagne ? `"${cdr.id_campaign || ''}"` : null,
           visibleColumns.serveur ? `"${cdr.server_name || ''}"` : null
         ].filter(Boolean).join(",");
       })
       .join("\n");
 
     const blob = new Blob([
-      '﻿', // BOM pour l'encodage UTF-8 sous Excel
+      '﻿', // BOM for UTF-8 encoding in Excel
       headers,
       csvContent
     ], { type: 'text/csv;charset=utf-8;' });
@@ -387,7 +387,7 @@ const CDRTable = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
-    const filename = `rapport_cdr_${timestamp}.csv`;
+    const filename = `cdr_report_${timestamp}.csv`;
     
     link.setAttribute('href', url);
     link.setAttribute('download', filename);
@@ -396,14 +396,14 @@ const CDRTable = () => {
     document.body.appendChild(link);
     link.click();
     
-    // Nettoyage
+    // Cleanup
     setTimeout(() => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     }, 100);
     
-    // Afficher une notification de succès
-    alert(`Export réussi ! ${recordsToExport.length} éléments ont été exportés.`);
+    // Show success notification
+    alert(`Export successful! ${recordsToExport.length} items have been exported.`);
   };
 
   return (
@@ -422,12 +422,12 @@ const CDRTable = () => {
                     variant="light" 
                     className="d-flex align-items-center"
                     onClick={exportToCSV}
-                    title="Exporter les lignes sélectionnées"
+                    title="Export selected rows"
                   >
                     <FaFileExport className="me-2" />
                     {Object.values(selectedRows).filter(Boolean).length > 0 
-                      ? `Exporter (${Object.values(selectedRows).filter(Boolean).length} sélectionnés)` 
-                      : 'Exporter tout'}
+                      ? `Export (${Object.values(selectedRows).filter(Boolean).length} selected)` 
+                      : 'Export All'}
                   </Button>
                 </div>
               </div>
@@ -440,43 +440,44 @@ const CDRTable = () => {
                   {error}
                 </Alert>
               )}
-
+              
               <Form onSubmit={handleDateFilter} className="mb-3">
                 <Row className="g-2">
                   <Col md={3}>
                     <Form.Group>
-                      <Form.Label>Date de début</Form.Label>
+                      <Form.Label>Start Date</Form.Label>
                       <Form.Control
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
                         className="form-control"
+                        max={endDate || ''}
                       />
                     </Form.Group>
                   </Col>
                   <Col md={3}>
                     <Form.Group>
-                      <Form.Label>Date de fin</Form.Label>
+                      <Form.Label>End Date</Form.Label>
                       <Form.Control
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
                         className="form-control"
-                        min={startDate}
+                        min={startDate || ''}
                       />
                     </Form.Group>
                   </Col>
                   <Col md={4} className="d-flex align-items-end">
                     <div className="d-flex gap-2">
                       <Button variant="primary" type="submit" disabled={loading}>
-                        {loading ? 'Chargement...' : 'Filtrer'}
+                        {loading ? 'Loading...' : 'Filter'}
                       </Button>
                       <Button 
                         variant="outline-secondary" 
                         onClick={resetDateFilter}
                         disabled={loading || (!startDate && !endDate)}
                       >
-                        Réinitialiser
+                        Reset
                       </Button>
                     </div>
                   </Col>
@@ -487,7 +488,7 @@ const CDRTable = () => {
                 <div className="position-relative flex-grow-1">
                   <Form.Control
                     type="text"
-                    placeholder="Rechercher par numéro d'appelant..."
+                    placeholder="Search by caller ID..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="ps-4"
@@ -535,7 +536,7 @@ const CDRTable = () => {
                             type="checkbox"
                             checked={selectAll}
                             onChange={toggleSelectAll}
-                            title="Sélectionner/Désélectionner tout"
+                            title="Select/Deselect all"
                           />
                         </th>
                         {visibleColumns.Date && (
@@ -574,7 +575,6 @@ const CDRTable = () => {
                     <tbody>
                       {currentRecords.map((cdr, index) => (
                         <tr key={`${cdr.id}-${index}`}>
-                          {/* Ajout d'un identifiant unique combinant l'ID et l'index pour éviter les doublons */}
                           <td>
                             <Form.Check
                               type="checkbox"
@@ -586,7 +586,7 @@ const CDRTable = () => {
                               onClick={(e) => e.stopPropagation()}
                             />
                           </td>
-                          {visibleColumns.Date && <td>{new Date(cdr.starttime).toLocaleString('fr-FR')}</td>}
+                          {visibleColumns.Date && <td>{new Date(cdr.starttime).toLocaleString('en-US')}</td>}
                           {visibleColumns.utilisateurSip && <td>{cdr.src}</td>}
                           {visibleColumns.idAppelant && <td>{cdr.callerid}</td>}
                           {visibleColumns.numero && <td>{cdr.calledstation}</td>}
@@ -600,7 +600,7 @@ const CDRTable = () => {
                           {visibleColumns.prixVente && <td>{cdr.sessionbill} €</td>}
                           {visibleColumns.idUnique && <td>{cdr.uniqueid}</td>}
                           {visibleColumns.Plan && <td>{cdr.id_plan}</td>}
-                          {visibleColumns.campagne && <td>{cdr.id_campaign || "empty"}</td>}
+                          {visibleColumns.campagne && <td>{cdr.id_campaign || "-"}</td>}
                           {visibleColumns.serveur && <td>{cdr.server_name}</td>}
                         </tr>
                       ))}
@@ -610,7 +610,7 @@ const CDRTable = () => {
               )}
 
               <div className="text-muted mt-3">
-                Affichage de {totalUniqueRecords} enregistrement{totalUniqueRecords !== 1 ? 's' : ''} (page {currentPage} sur {totalPages})
+                Showing {totalUniqueRecords} record{totalUniqueRecords !== 1 ? 's' : ''} (page {currentPage} of {totalPages})
               </div>
 
               {filteredRecords.length > recordsPerPage && (

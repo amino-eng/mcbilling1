@@ -65,8 +65,8 @@ const UsersHeader = ({ onAddClick, users, isExporting, onExportClick }) => (
           <FaUsers className="text-primary fs-3" />
         </div>
         <div>
-          <h2 className="fw-bold mb-0 text-white">Gestion des Utilisateurs</h2>
-          <p className="text-white-50 mb-0 d-none d-md-block">Gérez vos utilisateurs facilement</p>
+          <h2 className="fw-bold mb-0 text-white">User Management</h2>
+          <p className="text-white-50 mb-0 d-none d-md-block">Manage your users easily</p>
         </div>
       </div>
     </div>
@@ -88,7 +88,7 @@ const UsersHeader = ({ onAddClick, users, isExporting, onExportClick }) => (
           <div className="icon-container">
             <FaUserPlus />
           </div>
-          <span>Ajouter</span>
+          <span>Add</span>
         </Button>
         <Button
           variant="success"
@@ -98,7 +98,7 @@ const UsersHeader = ({ onAddClick, users, isExporting, onExportClick }) => (
           <div className="icon-container">
             <FaDownload />
           </div>
-          <span>Exporter</span>
+          <span>Export</span>
         </Button>
       </div>
     </div>
@@ -112,7 +112,7 @@ const SearchBar = ({ searchTerm, onSearchChange }) => (
     </div>
     <Form.Control
       type="text"
-      placeholder="Rechercher un utilisateur..."
+      placeholder="Search for a user..."
       value={searchTerm}
       onChange={onSearchChange}
       className="py-2 ps-5 shadow-sm border-0 search-input"
@@ -150,6 +150,22 @@ const getStatusBadgeColor = (status) => {
   }
 }
 
+// Map column names to display names
+const columnDisplayNames = {
+  'username': 'Username',
+  'credit': 'Credit (€)',
+  'active': 'Status',
+  'sip_count': 'SIP Users',
+  'creationdate': 'Creation Date',
+  'email': 'Email',
+  'phone': 'Phone',
+  'group_name': 'Group',
+  'plan_name': 'Plan',
+  'last_login': 'Last Login',
+  'expiration_date': 'Expiration Date',
+  'description': 'Description'
+};
+
 const UsersTable = ({ users, selectedColumns, onEdit, onDelete, isLoading, onStatusFilterChange, statusFilter }) => (
   <div
     className="table-responsive shadow-sm table-container"
@@ -162,7 +178,7 @@ const UsersTable = ({ users, selectedColumns, onEdit, onDelete, isLoading, onSta
     {isLoading ? (
       <div className="text-center py-5">
         <Spinner animation="border" variant="primary" />
-        <p className="mt-2">Chargement des données...</p>
+        <p className="mt-2">Loading data...</p>
       </div>
     ) : users.length === 0 ? (
       <div className="text-center py-5 my-4 empty-state">
@@ -186,13 +202,13 @@ const UsersTable = ({ users, selectedColumns, onEdit, onDelete, isLoading, onSta
             <FaUsers className="text-primary" />
           </div>
         </div>
-        <h4 className="text-dark mb-3">Aucun utilisateur trouvé</h4>
-        <p className="text-muted mb-4">Ajoutez un nouvel utilisateur ou modifiez votre recherche</p>
+        <h4 className="text-dark mb-3">No users found</h4>
+        <p className="text-muted mb-4">Add a new user or modify your search</p>
         <Button variant="primary" onClick={() => window.location.reload()} className="btn-hover-effect">
           <div className="icon-container me-2">
             <FaSyncAlt />
           </div>
-          Rafraîchir la page
+          Refresh page
         </Button>
       </div>
     ) : (
@@ -223,7 +239,7 @@ const UsersTable = ({ users, selectedColumns, onEdit, onDelete, isLoading, onSta
               >
                 {col === 'active' ? (
                   <div className="d-flex align-items-center gap-2">
-                    <span>Status</span>
+                    <span>{columnDisplayNames[col] || col}</span>
                     <Dropdown>
                       <Dropdown.Toggle 
                         variant="outline-secondary" 
@@ -238,7 +254,7 @@ const UsersTable = ({ users, selectedColumns, onEdit, onDelete, isLoading, onSta
                           active={statusFilter === 'all'}
                           onClick={() => onStatusFilterChange('all')}
                         >
-                          Tous les statuts
+                          All statuses
                         </Dropdown.Item>
                         <Dropdown.Divider />
                         <Dropdown.Item 
@@ -246,41 +262,41 @@ const UsersTable = ({ users, selectedColumns, onEdit, onDelete, isLoading, onSta
                           onClick={() => onStatusFilterChange('1')}
                         >
                           <Badge bg="success" className="me-2">•</Badge>
-                          Actif
+                          Active
                         </Dropdown.Item>
                         <Dropdown.Item 
                           active={statusFilter === '0'}
                           onClick={() => onStatusFilterChange('0')}
                         >
                           <Badge bg="secondary" className="me-2">•</Badge>
-                          Inactif
+                          Inactive
                         </Dropdown.Item>
                         <Dropdown.Item 
                           active={statusFilter === '2'}
                           onClick={() => onStatusFilterChange('2')}
                         >
                           <Badge bg="warning" className="me-2">•</Badge>
-                          En attente
+                          Pending
                         </Dropdown.Item>
                         <Dropdown.Item 
                           active={statusFilter === '3'}
                           onClick={() => onStatusFilterChange('3')}
                         >
                           <Badge bg="danger" className="me-2">•</Badge>
-                          Bloqué
+                          Blocked
                         </Dropdown.Item>
                         <Dropdown.Item 
                           active={statusFilter === '4'}
                           onClick={() => onStatusFilterChange('4')}
                         >
                           <Badge bg="danger" className="me-2">•</Badge>
-                          Bloqué Entrant/Sortant
+                          Blocked In/Out
                         </Dropdown.Item>
                       </Dropdown.Menu>
                     </Dropdown>
                   </div>
                 ) : (
-                  col
+                  columnDisplayNames[col] || col
                 )}
               </th>
             ))}
@@ -328,7 +344,7 @@ const UsersTable = ({ users, selectedColumns, onEdit, onDelete, isLoading, onSta
                     onClick={() => onEdit(user.id)}
                     size="sm"
                     className="p-1"
-                    title="Modifier"
+                    title="Edit"
                   >
                     <FaEdit className="fs-5" />
                   </Button>
@@ -337,7 +353,7 @@ const UsersTable = ({ users, selectedColumns, onEdit, onDelete, isLoading, onSta
                     onClick={() => onDelete(user.id)}
                     size="sm"
                     className="p-1"
-                    title="Supprimer"
+                    title="Delete"
                   >
                     <FaTrash className="fs-5" />
                   </Button>
@@ -380,7 +396,7 @@ const PaginationSection = ({ currentPage, totalPages, onPageChange }) => (
 )
 
 function Users() {
-  // États principaux
+  // Main states
   const [users, setUsers] = useState([])
   const [filteredUsers, setFilteredUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -389,17 +405,17 @@ function Users() {
   const [creditValue, setCreditValue] = useState("")
   const [sortConfig, setSortConfig] = useState({ key: 'credit', direction: 'asc' })
 
-  // États pour la recherche et les colonnes
+  // States for search and columns
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedColumns, setSelectedColumns] = useState(["username", "credit", "active", "sip_count", "creationdate"])
   const [dropdownVisibility, setDropdownVisibility] = useState({})
   const [statusFilter, setStatusFilter] = useState("all") // 'all', '1' (Active), '0' (Inactive), '2' (Pending), '3' (Blocked), '4' (Blocked In Out)
 
-  // États pour la pagination
+  // States for pagination
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
 
-  // États pour les formulaires
+  // States for forms
   const [showNewUserForm, setShowNewUserForm] = useState(false)
   const [showEditUserForm, setShowEditUserForm] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
@@ -824,26 +840,92 @@ function Users() {
   }
 
   const toggleDropdown = (column) => {
-    setDropdownVisibility((prevState) => ({
+    setDropdownVisibility((prevState => ({
       ...prevState,
-      [column]: !prevState[column],
-    }))
+      [column]: !prevState[column]
+    })))
   }
 
-  // CSV export
+  // CSV export with proper formatting and English headers
   const exportToCSV = () => {
+    if (users.length === 0) {
+      showNotification("No users to export", "warning")
+      return
+    }
+
+    // Define column mappings with English headers
+    const columnMappings = {
+      id: "ID",
+      username: "Username",
+      credit: "Credit (€)",
+      active: "Status",
+      group_name: "Group",
+      plan_name: "Plan",
+      language: "Language",
+      country: "Country",
+      email: "Email",
+      phone: "Phone",
+      address: "Address",
+      city: "City",
+      postal_code: "Postal Code",
+      description: "Description",
+      created_date: "Creation Date",
+      expiration_date: "Expiration Date",
+      last_login: "Last Login"
+    }
+
+    // Get only the columns that exist in the data and have mappings
+    const validColumns = selectedColumns.filter(col => columnMappings[col])
+    
+    // Create header row with English labels
+    const headers = validColumns.map(col => columnMappings[col] || col)
+    
+    // Format data rows with proper escaping
+    const rows = users.map(user => {
+      return validColumns.map(col => {
+        let value = user[col] || ""
+        
+        // Format status
+        if (col === 'active') {
+          value = getStatusDisplay(String(user[col]))
+        }
+        // Format dates
+        else if (col.includes('date') || col.includes('login')) {
+          value = user[col] ? new Date(user[col]).toLocaleString('en-US') : ''
+        }
+        // Format credit as number with 2 decimals
+        else if (col === 'credit') {
+          value = parseFloat(user[col] || 0).toFixed(2)
+        }
+        
+        // Escape quotes and wrap in quotes if contains comma or quote
+        const strValue = String(value)
+        if (strValue.includes(',') || strValue.includes('"') || strValue.includes('\n')) {
+          return `"${strValue.replace(/"/g, '""')}"`
+        }
+        return strValue
+      })
+    })
+
+    // Combine headers and rows with BOM for Excel compatibility
     const csvContent = [
-      selectedColumns.join(","),
-      ...users.map((user) => selectedColumns.map((col) => user[col] || "").join(",")),
-    ].join("\n")
-    const blob = new Blob([csvContent], { type: "text/csv" })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = "users.csv"
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
+      '\uFEFF', // UTF-8 BOM
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\r\n')
+
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `users_export_${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    // Show success message
+    showNotification(`Exported ${users.length} users successfully`, 'success')
   }
 
   // Delete handling
@@ -2292,10 +2374,10 @@ function Users() {
                               ) : ['credit', 'sip_count', 'username', 'creationdate'].includes(col) ? (
                                 <div className="d-flex align-items-center">
                                   <span>
-                                    {col === 'credit' ? 'Crédit' : 
+                                    {col === 'credit' ? 'Credit' : 
                                      col === 'sip_count' ? 'SIP Count' : 
-                                     col === 'creationdate' ? 'Date de création' :
-                                     'Nom d\'utilisateur'}
+                                     col === 'creationdate' ? 'Creation Date' :
+                                     'Username'}
                                   </span>
                                   <span className="ms-1">
                                     {sortConfig.key === col ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}

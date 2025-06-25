@@ -129,7 +129,7 @@ exports.ajouterUtilisateur = (req, res) => {
     } = req.body
 
     // Validate required fields
-    if (!username || !password || !credit || !id_group || !id_plan) {
+    if (!username || !password || !id_group || !id_plan) {
       return res.status(400).json({ error: "Missing required fields", success: false });
     }
 
@@ -224,12 +224,14 @@ exports.ajouterUtilisateur = (req, res) => {
                 const userId = results.insertId
 
                 // Create SIP users with minimal required fields
+                // Default codecs if not provided
+                const defaultCodecs = 'ulaw,alaw,g729,gsm,opus';
                 const sipUsers = Array.from({ length: Number(numberOfSipUsers) || 0 }, (_, i) => [
                   userId, // id_user
                   `${username}-${String(i + 1).padStart(2, "0")}`, // name
                   `${username}-${String(i + 1).padStart(2, "0")}`, // accountcode
                   "dynamic", // host
-                  allow || null, // allow
+                  allow || defaultCodecs, // allow (using allow value or default codecs)
                   null, // alias
                   null, // regexten
                   null, // amaflags
@@ -239,7 +241,7 @@ exports.ajouterUtilisateur = (req, res) => {
                   null, // allowsubscribe
                   "no", // videosupport
                   null, // callgroup
-                  callerid || "default_callerid", // callerid
+                  callerid || "dynamic", // callerid (default to dynamic)
                   context || "default_context", // context
                   null, // DEFAULTip
                   "RFC2833", // dtmfmode
@@ -262,7 +264,7 @@ exports.ajouterUtilisateur = (req, res) => {
                   "yes", // qualify
                   null, // rtptimeout
                   null, // rtpholdtimeout
-                  secret || "default_secret", // secret
+                  password, // Use the user's password as the secret
                   "friend", // type
                   disallow || "all", // disallow
                   0, // regseconds

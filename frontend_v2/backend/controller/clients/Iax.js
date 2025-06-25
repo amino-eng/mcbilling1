@@ -94,80 +94,92 @@ exports.ajouterIax = (req, res) => {
         return res.status(400).json({ error: "user_name and secret are required." });
     }
 
-    // Check for existing user_name
-    const checkUserQuery = "SELECT * FROM pkg_iax WHERE username = ?";
-    connection.query(checkUserQuery, [user_name], (checkError, checkResults) => {
-        if (checkError) {
-            console.error("Error checking existing user:", checkError);
-            return res.status(500).json({ error: "Database error", details: checkError.message });
+    // First, get the user's password
+    const getUserQuery = "SELECT password FROM pkg_user WHERE username = ?";
+    connection.query(getUserQuery, [user_name], (userError, userResults) => {
+        if (userError) {
+            console.error("Error fetching user data:", userError);
+            return res.status(500).json({ error: "Error fetching user data" });
         }
 
-        // Log results of the duplicate check
-        console.log("Check results:", checkResults);
-
-        if (checkResults.length > 0) {
-            return res.status(400).json({ error: "Duplicate entry for user_name" });
+        if (userResults.length === 0) {
+            return res.status(404).json({ error: "User not found" });
         }
 
-        // Proceed with the insertion
-        const query = `
-            INSERT INTO pkg_iax (
-                id_user, name, username, accountcode, regexten,
-                fromuser, fromdomain, mailbox, md5secret,
-                secret, host, port, context, callerid,
-                allow, disallow, nat, qualify, dtmfmode, insecure,
-                type, permit, deny
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
+        const userPassword = userResults[0].password;
 
-        // Set default values for optional parameters
-        const params = [
-            id_user || 0,
-            user_name,
-            user_name,
-            user_name,
-            user_name,
-            "default_fromuser",
-            "default_fromdomain",
-            "default_mailbox",
-            "default_md5secret",
-            secret,
-            host || "dynamic",
-            port || 4569,
-            context || "default",
-            callerid || "",
-            allow || "",
-            disallow || "all",
-            nat || "yes",
-            qualify || "yes",
-            dtmfmode || "rfc2833",
-            insecure || "port,invite",
-            type || "friend",
-            permit || "0.0.0.0/0.0.0.0",
-            deny || "0.0.0.0/0.0.0.0"
-        ];
-
-        // Add timeout to prevent hanging requests
-        const queryTimeout = setTimeout(() => {
-            return res.status(504).json({ error: "Database query timeout" });
-        }, 30000); // 30 seconds timeout
-
-        connection.query(query, params, (error, results) => {
-            // Clear the timeout since we got a response
-            clearTimeout(queryTimeout);
-
-            if (error) {
-                console.error("Database error:", error);
-                return res.status(500).json({ 
-                    error: "Database error", 
-                    details: error.sqlMessage || error.message 
-                });
+        // Check for existing user_name in pkg_iax
+        const checkUserQuery = "SELECT * FROM pkg_iax WHERE username = ?";
+        connection.query(checkUserQuery, [user_name], (checkError, checkResults) => {
+            if (checkError) {
+                console.error("Error checking existing user:", checkError);
+                return res.status(500).json({ error: "Database error", details: checkError.message });
             }
 
-            res.status(201).json({ 
-                message: "IAX entry added successfully",
-                id: results.insertId
+            if (checkResults.length > 0) {
+                return res.status(400).json({ error: "IAX user with this username already exists" });
+            }
+
+            // Proceed with the insertion
+            const query = `
+                INSERT INTO pkg_iax (
+                    id_user, name, username, accountcode, regexten,
+                    fromuser, fromdomain, mailbox, md5secret,
+                    secret, host, port, context, callerid,
+                    allow, disallow, nat, qualify, dtmfmode, insecure,
+                    type, permit, deny
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `;
+
+            // Set default values for optional parameters
+            const params = [
+                id_user || 0,
+                user_name,
+                user_name,
+                user_name,
+                user_name,
+                "default_fromuser",
+                "default_fromdomain",
+                "default_mailbox",
+                "default_md5secret",
+                userPassword, // Use the user's password as the IAX secret
+                host || "dynamic",
+                port || 4569,
+                context || "default",
+                callerid || `"${user_name}" <${user_name}>`,
+                allow || "ulaw,alaw,gsm,g729",
+                disallow || "all",
+                nat || "no",
+                qualify || "yes",
+                dtmfmode || "rfc2833",
+                insecure || "port,invite",
+                type || "friend",
+                permit || "0.0.0.0/0.0.0.0",
+                deny || "0.0.0.0/0.0.0.0"
+            ];
+
+            // Add timeout to prevent hanging requests
+            const queryTimeout = setTimeout(() => {
+                return res.status(504).json({ error: "Database query timeout" });
+            }, 30000); // 30 seconds timeout
+
+            connection.query(query, params, (error, results) => {
+                // Clear the timeout since we got a response
+                clearTimeout(queryTimeout);
+
+                if (error) {
+                    console.error("Database error:", error);
+                    return res.status(500).json({ 
+                        error: "Database error", 
+                        details: error.sqlMessage || error.message 
+                    });
+                }
+
+                res.status(201).json({ 
+                    message: "IAX entry added successfully",
+                    id: results.insertId
+                });
             });
         });
     });
@@ -203,7 +215,7 @@ exports.modifierIax = (req, res) => {
     const iaxId = req.params.id;
 
     if (!iaxId) {
-        return res.status(400).json({ error: "ID est requis" });
+        return res.status(400).json({ error: "ID is required" });
     }
 
     const {
@@ -225,46 +237,76 @@ exports.modifierIax = (req, res) => {
         deny
     } = req.body;
 
-    const query = `
-        UPDATE pkg_iax SET
-            id_user = ?, name = ?, username = ?, secret = ?, host = ?, port = ?,
-            context = ?, callerid = ?, allow = ?, disallow = ?, nat = ?,
-            qualify = ?, dtmfmode = ?, insecure = ?, type = ?, permit = ?, deny = ?
-        WHERE id = ?
-    `;
-
-    const params = [
-        id_user || 0,
-        user_name,
-        user_name,
-        secret,
-        host || "dynamic",
-        port || "4569",
-        context || "default",
-        callerid || "",
-        allow || "",
-        disallow || "all",
-        nat || "yes",
-        qualify || "yes",
-        dtmfmode || "rfc2833",
-        insecure || "port,invite",
-        type || "friend",
-        permit || "0.0.0.0/0.0.0.0",
-        deny || "0.0.0.0/0.0.0.0",
-        iaxId
-    ];
-
-    connection.query(query, params, (err, result) => {
-        if (err) {
-            console.error("Erreur lors de la modification de l'enregistrement:", err.message);
-            return res.status(500).json({ error: "Erreur de base de données", details: err });
+    // First, get the user's password
+    const getUserQuery = "SELECT password FROM pkg_user WHERE username = ?";
+    connection.query(getUserQuery, [user_name], (userError, userResults) => {
+        if (userError) {
+            console.error("Error fetching user data:", userError);
+            return res.status(500).json({ error: "Error fetching user data" });
         }
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: "Enregistrement non trouvé" });
+        if (userResults.length === 0) {
+            return res.status(404).json({ error: "User not found" });
         }
 
-        res.status(200).json({ message: "Enregistrement modifié avec succès" });
+        const userPassword = userResults[0].password;
+
+        // Update the IAX entry with the user's password as the secret
+        const query = `
+            UPDATE pkg_iax SET
+                id_user = ?,
+                name = ?,
+                username = ?,
+                secret = ?,
+                host = ?,
+                port = ?,
+                context = ?,
+                callerid = ?,
+                allow = ?,
+                disallow = ?,
+                nat = ?,
+                qualify = ?,
+                dtmfmode = ?,
+                insecure = ?,
+                type = ?,
+                permit = ?,
+                deny = ?
+            WHERE id = ?
+        `;
+
+        const params = [
+            id_user || 0,
+            user_name,
+            user_name,
+            userPassword, // Use the user's password as the IAX secret
+            host || "dynamic",
+            port || 4569,
+            context || "default",
+            callerid || `"${user_name}" <${user_name}>`,
+            allow || "ulaw,alaw,gsm,g729",
+            disallow || "all",
+            nat || "no",
+            qualify || "yes",
+            dtmfmode || "rfc2833",
+            insecure || "port,invite",
+            type || "friend",
+            permit || "0.0.0.0/0.0.0.0",
+            deny || "0.0.0.0/0.0.0.0",
+            iaxId
+        ];
+
+        connection.query(query, params, (error, result) => {
+            if (error) {
+                console.error("Error updating IAX entry:", error);
+                return res.status(500).json({ error: "Database error", details: error.message });
+            }
+
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ message: "IAX entry not found" });
+            }
+
+            res.status(200).json({ message: "IAX entry updated successfully" });
+        });
     });
 };
 // Supprimer un enregistrement de pkg_iax

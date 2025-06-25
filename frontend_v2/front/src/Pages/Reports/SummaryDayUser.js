@@ -56,7 +56,7 @@ function SummaryHeader({ onExportClick, records, isExporting, onResetFilters }) 
           onClick={onResetFilters}
           className="d-flex align-items-center gap-2 fw-semibold me-2"
         >
-          <span>Réinitialiser les filtres</span>
+          <span>Reset Filters</span>
         </Button>
         <Button
           variant="primary"
@@ -67,7 +67,7 @@ function SummaryHeader({ onExportClick, records, isExporting, onResetFilters }) 
           <div className="icon-container">
             {isExporting ? <Spinner animation="border" size="sm" /> : <FaDownload />}
           </div>
-          <span>Exporter</span>
+          <span>Export</span>
         </Button>
       </div>
     </Card.Header>
@@ -89,7 +89,7 @@ function SearchBar({
         <div className="position-relative flex-grow-1">
           <Form.Control
             type="text"
-            placeholder="Rechercher par jour ou nom d'utilisateur..."
+            placeholder="Search by day or username..."
             value={searchTerm}
             onChange={onSearchChange}
             className="ps-5"
@@ -99,7 +99,7 @@ function SearchBar({
         
         <div className="d-flex flex-wrap gap-2">
           <div className="d-flex flex-column">
-            <Form.Label className="small mb-1">Date de début</Form.Label>
+            <Form.Label className="small mb-1">From Date</Form.Label>
             <DatePicker
               selected={startDate}
               onChange={onStartDateChange}
@@ -108,12 +108,12 @@ function SearchBar({
               endDate={endDate}
               className="form-control"
               dateFormat="yyyy-MM-dd"
-              placeholderText="Date de début"
+              placeholderText="Start date"
             />
           </div>
           
           <div className="d-flex flex-column">
-            <Form.Label className="small mb-1">Date de fin</Form.Label>
+            <Form.Label className="small mb-1">To Date</Form.Label>
             <DatePicker
               selected={endDate}
               onChange={onEndDateChange}
@@ -123,7 +123,7 @@ function SearchBar({
               minDate={startDate}
               className="form-control"
               dateFormat="yyyy-MM-dd"
-              placeholderText="Date de fin"
+              placeholderText="End date"
             />
           </div>
           
@@ -133,7 +133,7 @@ function SearchBar({
             onClick={onFilterClick}
           >
             <FaFilter />
-            <span>Filtrer</span>
+            <span>Filter</span>
           </Button>
         </div>
       </div>
@@ -391,7 +391,7 @@ const SummaryDayUser = () => {
       setError(null);
     } catch (err) {
       console.error('Error fetching records:', err);
-      setError('Échec du chargement des données. Veuillez réessayer plus tard.');
+      setError('Failed to load data. Please try again later.');
     } finally {
       setIsLoading(false);
     }
@@ -399,7 +399,7 @@ const SummaryDayUser = () => {
 
   useEffect(() => {
     fetchRecords();
-  }, []);
+  }, [sortConfig]);
 
   useEffect(() => {
     let filtered = [...records];
@@ -431,27 +431,52 @@ const SummaryDayUser = () => {
       return;
     }
 
-    const csvData = [
-      ["Day", "Username", "Duration", "ALOC", "Answered", "Failed", "Buy Price", "Sell Price", "Margin", "Answer Rate"],
-      ...recordsToExport.map(record => [
-        record.day,
-        record.username,
-        formatDurationMinutes(record.sessiontime),
-        formatDurationMinutesSeconds(record.aloc_all_calls),
-        record.nbcall,
-        record.nbcall_fail,
-        parseFloat(record.buycost).toFixed(2),
-        parseFloat(record.sessionbill).toFixed(2),
-        parseFloat(record.lucro).toFixed(2),
-        parseFloat(record.asr).toFixed(2)
-      ])
+    // Prepare headers with proper CSV formatting
+    const headers = [
+      'Day',
+      'Username',
+      'Duration (min)',
+      'Average Call Duration (min:sec)',
+      'Answered Calls',
+      'Failed Calls',
+      'Buy Price (€)',
+      'Sell Price (€)',
+      'Margin (€)',
+      'Answer Rate (%)'
     ];
 
-    const csvFile = csvData.join('\n');
-    const blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
-    saveAs(blob, 'daily_user_summary.csv');
+    // Prepare CSV content with BOM for Excel
+    let csvContent = '\uFEFF' + headers.join(',') + '\r\n';
+    
+    // Add data rows
+    recordsToExport.forEach(record => {
+      const row = [
+        `"${record.day}"`,
+        `"${record.username || ''}"`,
+        formatDurationMinutes(record.sessiontime || 0),
+        `"${formatDurationMinutesSeconds(record.aloc_all_calls || 0)}"`,
+        record.nbcall || 0,
+        record.nbcall_fail || 0,
+        parseFloat(record.buycost || 0).toFixed(2),
+        parseFloat(record.sessionbill || 0).toFixed(2),
+        parseFloat(record.lucro || 0).toFixed(2),
+        `${parseFloat(record.asr || 0).toFixed(2)}%`
+      ];
+      csvContent += row.join(',') + '\r\n';
+    });
+
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `daily_user_summary_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
     setIsExporting(false);
-    setSuccess(`Exported ${recordsToExport.length} records successfully`);
+    setSuccess(`Successfully exported ${recordsToExport.length} records`);
     setTimeout(() => setSuccess(null), 5000);
   };
 

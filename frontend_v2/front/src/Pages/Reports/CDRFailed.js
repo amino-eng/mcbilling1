@@ -15,7 +15,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { format, subDays } from "date-fns";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { fr } from 'date-fns/locale';
+import { enGB } from 'date-fns/locale';
 
 const DEFAULT_NEW_CDR = {
   starttime: "",
@@ -66,7 +66,7 @@ function CDRHeader({ onExportClick, cdrCount, isExporting, startDate, endDate, o
         </Badge>
         <div className="d-flex align-items-center gap-2">
           <div className="d-flex align-items-center me-2">
-            <span className="me-2">De:</span>
+            <span className="me-2">From:</span>
             <DatePicker
               selected={startDate}
               onChange={(date) => onDateChange('startDate', date)}
@@ -75,12 +75,12 @@ function CDRHeader({ onExportClick, cdrCount, isExporting, startDate, endDate, o
               endDate={endDate}
               maxDate={new Date()}
               className="form-control form-control-sm"
-              locale={fr}
+              locale={enGB}
               dateFormat="dd/MM/yyyy"
             />
           </div>
           <div className="d-flex align-items-center me-2">
-            <span className="me-2">À:</span>
+            <span className="me-2">To:</span>
             <DatePicker
               selected={endDate}
               onChange={(date) => onDateChange('endDate', date)}
@@ -90,7 +90,7 @@ function CDRHeader({ onExportClick, cdrCount, isExporting, startDate, endDate, o
               minDate={startDate}
               maxDate={new Date()}
               className="form-control form-control-sm"
-              locale={fr}
+              locale={enGB}
               dateFormat="dd/MM/yyyy"
             />
           </div>
@@ -100,7 +100,7 @@ function CDRHeader({ onExportClick, cdrCount, isExporting, startDate, endDate, o
             className="me-2"
             size="sm"
           >
-            Réinitialiser
+            Reset
           </Button>
           <Button
             variant="primary"
@@ -203,11 +203,11 @@ function CdrFailedTable() {
       if (response.data.success) {
         setCdrFailedData(response.data.cdr_failed);
       } else {
-        setError("Échec du chargement des CDR échoués");
+        setError("Failed to load failed CDRs");
       }
     } catch (err) {
       console.error("Error fetching CDR failed data:", err);
-      setError("Erreur lors du chargement des données. Veuillez réessayer.");
+      setError("Error loading data. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -262,32 +262,57 @@ function CdrFailedTable() {
 
   const exportToCSV = () => {
     const csvRows = [];
+    
+    // Add BOM for UTF-8 encoding (helps with Excel)
+    const BOM = '\uFEFF';
+    
+    // Prepare headers
     const headers = ['Selected', ...allColumns]
       .filter((col, index) => index === 0 || (col.key && visibleColumns[col.key]))
-      .map(col => col === 'Selected' ? 'Selected' : col.label)
-      .join(",");
-    csvRows.push(headers);
+      .map(col => col === 'Selected' ? 'Selected' : col.label);
+    
+    // Add headers to CSV
+    csvRows.push(headers.join(','));
 
+    // Prepare data rows
     const rowsToExport = selectedRows.size > 0 
       ? displayedData.filter(row => selectedRows.has(row.id))
       : displayedData;
 
+    // Add data rows to CSV
     rowsToExport.forEach((row) => {
-      const isSelected = selectedRows.has(row.id) ? 'Oui' : 'Non';
-      const rowValues = [isSelected, ...allColumns
-        .filter(col => visibleColumns[col.key])
-        .map(col => `"${String(row[col.key] || '').replace(/"/g, '""')}"`)];
-      csvRows.push(rowValues.join(","));
+      const isSelected = selectedRows.has(row.id) ? 'Yes' : 'No';
+      const rowValues = [
+        `"${isSelected}"`, // Wrap in quotes to handle commas
+        ...allColumns
+          .filter(col => visibleColumns[col.key])
+          .map(col => {
+            let value = row[col.key] || '';
+            // Format date if this is the date column
+            if (col.key === 'starttime' && value) {
+              value = new Date(value).toLocaleString('en-US');
+            }
+            // Escape quotes and wrap in quotes
+            return `"${String(value).replace(/"/g, '""')}"`;
+          })
+      ];
+      csvRows.push(rowValues.join(','));
     });
 
-    const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+    // Create CSV content with BOM
+    const csvContent = 'data:text/csv;charset=utf-8,' + BOM + csvRows.join('\r\n');
+    
+    // Create and trigger download
     const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `failed_cdr_data_${new Date().toISOString().slice(0, 10)}.csv`);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `failed_cdr_data_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    // Show success message
+    toast.success('CSV export completed successfully!');
   };
 
   const handleDelete = async () => {

@@ -112,21 +112,46 @@ const SummaryMonthUserTable = () => {
     return sortedData.filter(item => selectedRows[item.id])
   }
 
-  const csvData = [
-    ["Mois", "Utilisateur", "Durée", "Appels alloués", "Appels répondu", "Appels échoués", "Prix d'achat (€)", "Prix de vente (€)", "Marge", "ASR (%)"],
-    ...getSelectedData().map(item => [
-      `${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}`,
-      item.username,
-      formatSessionTime(item.sessiontime),
-      roundToTwoDecimalPlaces(item.aloc_all_calls),
-      item.nbcall,
-      item.nbcall_fail || 0, // Add failed calls count, default to 0 if not available
-      roundToTwoDecimalPlaces(item.buycost),
-      roundToTwoDecimalPlaces(item.sessionbill),
-      roundToTwoDecimalPlaces(item.lucro),
-      roundToTwoDecimalPlaces(item.asr)
-    ])
-  ]
+  // Prepare CSV data with English headers and proper formatting
+  const getCSVData = () => {
+    const headers = [
+      'Month',
+      'Username',
+      'Duration',
+      'Allocated Calls (min:sec)',
+      'Answered Calls',
+      'Failed Calls',
+      'Buy Price (€)',
+      'Sell Price (€)',
+      'Margin (€)',
+      'Answer Rate (%)'
+    ];
+    
+    const data = getSelectedData();
+    
+    // Create array of arrays for CSV data
+    const csvData = [headers];
+    
+    data.forEach(item => {
+      csvData.push([
+        `${item.month.toString().slice(0, 4)}-${item.month.toString().slice(4)}`,
+        item.username || '',
+        formatSessionTime(item.sessiontime || 0),
+        formatSessionTime(item.aloc_all_calls || 0),
+        item.nbcall || 0,
+        item.nbcall_fail || 0,
+        roundToTwoDecimalPlaces(item.buycost || 0),
+        roundToTwoDecimalPlaces(item.sessionbill || 0),
+        roundToTwoDecimalPlaces(item.lucro || 0),
+        roundToTwoDecimalPlaces(item.asr || 0)
+      ]);
+    });
+    
+    return csvData;
+  };
+  
+  // Get CSV data for export
+  const csvData = getCSVData();
 
   if (loading) {
     return (
@@ -194,13 +219,23 @@ const SummaryMonthUserTable = () => {
                   <Col md={6} lg={8} className="d-flex justify-content-end">
                     <CSVLink
                       data={csvData}
-                      filename="monthly_user_reports.csv"
+                      filename={`monthly_user_reports_${new Date().toISOString().split('T')[0]}.csv`}
                       className={`btn btn-success d-flex align-items-center gap-2 ${Object.keys(selectedRows).length === 0 ? 'disabled' : ''}`}
                       disabled={isExporting || Object.keys(selectedRows).length === 0}
-                      title={Object.keys(selectedRows).length === 0 ? 'Sélectionnez au moins une ligne à exporter' : ''}
+                      title={Object.keys(selectedRows).length === 0 ? 'Select at least one row to export' : ''}
+                      asyncOnClick={true}
+                      onClick={(event, done) => {
+                        if (Object.keys(selectedRows).length === 0) {
+                          event.preventDefault();
+                          return false;
+                        }
+                        setIsExporting(true);
+                        done();
+                        setTimeout(() => setIsExporting(false), 1000);
+                      }}
                     >
                       {isExporting ? <Spinner animation="border" size="sm" /> : <FaDownload />}
-                      {Object.keys(selectedRows).length > 0 ? `Exporter (${Object.values(selectedRows).filter(Boolean).length})` : 'Exporter'}
+                      {Object.keys(selectedRows).length > 0 ? `Export (${Object.values(selectedRows).filter(Boolean).length})` : 'Export'}
                     </CSVLink>
                   </Col>
                 </Row>
@@ -222,7 +257,7 @@ const SummaryMonthUserTable = () => {
                           onClick={() => requestSort('month')}
                           className="d-flex align-items-center"
                         >
-                          Mois
+                          Month
                           {sortConfig.key === 'month' ? (
                             sortConfig.direction === 'asc' ? 
                               <FaSortUp className="ms-1" /> : 
@@ -238,7 +273,7 @@ const SummaryMonthUserTable = () => {
                           onClick={() => requestSort('aloc_all_calls')}
                           className="d-flex align-items-center"
                         >
-                          Allocated Calls
+  Avg Call Duration
                           {sortConfig.key === 'aloc_all_calls' ? (
                             sortConfig.direction === 'asc' ? 
                               <FaSortUp className="ms-1" /> : 
@@ -251,8 +286,8 @@ const SummaryMonthUserTable = () => {
                         <th>Failed Calls</th>
                         <th>Buy Price (€)</th>
                         <th>Sell Price (€)</th>
-                        <th>Markup</th>
-                        <th>ASR (%)</th>
+                        <th>Margin (€)</th>
+                        <th>Answer Rate (%)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -276,7 +311,7 @@ const SummaryMonthUserTable = () => {
                           <td>{roundToTwoDecimalPlaces(item.sessionbill)}€</td>
                           <td>
                             <Badge bg={item.lucro >= 0 ? "success" : "danger"}>
-                              {roundToTwoDecimalPlaces(item.lucro)}
+                              {roundToTwoDecimalPlaces(item.lucro)}€
                             </Badge>
                           </td>
                           <td>{roundToTwoDecimalPlaces(item.asr)}%</td>

@@ -71,31 +71,53 @@ const SummaryPerUser = () => {
       ? filteredData.filter((_, index) => selectedRows[index])
       : filteredData;
       
-    const header = ['Username', 'Duration', 'Allocated Calls', 'Answered', 'Failed', 'Buy Price', 'Sell Price', 'Markup', 'ASR'];
-
     if (dataToExport.length === 0) {
-      alert('Veuillez sélectionner au moins une ligne à exporter');
+      alert('Please select at least one row to export');
       return;
     }
 
-    const rows = dataToExport.map((userSummary) => [
-      userSummary.username,
-      formatSessionTime(userSummary.sessiontime),
-      userSummary.aloc_all_calls,
-      userSummary.nbcall,
-      userSummary.nbcall_fail,
-      roundToTwoDecimal(userSummary.buycost),
-      roundToTwoDecimal(userSummary.sessionbill),
-      roundToTwoDecimal(userSummary.lucro),
-      roundToTwoDecimal(userSummary.asr),
-    ]);
+    // Prepare headers with descriptions
+    const headers = [
+      'Username',
+      'Duration (HH:MM:SS)',
+      'Allocated Calls (min:sec)',
+      'Answered Calls',
+      'Failed Calls',
+      'Buy Price (€)',
+      'Sell Price (€)',
+      'Margin (€)',
+      'Answer Rate (%)'
+    ];
+
+    // Format the data with proper escaping for CSV
+    const csvContent = [
+      headers.join(','), // Header row
+      ...dataToExport.map(user => [
+        `"${(user.username || '').replace(/"/g, '""')}"`,
+        `"${formatSessionTime(user.sessiontime || 0)}"`,
+        `"${formatSessionTime(user.aloc_all_calls || 0)}"`,
+        user.nbcall || 0,
+        user.nbcall_fail || 0,
+        roundToTwoDecimal(user.buycost || 0),
+        roundToTwoDecimal(user.sessionbill || 0),
+        roundToTwoDecimal(user.lucro || 0),
+        roundToTwoDecimal(user.asr || 0)
+      ].join(','))
+    ].join('\r\n');
     
-    const csvContent = [header, ...rows].map(row => row.join(',')).join('\n');
-    
+    // Create and trigger download
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = `data:text/csv;charset=utf-8,${encodeURIComponent(csvContent)}`;
-    link.download = 'resume_utilisateur.csv';
+    link.setAttribute('href', url);
+    link.setAttribute('download', `user_summary_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
+    
+    // Show success message
+    setSuccessMessage(`Exported ${dataToExport.length} records successfully`);
+    setTimeout(() => setSuccessMessage(''), 3000);
   }, [selectedRows, filteredData]);
 
   const handleRowSelect = (index) => {
@@ -213,7 +235,7 @@ const SummaryPerUser = () => {
                 <Col md={6} lg={8} className="d-flex justify-content-end align-items-center gap-3">
                   {Object.values(selectedRows).filter(Boolean).length > 0 && (
                     <span className="text-muted">
-                      {Object.values(selectedRows).filter(Boolean).length} {Object.values(selectedRows).filter(Boolean).length > 1 ? 'lignes sélectionnées' : 'ligne sélectionnée'}
+                      {Object.values(selectedRows).filter(Boolean).length} {Object.values(selectedRows).filter(Boolean).length > 1 ? 'rows selected' : 'row selected'}
                     </span>
                   )}
                   <Button 
@@ -249,8 +271,8 @@ const SummaryPerUser = () => {
                       <th><FaTimesCircle className="me-2" /> Failed</th>
                       <th><FaEuroSign className="me-2" /> Buy Price</th>
                       <th><FaEuroSign className="me-2" /> Sell Price</th>
-                      <th>Markup</th>
-                      <th><FaPercentage className="me-2" /> Answer Rate</th>
+                      <th>Margin (€)</th>
+                      <th><FaPercentage className="me-2" /> ASR</th>
                     </tr>
                   </thead>
                   <tbody>

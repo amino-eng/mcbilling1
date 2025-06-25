@@ -3,6 +3,19 @@ const connection = require("../../config/dataBase");
 // Get monthly user call statistics
 exports.getUserMonthlyStats = (req, res) => {
   try {
+    const { startDate, endDate } = req.query;
+    
+    let whereClause = 'WHERE smu.month IS NOT NULL ';
+    const params = [];
+    
+    if (startDate && endDate) {
+      whereClause += 'AND smu.month BETWEEN ? AND ? ';
+      params.push(
+        startDate.substring(0, 7), // Format YYYY-MM
+        endDate.substring(0, 7)    // Format YYYY-MM
+      );
+    }
+    
     const query = `
       SELECT 
         u.username,
@@ -10,16 +23,21 @@ exports.getUserMonthlyStats = (req, res) => {
         COALESCE(SUM(smu.nbcall - smu.nbcall_fail), 0) as answered_calls,
         COALESCE(SUM(smu.nbcall_fail), 0) as failed_calls,
         COALESCE(SUM(smu.sessiontime), 0) as total_duration,
+        COALESCE(SUM(smu.sessionbill), 0) as sell_price,
+        COALESCE(SUM(smu.buycost), 0) as buy_price,
+        COALESCE(SUM(smu.lucro), 0) as revenue,
         smu.month
       FROM pkg_user u
       LEFT JOIN pkg_cdr_summary_month_user smu ON u.id = smu.id_user
-      WHERE smu.month IS NOT NULL
+      ${whereClause}
       GROUP BY u.id, u.username, smu.month
-      ORDER BY smu.month DESC, total_calls DESC
-      LIMIT 5  -- Top 5 users by call volume per month
+      ORDER BY smu.month DESC, revenue DESC
+      LIMIT 5  -- Top 5 users by revenue per month
     `;
-
-    connection.query(query, (err, results) => {
+    
+    console.log('Executing monthly query with params:', { query, params });
+    
+    connection.query(query, params, (err, results) => {
       if (err) {
         console.error("Error fetching monthly user stats:", err);
         return res.status(500).json({ error: "Database error" });

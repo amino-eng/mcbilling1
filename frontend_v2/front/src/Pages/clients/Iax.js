@@ -646,12 +646,12 @@ const IaxTable = () => {
         setNewEntry({
             user_name: item.user_name,
             id_user: id_user, // Use the ID from the matching user
-            secret: item.secret,
+            secret: matchingUser ? matchingUser.password : item.secret, // Use the user's password if available
             host: item.host,
             port: item.port,
             context: item.context,
             callerid: item.callerid,
-            allow: item.allow.split(','),
+            allow: item.allow ? item.allow.split(',') : [],
             disallow: item.disallow,
             nat: item.nat,
             qualify: item.qualify,

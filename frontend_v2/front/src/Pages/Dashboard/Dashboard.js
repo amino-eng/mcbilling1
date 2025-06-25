@@ -854,8 +854,6 @@ function Dashboard() {
             position: relative;
             transition: all 0.3s ease;
           }
-          .theme-toggle-circle {
-            position: absolute;
             top: 2px;
             left: ${darkMode ? '26px' : '2px'};
             width: 20px;
@@ -958,9 +956,9 @@ function Dashboard() {
         </div>
       )}
 
-      {/* Call Statistics */}
+      {/* Call Statistics - First Row */}
       <Row className="g-3 mb-4">
-        <Col md={3}>
+        <Col md={4}>
           <Card 
             style={{...dashboardStyles.statCard}} 
             className="h-100"
@@ -987,99 +985,8 @@ function Dashboard() {
             </Card.Body>
           </Card>
         </Col>
-        <Col md={3}>
-          <Card 
-            style={{...dashboardStyles.statCard}} 
-            className="h-100"
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-          >
-            <div style={{height: '4px', background: 'linear-gradient(to right, #28a745, #5cb85c)'}}></div>
-            <Card.Body className="d-flex flex-column">
-              <div className="d-flex align-items-center mb-3">
-                <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(40,167,69,0.1), rgba(92,184,92,0.1))'}} className="icon-container">
-                  <i className="bi bi-check-circle-fill text-success fs-4"></i>
-                </div>
-                <div>
-                  <h5 className="card-title mb-0">Successful Calls</h5>
-                  <p className="text-muted mb-0 small">Completed without errors</p>
-                </div>
-              </div>
-              <div className="mt-3">
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <h2 className="text-success mb-0">{callStats.successfulCalls}</h2>
-                  <span className="badge bg-success bg-opacity-10 text-success" style={dashboardStyles.badge}>
-                    {Math.round((callStats.successfulCalls / (callStats.totalCalls || 1)) * 100)}% successful calls
-                  </span>
-                </div>
-                <div className="progress" style={dashboardStyles.progressBar}>
-                  <div className="progress-bar bg-success" style={{width: `${Math.round((callStats.successfulCalls / (callStats.totalCalls || 1)) * 100)}%`}}></div>
-                </div>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3}>
-          <Card 
-            style={{...dashboardStyles.statCard}} 
-            className="h-100"
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-          >
-            <div style={{height: '4px', background: 'linear-gradient(to right, #dc3545, #ff6b81)'}}></div>
-            <Card.Body className="d-flex flex-column">
-              <div className="d-flex align-items-center mb-3">
-                <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(220,53,69,0.1), rgba(255,107,129,0.1))'}} className="icon-container">
-                  <i className="bi bi-x-circle-fill text-danger fs-4"></i>
-                </div>
-                <div>
-                  <h5 className="card-title mb-0">Failed Calls</h5>
-                  <p className="text-muted mb-0 small">Calls with errors</p>
-                </div>
-              </div>
-              <div className="mt-3">
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <h2 className="text-danger mb-0">{callStats.failedCalls}</h2>
-                  <span className="badge bg-danger bg-opacity-10 text-danger" style={dashboardStyles.badge}>
-                    {Math.round((callStats.failedCalls / (callStats.totalCalls || 1)) * 100)}% failed calls
-                  </span>
-                </div>
-                <div className="progress" style={dashboardStyles.progressBar}>
-                  <div className="progress-bar bg-danger" style={{width: `${Math.round((callStats.failedCalls / (callStats.totalCalls || 1)) * 100)}%`}}></div>
-                </div>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={2}>
-          <Card 
-            style={{...dashboardStyles.statCard}} 
-            className="h-100"
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-          >
-            <div style={{height: '4px', background: 'linear-gradient(to right, #17a2b8, #36c7d0)'}}></div>
-            <Card.Body className="d-flex flex-column">
-              <div className="d-flex align-items-center mb-3">
-                <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(23,162,184,0.1), rgba(54,199,208,0.1))'}} className="icon-container">
-                  <i className="bi bi-clock-fill text-info fs-4"></i>
-                </div>
-                <div>
-                  <h5 className="card-title mb-0">Total Duration</h5>
-                  <p className="text-muted mb-0 small">Time spent on calls</p>
-                </div>
-              </div>
-              <div className="mt-3">
-                <h2 className="text-info mb-1">{formatDuration(callStats.totalDuration)}</h2>
-                <div className="progress" style={dashboardStyles.progressBar}>
-                  <div className="progress-bar bg-info" style={{width: '100%'}}></div>
-                </div>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
         
-        <Col md={2}>
+        <Col md={4}>
           <Card 
             style={{...dashboardStyles.statCard}} 
             className="h-100"
@@ -1111,7 +1018,7 @@ function Dashboard() {
           </Card>
         </Col>
         
-        <Col md={2}>
+        <Col md={4}>
           <Card 
             style={{...dashboardStyles.statCard}} 
             className="h-100"
@@ -1137,6 +1044,75 @@ function Dashboard() {
                 </h2>
                 <div className="progress" style={dashboardStyles.progressBar}>
                   <div className="progress-bar bg-purple" style={{width: '100%'}}></div>
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Second Row - Successful and Failed Calls */}
+      <Row className="g-3 mb-4">
+        <Col md={6}>
+          <Card 
+            style={{...dashboardStyles.statCard}} 
+            className="h-100"
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            <div style={{height: '4px', background: 'linear-gradient(to right, #28a745, #5cb85c)'}}></div>
+            <Card.Body className="d-flex flex-column">
+              <div className="d-flex align-items-center mb-3">
+                <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(40,167,69,0.1), rgba(92,184,92,0.1))'}} className="icon-container">
+                  <i className="bi bi-check-circle-fill text-success fs-4"></i>
+                </div>
+                <div>
+                  <h5 className="card-title mb-0">Successful Calls</h5>
+                  <p className="text-muted mb-0 small">Completed without errors</p>
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <h2 className="text-success mb-0">{callStats.successfulCalls}</h2>
+                  <span className="badge bg-success bg-opacity-10 text-success" style={dashboardStyles.badge}>
+                    {Math.round((callStats.successfulCalls / (callStats.totalCalls || 1)) * 100)}% successful calls
+                  </span>
+                </div>
+                <div className="progress" style={dashboardStyles.progressBar}>
+                  <div className="progress-bar bg-success" style={{width: `${Math.round((callStats.successfulCalls / (callStats.totalCalls || 1)) * 100)}%`}}></div>
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+        
+        <Col md={6}>
+          <Card 
+            style={{...dashboardStyles.statCard}} 
+            className="h-100"
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            <div style={{height: '4px', background: 'linear-gradient(to right, #dc3545, #ff6b81)'}}></div>
+            <Card.Body className="d-flex flex-column">
+              <div className="d-flex align-items-center mb-3">
+                <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(220,53,69,0.1), rgba(255,107,129,0.1))'}} className="icon-container">
+                  <i className="bi bi-x-circle-fill text-danger fs-4"></i>
+                </div>
+                <div>
+                  <h5 className="card-title mb-0">Failed Calls</h5>
+                  <p className="text-muted mb-0 small">Calls with errors</p>
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <h2 className="text-danger mb-0">{callStats.failedCalls}</h2>
+                  <span className="badge bg-danger bg-opacity-10 text-danger" style={dashboardStyles.badge}>
+                    {Math.round((callStats.failedCalls / (callStats.totalCalls || 1)) * 100)}% failed calls
+                  </span>
+                </div>
+                <div className="progress" style={dashboardStyles.progressBar}>
+                  <div className="progress-bar bg-danger" style={{width: `${Math.round((callStats.failedCalls / (callStats.totalCalls || 1)) * 100)}%`}}></div>
                 </div>
               </div>
             </Card.Body>
@@ -1233,6 +1209,8 @@ function Dashboard() {
                     <th className="text-end">Answered</th>
                     <th className="text-end">Failed</th>
                     <th className="text-end">Duration</th>
+                    <th className="text-end">Sell Price</th>
+                    <th className="text-end">Revenue</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1254,6 +1232,10 @@ function Dashboard() {
                       <td className="text-end text-success">{user.answered_calls}</td>
                       <td className="text-end text-danger">{user.failed_calls}</td>
                       <td className="text-end">{formatDuration(user.total_duration)}</td>
+                      <td className="text-end">{(user.sell_price || 0).toFixed(2)}</td>
+                      <td className="text-end fw-bold" style={{color: ((user.sell_price || 0) - (user.buy_price || 0)) >= 0 ? '#28a745' : '#dc3545'}}>
+                        {((user.sell_price || 0) - (user.buy_price || 0)).toFixed(2)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1300,6 +1282,8 @@ function Dashboard() {
                     <th className="text-end">Answered</th>
                     <th className="text-end">Failed</th>
                     <th className="text-end">Duration</th>
+                    <th className="text-end">Sell Price</th>
+                    <th className="text-end">Revenue</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1322,6 +1306,10 @@ function Dashboard() {
                       <td className="text-end text-success">{user.answered_calls}</td>
                       <td className="text-end text-danger">{user.failed_calls}</td>
                       <td className="text-end">{formatDuration(user.total_duration)}</td>
+                      <td className="text-end">{(user.sell_price || 0).toFixed(2)}</td>
+                      <td className="text-end fw-bold" style={{color: (user.sell_price - (user.buy_price || 0)) >= 0 ? '#28a745' : '#dc3545'}}>
+                        {((user.sell_price || 0) - (user.buy_price || 0)).toFixed(2)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

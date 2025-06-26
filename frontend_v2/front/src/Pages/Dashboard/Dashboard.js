@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Alert, Spinner, Button, Badge } from 'react-bootstrap';
-import { Line, Doughnut } from 'react-chartjs-2';
+import { Line, Doughnut, Bar } from 'react-chartjs-2';
 
 import axios from 'axios';
 
@@ -13,8 +13,10 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
-  Filler
+  Filler,
+  BarController
 } from 'chart.js';
 
 ChartJS.register(
@@ -25,6 +27,8 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
+  BarController,
   Title,
   Filler
 );
@@ -297,13 +301,93 @@ function Dashboard() {
   const [userMonthlyCallStats, setUserMonthlyCallStats] = useState([]);
   const [loadingUserStats, setLoadingUserStats] = useState(true);
   const [loadingMonthlyUserStats, setLoadingMonthlyUserStats] = useState(true);
+  const [userCallChartData, setUserCallChartData] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  // Define colors for the chart
+  const colors = {
+    total: {
+      bg: 'rgba(63, 94, 251, 0.85)',
+      border: 'rgba(63, 94, 251, 1)',
+      hover: 'rgba(63, 94, 251, 1)'
+    },
+    answered: {
+      bg: 'rgba(0, 227, 150, 0.85)',
+      border: 'rgba(0, 227, 150, 1)',
+      hover: 'rgba(0, 200, 130, 1)'
+    },
+    failed: {
+      bg: 'rgba(255, 71, 87, 0.85)',
+      border: 'rgba(255, 71, 87, 1)',
+      hover: 'rgba(230, 50, 70, 1)'
+    }
+  };
 
   // Fetch user call statistics
-  const fetchUserCallStats = async () => {
+  const fetchUserCallStats = async (date) => {
     setLoadingUserStats(true);
     try {
-      const response = await axios.get("http://localhost:5000/api/admin/SummaryDayUser/stats/user-calls");
+      const response = await axios.get("http://localhost:5000/api/admin/SummaryDayUser/stats/user-calls", {
+        params: { date: date || selectedDate }
+      });
+      console.log('API Response:', response.data); // Debug log
       setUserCallStats(response.data);
+      
+      // Prepare chart data
+      if (response.data && response.data.length > 0) {
+        console.log('Preparing chart data with:', response.data); // Debug log
+        const labels = response.data.map(user => user.username || 'Unknown');
+        const totalCalls = response.data.map(user => user.total_calls || 0);
+        const answeredCalls = response.data.map(user => user.answered_calls || 0);
+        const failedCalls = response.data.map(user => user.failed_calls || 0);
+
+        // Using the component-scoped colors
+
+        setUserCallChartData({
+          labels,
+          datasets: [
+            {
+              label: 'Total Calls',
+              data: totalCalls,
+              backgroundColor: colors.total.bg,
+              borderColor: colors.total.border,
+              borderWidth: 1.5,
+              borderRadius: 4,
+              hoverBackgroundColor: colors.total.hover,
+              hoverBorderColor: colors.total.border,
+              hoverBorderWidth: 2,
+              barPercentage: 0.8,
+              categoryPercentage: 0.7
+            },
+            {
+              label: 'Answered',
+              data: answeredCalls,
+              backgroundColor: colors.answered.bg,
+              borderColor: colors.answered.border,
+              borderWidth: 1.5,
+              borderRadius: 4,
+              hoverBackgroundColor: colors.answered.hover,
+              hoverBorderColor: colors.answered.border,
+              hoverBorderWidth: 2,
+              barPercentage: 0.8,
+              categoryPercentage: 0.7
+            },
+            {
+              label: 'Failed',
+              data: failedCalls,
+              backgroundColor: colors.failed.bg,
+              borderColor: colors.failed.border,
+              borderWidth: 1.5,
+              borderRadius: 4,
+              hoverBackgroundColor: colors.failed.hover,
+              hoverBorderColor: colors.failed.border,
+              hoverBorderWidth: 2,
+              barPercentage: 0.8,
+              categoryPercentage: 0.7
+            }
+          ]
+        });
+      }
     } catch (error) {
       console.error("Error fetching user call stats:", error);
     } finally {
@@ -797,7 +881,7 @@ function Dashboard() {
     if (callTrendsData.datasets.length > 0) {
       updateChartOptions();
     }
-  }, [darkMode]);
+  }, [darkMode, selectedDate]);
   
   // Effect to update chart options when theme changes - removed duplicate
 
@@ -1125,13 +1209,21 @@ function Dashboard() {
         <Col md={12}>
           <Card style={dashboardStyles.chartCard}>
             <Card.Header style={dashboardStyles.cardHeader} className="border-bottom-0 pt-3 pb-0">
-              <div className="d-flex align-items-center">
-                <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(108,117,125,0.05), rgba(173,181,189,0.05))', width: '36px', height: '36px', marginRight: '0.75rem'}}>
-                  <i className="bi bi-pie-chart-fill text-primary"></i>
+              <div className="d-flex justify-content-between align-items-center w-100">
+                <div className="d-flex align-items-center">
+                  <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(108,117,125,0.05), rgba(173,181,189,0.05))', width: '36px', height: '36px', marginRight: '0.75rem'}}>
+                    <i className="bi bi-pie-chart-fill text-primary"></i>
+                  </div>
+                  <div>
+                    <h5 className="card-title mb-0">Call Distribution</h5>
+                    <p className="text-muted small mb-0">Successful vs. Failed Calls</p>
+                  </div>
                 </div>
-                <div>
-                  <h5 className="card-title mb-0">Call Distribution</h5>
-                  <p className="text-muted small mb-0">Successful vs. Failed Calls</p>
+                <div className="text-end">
+                  <h4 className="text-primary mb-0">
+                    <i className="bi bi-telephone-fill me-2"></i>
+                    {callStats.totalCalls} Total Calls
+                  </h4>
                 </div>
               </div>
             </Card.Header>
@@ -1188,8 +1280,72 @@ function Dashboard() {
               <i className="bi bi-people-fill text-primary"></i>
             </div>
             <div>
-              <h5 className="card-title mb-0">Daily User Call Statistics</h5>
-              <p className="text-muted small mb-0">Top 5 users by call volume (Today)</p>
+              <div className="d-flex justify-content-between align-items-center w-100">
+                <div>
+                  <h5 className="card-title mb-0">Daily User Call Statistics</h5>
+                  <p className="text-muted small mb-0">Call distribution by user</p>
+                </div>
+                <div className="d-flex align-items-center">
+                  <div className="d-flex align-items-center bg-light rounded-pill px-3 py-1 shadow-sm" style={{ backgroundColor: darkMode ? '#2a3042' : '#f8f9fa' }}>
+                    <label htmlFor="datePicker" className="form-label mb-0 me-2 text-nowrap fw-medium" style={{ 
+                      fontSize: '0.85rem',
+                      color: darkMode ? '#e9ecef' : '#495057'
+                    }}>
+                      <i className="bi bi-calendar3 me-1"></i> Date :
+                    </label>
+                    <div className="input-group input-group-sm border-0 bg-transparent" style={{ width: 'auto' }}>
+                      <input 
+                        type="date" 
+                        id="datePicker"
+                        className="form-control form-control-sm border-0 bg-transparent p-0"
+                        value={selectedDate}
+                        max={new Date().toISOString().split('T')[0]}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        style={{
+                          width: '120px',
+                          cursor: 'pointer',
+                          fontSize: '0.85rem',
+                          fontWeight: '500',
+                          color: darkMode ? '#e9ecef' : '#212529',
+                          backgroundColor: 'transparent',
+                          border: 'none',
+                          boxShadow: 'none',
+                          WebkitAppearance: 'none',
+                          appearance: 'none'
+                        }}
+                      />
+                      <button 
+                        className="btn btn-sm p-0 ms-2 d-flex align-items-center justify-content-center" 
+                        type="button"
+                        onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+                        title="Today"
+                        style={{
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          backgroundColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                          border: 'none',
+                          color: darkMode ? '#e9ecef' : '#6c757d',
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.backgroundColor = darkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)';
+                          e.currentTarget.style.color = darkMode ? '#fff' : '#495057';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.backgroundColor = darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
+                          e.currentTarget.style.color = darkMode ? '#e9ecef' : '#6c757d';
+                        }}
+                      >
+                        <i className="bi bi-calendar-check" style={{ fontSize: '0.8rem' }}></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </Card.Header>
@@ -1199,52 +1355,108 @@ function Dashboard() {
               <Spinner animation="border" variant="primary" />
               <p className="mt-2 mb-0">Loading user statistics...</p>
             </div>
-          ) : userCallStats.length > 0 ? (
-            <div className="table-responsive">
-              <table className="table table-hover mb-0">
-                <thead>
-                  <tr>
-                    <th>User</th>
-                    <th className="text-end">Total Calls</th>
-                    <th className="text-end">Answered</th>
-                    <th className="text-end">Failed</th>
-                    <th className="text-end">Duration</th>
-                    <th className="text-end">Sell Price</th>
-                    <th className="text-end">Revenue</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {userCallStats.map((user, index) => (
-                    <tr key={`daily-${index}`}>
-                      <td>
-                        <div className="d-flex align-items-center">
-                          <div className="avatar-sm me-2">
-                            <div className="avatar-title rounded-circle bg-soft-primary text-primary">
-                              {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
+          ) : userCallStats && userCallStats.length > 0 ? (
+            <div>
+              <div style={{ height: '400px' }} className="mb-4">
+                <Bar
+                  data={userCallChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'top',
+                        labels: {
+                          color: darkMode ? '#dee2e6' : '#212529',
+                        },
+                      },
+                      tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: darkMode ? '#2a3042' : '#ffffff',
+                        titleColor: darkMode ? '#ffffff' : '#212529',
+                        bodyColor: darkMode ? '#e9ecef' : '#495057',
+                        borderColor: darkMode ? '#495057' : '#e9ecef',
+                      },
+                    },
+                    scales: {
+                      x: {
+                        stacked: true,
+                        grid: {
+                          color: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                        },
+                        ticks: {
+                          color: darkMode ? '#dee2e6' : '#212529',
+                        },
+                      },
+                      y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        grid: {
+                          color: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                        },
+                        ticks: {
+                          color: darkMode ? '#dee2e6' : '#212529',
+                          stepSize: 1,
+                        },
+                      },
+                    },
+                  }}
+                />
+              </div>
+              {/* Tableau des détails */}
+              <div className="mt-4">
+                <h6 className="mb-3">User Details</h6>
+                <div className="table-responsive">
+                  <table className="table table-sm table-hover">
+                    <thead>
+                      <tr>
+                        <th>User</th>
+                        <th className="text-end">Duration</th>
+                        <th className="text-end">Sell Price</th>
+                        <th className="text-end">Revenue</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {userCallStats.map((user, index) => (
+                        <tr key={`details-${index}`}>
+                          <td>
+                            <div className="d-flex align-items-center">
+                              <div className="avatar-sm me-2">
+                                <div className="avatar-title rounded-circle bg-soft-primary text-primary">
+                                  {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
+                                </div>
+                              </div>
+                              <div>
+                                <h6 className="mb-0">{user.username || 'Unknown'}</h6>
+                              </div>
                             </div>
-                          </div>
-                          <div>
-                            <h6 className="mb-0">{user.username || 'Unknown'}</h6>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="text-end">{user.total_calls}</td>
-                      <td className="text-end text-success">{user.answered_calls}</td>
-                      <td className="text-end text-danger">{user.failed_calls}</td>
-                      <td className="text-end">{formatDuration(user.total_duration)}</td>
-                      <td className="text-end">{(user.sell_price || 0).toFixed(2)}</td>
-                      <td className="text-end fw-bold" style={{color: ((user.sell_price || 0) - (user.buy_price || 0)) >= 0 ? '#28a745' : '#dc3545'}}>
-                        {((user.sell_price || 0) - (user.buy_price || 0)).toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          </td>
+                          <td className="text-end">{formatDuration(user.total_duration || 0)}</td>
+                          <td className="text-end">{(user.sell_price || 0).toFixed(2)}</td>
+                          <td 
+                            className="text-end fw-bold" 
+                            style={{color: ((user.sell_price || 0) - (user.buy_price || 0)) >= 0 ? '#28a745' : '#dc3545'}}
+                          >
+                            {((user.sell_price || 0) - (user.buy_price || 0)).toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="text-center py-4">
               <i className="bi bi-people fs-1 text-muted mb-2 d-block"></i>
-              <p className="text-muted mb-0">No daily user statistics available</p>
+              <p className="text-muted mb-0">No user statistics available</p>
+              <div className="mt-3 text-start">
+                <p className="small text-muted">Debug details:</p>
+                <pre className="bg-light p-3 rounded small">
+                  userCallStats: {JSON.stringify(userCallStats, null, 2)}
+                </pre>
+              </div>
             </div>
           )}
         </Card.Body>

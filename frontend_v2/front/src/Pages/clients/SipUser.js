@@ -70,11 +70,11 @@ const SIPUsers = () => {
     sip_group: "",
     block_call_reg: "no",
     record_call: "no",
-    techprefix: "",
-    nat: "",
+    techprefix: "", // Empty by default
+    nat: "force_rport,comedia",
     directmedia: "no",
-    qualify: "no",
-    context: "",
+    qualify: "yes",
+    context: "billing",
     dtmfmode: "RFC2833",
     insecure: "no",
     deny: "",
@@ -178,7 +178,7 @@ const SIPUsers = () => {
         enableVoicemail: "no",
         email: "",
         voicemail_email: "",
-        voicemail_password: "",
+        voicemail_password: "", // Sera défini à null côté serveur
         sippasswd: ""
       };
 
@@ -290,13 +290,13 @@ const SIPUsers = () => {
           ? userCallerIds[0].callerid 
           : `"${selectedUser.username}" <${selectedUser.username}>`;
         
-        // Mettre à jour les champs du formulaire
+        // Mettre à jour les champs du formulaire sans définir le Caller ID
         setFormData({
           ...formData,
           id_user: selectedUserId,
           name: selectedUser.username || "",
           accountcode: selectedUser.username || "",
-          callerid: defaultCallerId, // Définir automatiquement le Caller ID
+          callerid: "", // Ne pas définir automatiquement le Caller ID
           sippasswd: password || "" // Définir le mot de passe
         });
         
@@ -343,10 +343,15 @@ const SIPUsers = () => {
         throw new Error("Impossible de récupérer le mot de passe de l'utilisateur");
       }
       
+      // On utilise le nom tel quel pour le champ name
+      // Et on ajoute le suffixe -01 uniquement pour accountcode si vide
+      const cleanName = formData.name ? formData.name.replace(/-01$/, '') : "";
+      const accountCodeValue = formData.accountcode || (cleanName ? `${cleanName}-01` : "");
+      
       const dataToSubmit = {
         id_user: selectedUser,
-        name: formData.name,
-        accountcode: formData.accountcode || "",
+        name: cleanName, // Nom sans -01
+        accountcode: accountCodeValue, // Avec -01 si vide
         host: formData.host,
         status: formData.status || "1",
         callerid: formData.callerid || "",
@@ -451,12 +456,12 @@ const SIPUsers = () => {
         sippasswd: userPassword, // Also set sippasswd to the same value for backward compatibility
         // Ensure codecs are sent as comma-separated string
         allow: formData.codecs?.join(','),
-        // Convert string 'yes'/'no' to 1/0 for boolean fields
-        block_call_reg: formData.block_call_reg === 'yes' ? 1 : 0,
-        record_call: formData.record_call === 'yes' ? 1 : 0,
-        directmedia: formData.directmedia === 'yes' ? 1 : 0,
-        qualify: formData.qualify === 'yes' ? 1 : 0,
-        allowtransfer: formData.allowtransfer === 'yes' ? 1 : 0,
+        // Keep boolean fields as strings for the backend
+        block_call_reg: formData.block_call_reg === 'yes' ? 'yes' : 'no',
+        record_call: formData.record_call === 'yes' ? 'yes' : 'no',
+        directmedia: formData.directmedia === 'yes' ? 'yes' : 'no',
+        qualify: formData.qualify === 'yes' ? 'yes' : 'no',
+        allowtransfer: formData.allowtransfer === 'yes' ? 'yes' : 'no',
         // Ensure numeric fields are properly typed
         status: formData.status ? parseInt(formData.status, 10) : 1,
         callLimit: formData.callLimit ? parseInt(formData.callLimit, 10) : 0,
@@ -628,8 +633,15 @@ const SIPUsers = () => {
                 </select>
               </Form.Group>
               <Form.Group>
-                <Form.Label>SIP user</Form.Label>
-                <Form.Control type="text" name="name" value={formData.name} onChange={handleChange} />
+                <Form.Label>Nom d'utilisateur SIP</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  name="name" 
+                  value={formData.name || ''} 
+                  onChange={handleChange}
+                  placeholder="Entrez le nom d'utilisateur SIP"
+                  required
+                />
               </Form.Group>
               <Form.Group controlId="formPassword">
                 <Form.Label>SIP Password</Form.Label>
@@ -665,7 +677,6 @@ const SIPUsers = () => {
                     name="callerid" 
                     value={formData.callerid || ''} 
                     onChange={handleChange}
-                    placeholder="Caller ID will be set automatically when user is selected"
                     readOnly={!!selectedUser}
                   />
                   {selectedUser && (
@@ -678,9 +689,6 @@ const SIPUsers = () => {
                     </Button>
                   )}
                 </div>
-                <Form.Text className="text-muted">
-                  {selectedUser ? `Caller ID for ${users.find(u => u.id === selectedUser)?.username}` : 'Select a user to set Caller ID'}
-                </Form.Text>
               </Form.Group>
               <Form.Group>
                 <Form.Label>Disallow</Form.Label>
@@ -757,16 +765,17 @@ const SIPUsers = () => {
                 </Form.Control>
               </Form.Group>
               <Form.Group>
-                <Form.Label>Tech Prefix</Form.Label>
+                <Form.Label>Tech Prefix (Optional)</Form.Label>
                 <Form.Control
-                  type="text"
+                  type="number"
                   name="techprefix"
-                  value={formData.techprefix || ''}
+                  value={formData.techprefix}
                   onChange={handleChange}
-                  placeholder="Enter tech prefix (optional)"
+                  placeholder="Leave empty for default"
+                  min="0"
                 />
                 <Form.Text className="text-muted">
-                  Enter the tech prefix if required
+                  Must be a unique number. Leave empty if not needed.
                 </Form.Text>
               </Form.Group>
               <Form.Group>
@@ -795,7 +804,12 @@ const SIPUsers = () => {
               </Form.Group>
               <Form.Group>
                 <Form.Label>Direct Media</Form.Label>
-                <Form.Control as="select" name="directmedia" value={formData.directmedia} onChange={handleChange}>
+                <Form.Control 
+                  as="select" 
+                  name="directmedia" 
+                  value={formData.directmedia} 
+                  onChange={handleChange}
+                >
                   <option value="no">Non</option>
                   <option value="yes">Oui</option>
                 </Form.Control>

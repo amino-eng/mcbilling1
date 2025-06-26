@@ -223,99 +223,66 @@ exports.ajouterUtilisateur = (req, res) => {
 
                 const userId = results.insertId
 
-                // Create SIP users with minimal required fields
-                // Default codecs if not provided
-                const defaultCodecs = 'ulaw,alaw,g729,gsm,opus';
-                const sipUsers = Array.from({ length: Number(numberOfSipUsers) || 0 }, (_, i) => [
-                  userId, // id_user
-                  `${username}-${String(i + 1).padStart(2, "0")}`, // name
-                  `${username}-${String(i + 1).padStart(2, "0")}`, // accountcode
-                  "dynamic", // host
-                  allow || defaultCodecs, // allow (using allow value or default codecs)
-                  null, // alias
-                  null, // regexten
-                  null, // amaflags
-                  null, // callcounter
-                  null, // busylevel
-                  null, // allowoverlap
-                  null, // allowsubscribe
-                  "no", // videosupport
-                  null, // callgroup
-                  callerid || "dynamic", // callerid (default to dynamic)
-                  context || "default_context", // context
-                  null, // DEFAULTip
-                  "RFC2833", // dtmfmode
-                  fromuser || "default_fromuser", // fromuser
-                  fromdomain || "default_fromdomain", // fromdomain
-                  insecure || "default_insecure", // insecure
-                  language || "en", // language
-                  mailbox || "default_mailbox", // mailbox
-                  null, // session-timers
-                  null, // session-expires
-                  null, // session-minse
-                  null, // session-refresher
-                  null, // t38pt_usertpsource
-                  md5secret || "default_md5secret", // md5secret
-                  "force_rport,comedia", // nat
-                  deny || "default_deny", // deny
-                  permit || "default_permit", // permit
-                  null, // pickupgroup
-                  null, // port
-                  "yes", // qualify
-                  null, // rtptimeout
-                  null, // rtpholdtimeout
-                  password, // Use the user's password as the secret
-                  "friend", // type
-                  disallow || "all", // disallow
-                  0, // regseconds
-                  null, // ipaddr
-                  null, // fullcontact
-                  null, // setvar
-                  null, // regserver
-                  null, // lastms
-                  username, // defaultuser
-                  null, // auth
-                  null, // subscribemwi
-                  null, // vmexten
-                  null, // cid_number
-                  null, // callingpres
-                  null, // usereqphone
-                  null, // mohsuggest
-                  "no", // allowtransfer
-                  null, // autoframing
-                  null, // maxcallbitrate
-                  null, // rfc2833compensate
-                  null, // outboundproxy
-                  null, // rtpkeepalive
-                  null, // useragent
-                  null, // calllimit
-                  1, // status
-                  "no", // directmedia
-                  null, // sippasswd
-                  null, // callshopnumber
-                  0, // callshoptime
-                  null, // callbackextension
-                  null, // sip_group
-                  0, // ringfalse
-                  0, // record_call
-                  0, // voicemail
-                  null, // voicemail_email
-                  null, // voicemail_password
-                  "", // forward
-                  null, // url_events
-                  "", // block_call_reg
-                  60, // dial_timeout
-                  null, // techprefix
-                  0, // trace
-                  "", // addparameter
-                  0, // amd
-                  null, // sip_config
-                  null, // description
-                  null, // id_trunk_group
-                  "", // cnl
-                ])
+                // Import the SIP user controller
+                const { ajouterSIPUser } = require('./SIPUsers');
 
-                console.log("SIP Users to insert:", sipUsers) // Debugging log
+                // Function to create a single SIP user
+                const createSipUser = (index) => {
+                  return new Promise((resolve, reject) => {
+                    const sipUserData = {
+                      id_user: userId,
+                      name: `${username}-${String(index + 1).padStart(2, "0")}`,
+                      accountcode: `${username}-${String(index + 1).padStart(2, "0")}`,
+                      host: 'dynamic',
+                      status: '1',
+                      callerid: callerid || '',
+                      codecs: allow || 'ulaw,alaw,g729,gsm,opus',
+                      context: context || 'billing',
+                      dtmfmode: 'RFC2833',
+                      type: 'friend',
+                      nat: 'force_rport,comedia',
+                      qualify: 'yes', // Explicitly set to 'yes' as default
+                      directmedia: 'no',
+                      disallow: disallow || 'all',
+                      allowtransfer: 'no',
+                      password: password, // Pass the user's password
+                      // Add other required fields with defaults
+                      block_call_reg: 'no',
+                      record_call: 'no',
+                      techprefix: '0',
+                      insecure: 'no',
+                      deny: '',
+                      permit: ''
+                    };
+
+                    // Create mock request and response objects
+                    const mockReq = { body: sipUserData };
+                    const mockRes = {
+                      status: (code) => ({
+                        json: (data) => {
+                          if (code >= 400) {
+                            reject(new Error(`Error creating SIP user ${index + 1}: ${JSON.stringify(data)}`));
+                          } else {
+                            resolve(data);
+                          }
+                        }
+                      })
+                    };
+
+                    // Call the ajouterSIPUser function
+                    ajouterSIPUser(mockReq, mockRes);
+                  });
+                };
+
+
+                // Create SIP users one by one
+                const createSipUsers = async () => {
+                  const sipCount = Number(numberOfSipUsers) || 0;
+                  for (let i = 0; i < sipCount; i++) {
+                    await createSipUser(i);
+                  }
+                  return sipCount;
+                };
 
                 // Create IAX users
                 const iaxUsers = Array.from({ length: Number(numberOfIax) || 0 }, (_, i) => [
@@ -337,40 +304,16 @@ exports.ajouterUtilisateur = (req, res) => {
                   username || "default_username",
                   disallow || "default_disallow",
                   deny || "default_deny",
-                ])
+                ]);
 
-                console.log("IAX Users to insert:", iaxUsers) // Debugging log
+                console.log("IAX Users to insert:", iaxUsers); // Debugging log
 
-                // Insert SIP users
-                if (sipUsers.length > 0) {
-                  const insertSIPQuery = `
-                  INSERT INTO pkg_sip (
-                    id_user, name, accountcode, host, allow,
-                    alias, regexten, amaflags, callcounter, busylevel,
-                    allowoverlap, allowsubscribe, videosupport, callgroup,
-                    callerid, context, DEFAULTip, dtmfmode, fromuser, fromdomain,
-                    insecure, language, mailbox, \`session-timers\`, \`session-expires\`,
-                    \`session-minse\`, \`session-refresher\`, t38pt_usertpsource, md5secret, nat,
-                    deny, permit, pickupgroup, port, qualify,
-                    rtptimeout, rtpholdtimeout, secret, type, disallow,
-                    regseconds, ipaddr, fullcontact, setvar, regserver,
-                    lastms, defaultuser, auth, subscribemwi, vmexten,
-                    cid_number, callingpres, usereqphone, mohsuggest, allowtransfer,
-                    autoframing, maxcallbitrate, rfc2833compensate, outboundproxy, rtpkeepalive,
-                    useragent, calllimit, status, directmedia, sippasswd,
-                    callshopnumber, callshoptime, callbackextension, sip_group, ringfalse,
-                    record_call, voicemail, voicemail_email, voicemail_password, forward,
-                    url_events, block_call_reg, dial_timeout, techprefix, trace,
-                    addparameter, amd, sip_config, description, id_trunk_group,
-                    cnl
-                  ) VALUES ?`
-
-                  connection.query(insertSIPQuery, [sipUsers], (err) => {
-                    if (err) {
-                      console.error("SIP Insert Error:", err)
-                      return res.status(500).json({ error: "Database error occurred", success: false })
-                    }
-
+                // Execute operations in sequence
+                (async () => {
+                  try {
+                    // Create SIP users if needed
+                    const sipCount = await createSipUsers();
+                    
                     // Insert IAX users if any
                     if (iaxUsers.length > 0) {
                       const insertIAXQuery = `
@@ -378,54 +321,35 @@ exports.ajouterUtilisateur = (req, res) => {
                         id_user, name, accountcode, host, allow, regexten,
                         callerid, context, fromuser, fromdomain, insecure,
                         mailbox, md5secret, permit, secret, username, disallow, deny
-                      ) VALUES ?`
+                      ) VALUES ?`;
 
-                      connection.query(insertIAXQuery, [iaxUsers], (err) => {
-                        if (err) {
-                          console.error("IAX Insert Error:", err)
-                          return res.status(500).json({ error: "Database error occurred", success: false })
-                        }
-
-                        res.status(201).json({
-                          message: "User, SIP, and IAX users added successfully",
-                          userId: userId,
-                        })
-                      })
-                    } else {
-                      res.status(201).json({
-                        message: "User and SIP users added successfully",
-                        userId: userId,
-                      })
+                      await new Promise((resolve, reject) => {
+                        connection.query(insertIAXQuery, [iaxUsers], (err) => {
+                          if (err) {
+                            console.error("IAX Insert Error:", err);
+                            return reject(new Error("Error creating IAX users"));
+                          }
+                          resolve();
+                        });
+                      });
                     }
-                  })
-                } else {
-                  // Handle case with no SIP users
-                  if (iaxUsers.length > 0) {
-                    const insertIAXQuery = `
-                    INSERT INTO pkg_iax (
-                      id_user, name, accountcode, host, allow, regexten,
-                      callerid, context, fromuser, fromdomain, insecure,
-                      mailbox, md5secret, permit, secret, username, disallow, deny
-                    ) VALUES ?`
 
-                    connection.query(insertIAXQuery, [iaxUsers], (err) => {
-                      if (err) {
-                        console.error("IAX Insert Error:", err)
-                        return res.status(500).json({ error: "Database error occurred", success: false })
-                      }
 
-                      res.status(201).json({
-                        message: "User added without SIP",
-                        userId: userId,
-                      })
-                    })
-                  } else {
+                    // If we get here, everything was successful
                     res.status(201).json({
-                      message: "User added without SIP or IAX",
+                      message: `User created successfully with ${sipCount} SIP account(s) and ${iaxUsers.length} IAX account(s)`,
                       userId: userId,
-                    })
+                      success: true
+                    });
+
+                  } catch (error) {
+                    console.error("Error creating user accounts:", error);
+                    res.status(500).json({
+                      error: error.message || "Error creating user accounts",
+                      success: false
+                    });
                   }
-                }
+                })();
               })
             })
             .catch((err) => {
@@ -471,8 +395,12 @@ exports.supprimerUtilisateur = (req, res) => {
       const deleteIaxQuery = "DELETE FROM pkg_iax WHERE id_user = ?";
       connection.query(deleteIaxQuery, [userId], (err, result) => {
         if (err) {
-          console.error("Erreur lors de la suppression des entrées IAX :", err);
-          return callback(err);
+          console.error(`Erreur lors de la suppression des entrées IAX pour l'utilisateur ${userId}:`, err);
+          return callback({
+            type: 'IAX_DELETE_ERROR',
+            message: 'Failed to delete IAX entries',
+            error: err
+          });
         }
         console.log(`Suppression de ${result.affectedRows} entrée(s) IAX pour l'utilisateur ${userId}`);
         callback(null);
@@ -484,10 +412,31 @@ exports.supprimerUtilisateur = (req, res) => {
       const deleteSipQuery = "DELETE FROM pkg_sip WHERE id_user = ?";
       connection.query(deleteSipQuery, [userId], (err, result) => {
         if (err) {
-          console.error("Erreur lors de la suppression des utilisateurs SIP :", err);
-          return callback(err);
+          console.error(`Erreur lors de la suppression des utilisateurs SIP pour l'utilisateur ${userId}:`, err);
+          return callback({
+            type: 'SIP_DELETE_ERROR',
+            message: 'Failed to delete SIP users',
+            error: err
+          });
         }
         console.log(`Suppression de ${result.affectedRows} utilisateur(s) SIP pour l'utilisateur ${userId}`);
+        callback(null);
+      });
+    };
+
+    // Fonction pour supprimer les entrées IVR d'un utilisateur
+    const deleteIvrEntries = (callback) => {
+      const deleteIvrQuery = "DELETE FROM pkg_ivr WHERE id_user = ?";
+      connection.query(deleteIvrQuery, [userId], (err, result) => {
+        if (err) {
+          console.error(`Erreur lors de la suppression des entrées IVR pour l'utilisateur ${userId}:`, err);
+          return callback({
+            type: 'IVR_DELETE_ERROR',
+            message: 'Failed to delete IVR entries',
+            error: err
+          });
+        }
+        console.log(`Suppression de ${result.affectedRows} entrée(s) IVR pour l'utilisateur ${userId}`);
         callback(null);
       });
     };
@@ -497,43 +446,93 @@ exports.supprimerUtilisateur = (req, res) => {
     connection.query(checkDidQuery, [userId], (didErr, didResults) => {
       if (didErr) {
         console.error("Erreur lors de la vérification des enregistrements DID :", didErr);
-        return res.status(500).json({ error: "Database error occurred", success: false });
-      }
-
-      const didCount = didResults[0].count;
-      if (didCount > 0) {
-        return res.status(400).json({ 
-          error: "Cannot delete user with active DID records", success: false 
+        return res.status(500).json({ 
+          error: "Database error checking DID records", 
+          success: false,
+          details: didErr.message 
         });
       }
 
-      // Supprimer d'abord les entrées IAX, puis les utilisateurs SIP, puis l'utilisateur
+      if (!didResults || didResults.length === 0) {
+        console.error("Unexpected result when checking DID records:", didResults);
+        return res.status(500).json({ 
+          error: "Unexpected database response when checking DID records", 
+          success: false 
+        });
+      }
+
+      const didCount = didResults[0]?.count || 0;
+      if (didCount > 0) {
+        console.log(`User ${userId} has ${didCount} associated DID records`);
+        return res.status(400).json({ 
+          error: "Cannot delete user with active DID records. Please remove all associated DIDs first.", 
+          success: false 
+        });
+      }
+
+      // Supprimer d'abord les entrées IAX, puis les utilisateurs SIP, puis les IVR, puis l'utilisateur
       deleteIaxEntries((iaxErr) => {
         if (iaxErr) {
-          return res.status(500).json({ error: "Error deleting IAX entries", success: false });
+          console.error(`Erreur lors de la suppression des entrées IAX:`, iaxErr.error);
+          return res.status(500).json({ 
+            error: "Error deleting IAX entries: " + (iaxErr.error?.message || 'Unknown error'), 
+            success: false,
+            errorType: iaxErr.type || 'UNKNOWN_ERROR'
+          });
         }
 
         deleteSipUsers((sipErr) => {
           if (sipErr) {
-            return res.status(500).json({ error: "Error deleting SIP users", success: false });
+            console.error(`Erreur lors de la suppression des utilisateurs SIP:`, sipErr.error);
+            return res.status(500).json({ 
+              error: "Error deleting SIP users: " + (sipErr.error?.message || 'Unknown error'), 
+              success: false,
+              errorType: sipErr.type || 'UNKNOWN_ERROR'
+            });
           }
 
-          // Maintenant, supprimer l'utilisateur
-          const deleteUserQuery = "DELETE FROM pkg_user WHERE id = ?";
-          connection.query(deleteUserQuery, [userId], (userErr) => {
-            if (userErr) {
-              console.error("Erreur lors de la suppression de l'utilisateur :", userErr);
-              return res.status(500).json({ error: "Database error occurred", success: false });
+          // Supprimer les entrées IVR avant de supprimer l'utilisateur
+          deleteIvrEntries((ivrErr) => {
+            if (ivrErr) {
+              console.error(`Erreur lors de la suppression des entrées IVR:`, ivrErr.error);
+              return res.status(500).json({ 
+                error: "Error deleting IVR entries: " + (ivrErr.error?.message || 'Unknown error'), 
+                success: false,
+                errorType: ivrErr.type || 'UNKNOWN_ERROR'
+              });
             }
 
-            console.log("Utilisateur et toutes ses données associées supprimés avec succès.");
+            // Maintenant, supprimer l'utilisateur
+            const deleteUserQuery = "DELETE FROM pkg_user WHERE id = ?";
+            connection.query(deleteUserQuery, [userId], (userErr, result) => {
+            if (userErr) {
+              console.error(`Erreur lors de la suppression de l'utilisateur ${userId}:`, userErr);
+              return res.status(500).json({ 
+                error: "Failed to delete user: " + (userErr.message || 'Database error'), 
+                success: false,
+                errorType: 'USER_DELETE_ERROR',
+                details: userErr.sqlMessage || 'Unknown database error'
+              });
+            }
+
+            if (result.affectedRows === 0) {
+              console.warn(`Aucun utilisateur trouvé avec l'ID ${userId} pour suppression`);
+              return res.status(404).json({ 
+                error: "User not found or already deleted", 
+                success: false 
+              });
+            }
+
+            console.log(`Utilisateur ${userId} et toutes ses données associées supprimés avec succès.`);
             res.status(200).json({ 
               success: true,
-              message: "User and all associated data deleted successfully" 
+              message: `User ${userId} and all associated data deleted successfully`,
+              userId: userId
             });
           });
         });
       });
+    });
     });
   });
 };

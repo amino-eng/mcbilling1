@@ -106,10 +106,12 @@ exports.afficherSIPUsers = async (req, res) => {
 exports.ajouterSIPUser = (req, res) => {
   const {
     id_user, name, accountcode, host, status = '1', callerid, 
-    alias, codecs, sip_group, block_call_reg, record_call, techprefix,
-    nat, directmedia, qualify, context, dtmfmode, insecure, deny, permit,
-    type, allowtransfer, fakeRing, callLimit, moh, addparameter, forwardType,
-    dial_timeout, enableVoicemail, email, voicemail_email, voicemail_password
+    alias, codecs = 'g729,ulaw,opus,gsm,alaw', sip_group, block_call_reg = 'no', record_call = 'no', techprefix = '0',
+    nat = 'force_rport,comedia', directmedia = 'no', qualify = 'yes', context = 'billing', 
+    dtmfmode = 'RFC2833', insecure = 'no', deny = '', permit = '',
+    type = 'friend', allowtransfer = 'no', fakeRing = 'no', callLimit = 0, moh = '', 
+    addparameter = '', forwardType = 'undefined', dial_timeout = 60, enableVoicemail = 'no', 
+    email = '', voicemail_email = '', voicemail_password = '', disallow = 'all'
   } = req.body;
   
   console.log("Received request to add SIP user:", req.body);
@@ -145,34 +147,50 @@ exports.ajouterSIPUser = (req, res) => {
         });
       }
       
-      // Handle techprefix - convert to integer or null
-      const safeTechPrefix = techprefix !== null && techprefix !== undefined && techprefix !== '' ? parseInt(techprefix, 10) : null;
+      // Handle techprefix - convert to integer, use NULL for empty, '0', or 0
+      const safeTechPrefix = techprefix && techprefix !== '0' && techprefix !== 0 ? parseInt(techprefix, 10) : null;
     
-      // Convert string 'yes'/'no' to 1/0 for boolean fields
-      const recordCallInt = record_call === 'yes' ? 1 : 0;
-      const blockCallRegInt = block_call_reg === 'yes' ? 1 : 0;
-      const allowtransferInt = allowtransfer === 'yes' ? 1 : 0;
-      const directMediaInt = directmedia === 'yes' ? 1 : 0;
-      const qualifyInt = qualify === 'yes' ? 1 : 0;
-      const enableVoicemailInt = enableVoicemail === 'yes' ? 1 : 0;
+      // Convertir les champs booléens
+      const recordCallValue = record_call === 'yes' ? 1 : 0;
+      const blockCallRegValue = block_call_reg === 'yes' ? 1 : 0;
+      // allowtransfer: stocker 'no' ou 'yes' directement
+      const allowtransferValue = allowtransfer === 'yes' ? 'yes' : 'no';
+      // directmedia: stocker 'no' ou 'yes' directement
+      const directMediaValue = directmedia === 'yes' ? 'yes' : 'no';
+      // Set qualify from input with default to 'yes'
+      const qualifyValue = qualify === 'no' ? 'no' : 'yes';
+      const enableVoicemailValue = enableVoicemail === 'yes' ? 1 : 0;
 
-      // Now create the SIP user with all fields
+      // Define all fields including techprefix and additional fields
+      const fields = [
+        'id_user', 'name', 'accountcode', 'host', 'status', 'secret', 'callerid',
+        'alias', 'disallow', 'allow', 'sip_group', 'block_call_reg', 'record_call',
+        'techprefix', 'nat', 'directmedia', 'qualify', 'context', 'dtmfmode', 'insecure', 'deny', 'permit',
+        'type', 'allowtransfer', 'calllimit', 'addparameter', 'dial_timeout',
+        'voicemail_password', 'id_trunk_group', 'defaultuser'
+      ];
+
+      // Nettoyer le nom en supprimant le suffixe -01 s'il existe
+      const cleanName = name.endsWith('-01') ? name.slice(0, -3) : name;
+      // Utiliser le nom nettoyé comme accountcode sans ajouter -01
+      const accountCodeValue = accountcode || cleanName;
+      
+      const params = [
+        id_user, cleanName, accountCodeValue, host, status, userPassword, callerid || '',
+        alias || '', disallow || 'all', codecs || '', sip_group || '', blockCallRegValue, recordCallValue,
+        safeTechPrefix, nat || 'force_rport,comedia', directMediaValue, qualifyValue,
+        context || 'billing', dtmfmode || 'RFC2833', insecure || 'no', deny || '', permit || '',
+        type || 'friend', allowtransferValue || 'no', callLimit || 0, addparameter || '', dial_timeout || 60,
+        null,   // voicemail_password défini à null par défaut
+        0,      // id_trunk_group par défaut
+        cleanName  // defaultuser sans le suffixe -01
+      ];
+
       const query = `
         INSERT INTO pkg_sip (
-          id_user, name, accountcode, host, status, secret, callerid, 
-          alias, allow, sip_group, block_call_reg, record_call, techprefix,
-          nat, directmedia, qualify, context, dtmfmode, insecure, deny, permit,
-          type, allowtransfer, calllimit, addparameter, dial_timeout
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ${fields.join(', ')}
+        ) VALUES (${Array(fields.length).fill('?').join(', ')})
       `;
-
-      const params = [
-        id_user, name, accountcode || '', host, status, userPassword, callerid || '',
-        alias || '', codecs || '', sip_group || '', blockCallRegInt, recordCallInt, safeTechPrefix,
-        nat || '', directMediaInt, qualifyInt, context || 'default', dtmfmode || 'RFC2833', 
-        insecure || 'no', deny || '', permit || '', type || 'friend', allowtransferInt, 
-        callLimit || 0, addparameter || '', dial_timeout || 60
-      ];
 
       console.log("Creating SIP user with data:", { params });
 
@@ -380,14 +398,17 @@ exports.modifierSIPUser = (req, res) => {
       codecs: { value: codecs, type: typeof codecs, allowValue }
     });
   
-    // Convert string 'yes'/'no' to 1/0 for boolean fields
-    const recordCallInt = record_call === 'yes' ? 1 : 0;
-    const blockCallRegInt = block_call_reg === 'yes' ? 1 : 0;
-    const allowtransferInt = allowtransfer === 'yes' ? 1 : 0;
-    const directMediaInt = directmedia === 'yes' ? 1 : 0;
-    const qualifyInt = qualify === 'yes' ? 1 : 0;
+    // Convertir les champs booléens
+    const recordCallValue = record_call === 'yes' ? 1 : 0;
+    const blockCallRegValue = block_call_reg === 'yes' ? 1 : 0;
+    // allowtransfer: stocker 'no' ou 'yes' directement
+    const allowtransferValue = allowtransfer === 'yes' ? 'yes' : 'no';
+    // directmedia: stocker 'no' ou 'yes' directement
+    const directMediaValue = directmedia === 'yes' ? 'yes' : 'no';
+    // Qualify est toujours 'yes' par défaut
+    const qualifyValue = 'yes';
 
-    // Requête SQL pour mettre à jour l'utilisateur SIP avec uniquement les colonnes existantes
+    // Requête SQL pour mettre à jour l'utilisateur SIP avec les colonnes requises
     const query = `
       UPDATE pkg_sip 
       SET 
@@ -398,21 +419,25 @@ exports.modifierSIPUser = (req, res) => {
         nat = ?, directmedia = ?, qualify = ?, context = ?,
         dtmfmode = ?, insecure = ?, deny = ?, permit = ?,
         type = ?, allowtransfer = ?, calllimit = ?,
-        addparameter = ?, dial_timeout = ?
+        addparameter = ?, dial_timeout = ?,
+        voicemail_password = ?, id_trunk_group = ?, defaultuser = ?
       WHERE id = ?
     `;
 
-    // Paramètres de la requête (seulement ceux qui correspondent aux colonnes existantes)
+    // Paramètres de la requête avec les valeurs mises à jour
     const params = [
       id_user, name, accountcode, host, 
       status, allowValue, sippasswd, safeCallerId, 
       alias, sip_group,
-      blockCallRegInt, recordCallInt, safeTechPrefix, 
-      nat, directMediaInt, qualifyInt, context, 
+      blockCallRegValue, recordCallValue, safeTechPrefix, 
+      nat, directMediaValue, qualifyValue, context, 
       dtmfmode, insecure, deny, permit,
-      type, allowtransferInt, callLimit,
+      type, allowtransferValue, callLimit,
       addparameter, dial_timeout,
-      id // ID de l'utilisateur à mettre à jour
+      null,      // voicemail_password défini à null
+      0,         // id_trunk_group par défaut
+      name,      // defaultuser identique au champ name
+      id         // ID de l'utilisateur à mettre à jour
     ];
 
     // Execute the query with better error handling

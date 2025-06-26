@@ -102,16 +102,27 @@ exports.afficherSIPUsers = async (req, res) => {
 };
 
 
+// Fonction pour générer un mot de passe numérique aléatoire (retourne un nombre)
+const generateNumericPassword = (length = 6) => {
+  const numbers = '0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += numbers.charAt(Math.floor(Math.random() * numbers.length));
+  }
+  // Convertir en nombre entier
+  return parseInt(result, 10);
+};
+
 // Add SIP User
 exports.ajouterSIPUser = (req, res) => {
   const {
     id_user, name, accountcode, host, status = '1', callerid, 
-    alias, codecs = 'g729,ulaw,opus,gsm,alaw', sip_group, block_call_reg = 'no', record_call = 'no', techprefix = '0',
+    alias, codecs = 'g729,ulaw,opus,gsm,alaw', sip_group, record_call = 'no', techprefix = '0',
     nat = 'force_rport,comedia', directmedia = 'no', qualify = 'yes', context = 'billing', 
     dtmfmode = 'RFC2833', insecure = 'no', deny = '', permit = '',
     type = 'friend', allowtransfer = 'no', fakeRing = 'no', callLimit = 0, moh = '', 
     addparameter = '', forwardType = 'undefined', dial_timeout = 60, enableVoicemail = 'no', 
-    email = '', voicemail_email = '', voicemail_password = '', disallow = 'all'
+    email = '', voicemail_email = '', voicemail_password = generateNumericPassword(), disallow = 'all'
   } = req.body;
   
   console.log("Received request to add SIP user:", req.body);
@@ -152,7 +163,6 @@ exports.ajouterSIPUser = (req, res) => {
     
       // Convertir les champs booléens
       const recordCallValue = record_call === 'yes' ? 1 : 0;
-      const blockCallRegValue = block_call_reg === 'yes' ? 1 : 0;
       // allowtransfer: stocker 'no' ou 'yes' directement
       const allowtransferValue = allowtransfer === 'yes' ? 'yes' : 'no';
       // directmedia: stocker 'no' ou 'yes' directement
@@ -161,30 +171,113 @@ exports.ajouterSIPUser = (req, res) => {
       const qualifyValue = qualify === 'no' ? 'no' : 'yes';
       const enableVoicemailValue = enableVoicemail === 'yes' ? 1 : 0;
 
-      // Define all fields including techprefix and additional fields
+      // Helper function to replace null/undefined/empty with empty string
+      const safeValue = (val) => {
+        if (val === null || val === undefined) return '';
+        if (typeof val === 'string' && val.trim() === '') return '';
+        if (val === 'vide') return '';  // Remove 'vide' text
+        return val;
+      };
+      
+      // Function to generate a random numeric password
+      const generateNumericPassword = (length = 6) => {
+        const numbers = '0123456789';
+        let result = '';
+        for (let i = 0; i < length; i++) {
+          result += numbers.charAt(Math.floor(Math.random() * numbers.length));
+        }
+        return parseInt(result, 10);
+      };
+      
+      // Nettoyer le nom en supprimant le suffixe -01 s'il existe
+      const cleanName = name ? (name.endsWith('-01') ? name.slice(0, -3) : name) : '';
+      // Utiliser le nom nettoyé comme accountcode sans ajouter -01
+      const accountCodeValue = safeValue(accountcode) || cleanName;
+      
+      // S'assurer que le voicemail_password est un nombre valide
+      const safeVoicemailPassword = voicemail_password && !isNaN(voicemail_password) 
+        ? parseInt(voicemail_password, 10) 
+        : generateNumericPassword();
+      
+      // Define all fields in the exact order they appear in the database table
       const fields = [
         'id_user', 'name', 'accountcode', 'host', 'status', 'secret', 'callerid',
-        'alias', 'disallow', 'allow', 'sip_group', 'block_call_reg', 'record_call',
+        'alias', 'disallow', 'allow', 'sip_group', 'record_call',
         'techprefix', 'nat', 'directmedia', 'qualify', 'context', 'dtmfmode', 'insecure', 'deny', 'permit',
         'type', 'allowtransfer', 'calllimit', 'addparameter', 'dial_timeout',
-        'voicemail_password', 'id_trunk_group', 'defaultuser'
+        'voicemail_email', 'voicemail_password', 'id_trunk_group', 'defaultuser',
+        // Additional fields to prevent NULL values
+        'regexten', 'callgroup', 'defaultip', 'fromuser', 'fromdomain', 'language',
+        'mailbox', 'md5secret', 'pickupgroup', 'ipaddr', 'fullcontact', 'setvar',
+        'regserver', 'lastms', 'auth', 'subscribemwi', 'vmexten', 'cid_number',
+        'callingpres', 'usereqphone', 'mohsuggest', 'autoframing', 'outboundproxy',
+        'useragent', 'url_events', 'sip_config', 'description', 'amaflags'
       ];
-
-      // Nettoyer le nom en supprimant le suffixe -01 s'il existe
-      const cleanName = name.endsWith('-01') ? name.slice(0, -3) : name;
-      // Utiliser le nom nettoyé comme accountcode sans ajouter -01
-      const accountCodeValue = accountcode || cleanName;
       
+      // Préparer les valeurs avec des valeurs par défaut appropriées
       const params = [
-        id_user, cleanName, accountCodeValue, host, status, userPassword, callerid || '',
-        alias || '', disallow || 'all', codecs || '', sip_group || '', blockCallRegValue, recordCallValue,
-        safeTechPrefix, nat || 'force_rport,comedia', directMediaValue, qualifyValue,
-        context || 'billing', dtmfmode || 'RFC2833', insecure || 'no', deny || '', permit || '',
-        type || 'friend', allowtransferValue || 'no', callLimit || 0, addparameter || '', dial_timeout || 60,
-        null,   // voicemail_password défini à null par défaut
-        0,      // id_trunk_group par défaut
-        cleanName  // defaultuser sans le suffixe -01
+        safeValue(id_user), 
+        safeValue(cleanName),
+        safeValue(accountCodeValue),
+        safeValue(host),
+        safeValue(status),
+        safeValue(userPassword),
+        safeValue(callerid),
+        safeValue(alias),
+        safeValue(disallow),
+        safeValue(codecs),
+        safeValue(sip_group),
+        recordCallValue,
+        safeTechPrefix,
+        safeValue(nat),
+        directMediaValue,
+        qualifyValue,
+        safeValue(context),
+        safeValue(dtmfmode),
+        safeValue(insecure),
+        safeValue(deny),
+        safeValue(permit),
+        safeValue(type),
+        allowtransferValue,
+        callLimit || 0,
+        safeValue(addparameter),
+        dial_timeout || 60,
+        safeValue(voicemail_email),
+        safeVoicemailPassword,
+        0,  // id_trunk_group
+        safeValue(cleanName, 'user' + Date.now()),  // defaultuser
+        // Additional fields with default values
+        "",    // amaflags
+        '',  // regexten
+        '',  // callgroup
+        '',  // defaultip
+        '',  // fromuser
+        '',  // fromdomain
+        '',  // language
+        '',  // mailbox
+        '',  // md5secret
+        '',  // pickupgroup
+        '',  // ipaddr
+        '',  // fullcontact
+        '',  // setvar
+        '',  // regserver
+        '',  // lastms
+        '',  // auth
+        '',  // subscribemwi
+        '',  // vmexten
+        '',  // cid_number
+        '',  // callingpres
+        '',  // usereqphone
+        '',  // mohsuggest
+        '',  // autoframing
+        '',  // outboundproxy
+        '',  // useragent
+        '',  // url_events
+        '',  // sip_config
+        ''   // description
       ];
+      
+      console.log('Using voicemail_password:', safeVoicemailPassword, typeof safeVoicemailPassword);
 
       const query = `
         INSERT INTO pkg_sip (
@@ -384,13 +477,23 @@ exports.modifierSIPUser = (req, res) => {
       return res.status(400).json({ error: "ID est requis" });
     }
 
+    // Helper function to replace null/undefined with empty string
+    const safeValue = (val) => (val === null || val === undefined) ? '' : val;
+    
+    // Clean name by removing -01 suffix if it exists
+    const cleanName = name ? (name.endsWith('-01') ? name.slice(0, -3) : name) : '';
+    
+    // Use cleaned name as accountcode if not provided
+    const accountCodeValue = safeValue(accountcode) || cleanName;
+    
     // Map codecs array to a comma-separated string for the 'allow' field
-    const allowValue = Array.isArray(codecs) ? codecs.join(',') : (codecs || '');
+    const allowValue = Array.isArray(codecs) ? codecs.join(',') : (safeValue(codecs));
   
     // Ensure callerid is a string and not null/undefined
-    const safeCallerId = callerid !== null && callerid !== undefined ? String(callerid) : '';
-    // Convert empty string to null for techprefix to avoid integer conversion errors
-    const safeTechPrefix = techprefix !== null && techprefix !== undefined && techprefix !== '' ? parseInt(techprefix, 10) : null;
+    const safeCallerId = safeValue(callerid);
+    
+    // Handle techprefix - convert to integer, use NULL for empty, '0', or 0
+    const safeTechPrefix = techprefix && techprefix !== '0' && techprefix !== 0 ? parseInt(techprefix, 10) : null;
   
     console.log('Processing update with values:', {
       callerid: { value: callerid, type: typeof callerid, safe: safeCallerId },
@@ -426,19 +529,38 @@ exports.modifierSIPUser = (req, res) => {
 
     // Paramètres de la requête avec les valeurs mises à jour
     const params = [
-      id_user, name, accountcode, host, 
-      status, allowValue, sippasswd, safeCallerId, 
-      alias, sip_group,
-      blockCallRegValue, recordCallValue, safeTechPrefix, 
-      nat, directMediaValue, qualifyValue, context, 
-      dtmfmode, insecure, deny, permit,
-      type, allowtransferValue, callLimit,
-      addparameter, dial_timeout,
-      null,      // voicemail_password défini à null
-      0,         // id_trunk_group par défaut
-      name,      // defaultuser identique au champ name
-      id         // ID de l'utilisateur à mettre à jour
-    ];
+      safeValue(id_user), 
+      safeValue(cleanName), 
+      safeValue(accountCodeValue), 
+      safeValue(host), 
+      safeValue(status), 
+      allowValue, 
+      safeValue(sippasswd), 
+      safeCallerId,
+      safeValue(alias), 
+      safeValue(sip_group), 
+      blockCallRegValue, 
+      recordCallValue, 
+      safeTechPrefix,
+      safeValue(nat) || 'force_rport,comedia', 
+      directMediaValue, 
+      qualifyValue, 
+      safeValue(context) || 'billing',
+      safeValue(dtmfmode) || 'RFC2833', 
+      safeValue(insecure) || 'no', 
+      safeValue(deny), 
+      safeValue(permit),
+      safeValue(type) || 'friend', 
+      allowtransferValue, 
+      callLimit || 0, 
+      safeValue(addparameter), 
+      dial_timeout || 60,
+      safeValue(voicemail_email),  // Use safeValue for email fields
+      safeValue(voicemail_password) || '',
+      0,  // id_trunk_group = 0
+      safeValue(cleanName),  // defaultuser
+      id
+    ];  
 
     // Execute the query with better error handling
     connection.query(query, params, (error, result) => {

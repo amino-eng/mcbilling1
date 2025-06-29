@@ -732,61 +732,56 @@ const TariffsTable = () => {
   }
 
   const fetchTrunkGroups = async () => {
-    setLoadingTrunkGroups(true)
+    setLoadingTrunkGroups(true);
     try {
-      // Use existing rate data as fallback
-      // if the API doesn't return any data
-      const res = await axios.get("http://localhost:5000/api/admin/TrunkGroup/afficher")
-      console.log("Trunk Groups API Response:", res.data)
+      const res = await axios.get("http://localhost:5000/api/admin/TrunkGroup/afficher");
+      console.log("Trunk Groups API Response:", res.data);
 
-      // If the API returns data, use it
-      if (res.data && (res.data.trunkGroups || []).length > 0) {
-        setTrunkGroupResults(res.data.trunkGroups || [])
+      if (res.data && Array.isArray(res.data.trunk_groups)) {
+        console.log("Setting trunk groups from API:", res.data.trunk_groups);
+        setTrunkGroupResults(res.data.trunk_groups);
       } else {
-        // Otherwise, extract unique trunk groups from existing rates
-        console.log("No API results, using existing rate data")
-        const uniqueTrunkGroups = []
-        const trunkGroupIds = new Set()
-
-        tariffs.forEach((tariff) => {
-          if (tariff.id_trunk_group && !trunkGroupIds.has(tariff.id_trunk_group)) {
-            trunkGroupIds.add(tariff.id_trunk_group)
-            uniqueTrunkGroups.push({
-              id: tariff.id_trunk_group,
-              name: tariff.trunk_group_name,
-              description: tariff.trunk_group_description || "",
-            })
-          }
-        })
-
-        console.log("Trunk Groups extracted from rates:", uniqueTrunkGroups)
-        setTrunkGroupResults(uniqueTrunkGroups)
+        console.warn("No trunk groups found in API response");
+        setTrunkGroupResults([]);
       }
     } catch (err) {
-      console.error("Trunk Groups API Error:", err)
-
-      // In case of error, extract trunk groups from existing rates
-      console.log("API error, using existing rate data")
-      const uniqueTrunkGroups = []
-      const trunkGroupIds = new Set()
-
-      tariffs.forEach((tariff) => {
-        if (tariff.id_trunk_group && !trunkGroupIds.has(tariff.id_trunk_group)) {
-          trunkGroupIds.add(tariff.id_trunk_group)
-          uniqueTrunkGroups.push({
-            id: tariff.id_trunk_group,
-            name: tariff.trunk_group_name,
-            description: tariff.trunk_group_description || "",
-          })
-        }
-      })
-
-      console.log("Trunk Groups extracted from rates (after error):", uniqueTrunkGroups)
-      setTrunkGroupResults(uniqueTrunkGroups)
+      console.error("Error fetching trunk groups:", err);
+      // En cas d'erreur, on essaie d'extraire des tarifs existants
+      extractTrunkGroupsFromRates();
     } finally {
-      setLoadingTrunkGroups(false)
+      setLoadingTrunkGroups(false);
     }
-  }
+  };
+
+  // Fonction pour extraire les trunk groups des tarifs existants
+  const extractTrunkGroupsFromRates = () => {
+    if (!Array.isArray(tariffs) || tariffs.length === 0) {
+      console.warn("No tariffs available to extract trunk groups from");
+      return;
+    }
+
+    console.log("Extracting trunk groups from existing tariffs...");
+    const uniqueTrunkGroups = [];
+    const trunkGroupIds = new Set();
+
+    tariffs.forEach((tariff) => {
+      if (tariff.id_trunk_group && !trunkGroupIds.has(tariff.id_trunk_group)) {
+        trunkGroupIds.add(tariff.id_trunk_group);
+        uniqueTrunkGroups.push({
+          id: tariff.id_trunk_group,
+          name: tariff.trunk_group_name || `Group ${tariff.id_trunk_group}`,
+          description: tariff.trunk_group_description || ""
+        });
+      }
+    });
+
+    if (uniqueTrunkGroups.length > 0) {
+      console.log("Trunk groups extracted from tariffs:", uniqueTrunkGroups);
+      setTrunkGroupResults(uniqueTrunkGroups);
+    } else {
+      console.warn("No trunk groups could be extracted from tariffs");
+    }
+  };
 
   const selectPlan = (plan) => {
     setFormData((prev) => ({
@@ -805,16 +800,6 @@ const TariffsTable = () => {
       destination: prefix.destination,
     }))
     setShowDestinationSearch(false)
-  }
-
-  const selectTrunkGroup = (trunkGroup) => {
-    setFormData((prev) => ({
-      ...prev,
-      id_trunk_group: trunkGroup.id,
-      // Use the correct property name based on what's available
-      trunk_group_name: trunkGroup.name || trunkGroup.trunk_group_name || "",
-    }))
-    setShowTrunkGroupSearch(false)
   }
 
   // Open plan search modal and fetch data
@@ -836,7 +821,17 @@ const TariffsTable = () => {
     setTrunkGroupSearchTerm("")
     fetchTrunkGroups()
     setShowTrunkGroupSearch(true)
-  }
+  };
+
+  const handleSelectTrunkGroup = (trunkGroup) => {
+    setFormData(prev => ({
+      ...prev,
+      id_trunk_group: trunkGroup.id,
+      trunk_group_name: trunkGroup.name,
+      trunk_group_description: trunkGroup.description || ''
+    }));
+    setShowTrunkGroupSearch(false);
+  };
 
   const customStyles = `
     .floating-icon {
@@ -1014,7 +1009,7 @@ const TariffsTable = () => {
                 <Form.Control
                   type="text"
                   name="trunk_group_name"
-                  value={formData.trunk_group_name}
+                  value={formData.trunk_group_name || ''}
                   onChange={handleFormChange}
                   readOnly
                   required
@@ -1286,25 +1281,26 @@ const TariffsTable = () => {
                     trunkGroupResults.map((trunkGroup) => (
                       <tr
                         key={trunkGroup.id}
-                        onClick={() => selectTrunkGroup(trunkGroup)}
+                        onClick={() => handleSelectTrunkGroup(trunkGroup)}
                         style={{ cursor: "pointer" }}
+                        className={formData.id_trunk_group === trunkGroup.id ? 'table-active' : ''}
                       >
                         <td>
                           <Form.Check
                             type="checkbox"
                             checked={formData.id_trunk_group === trunkGroup.id}
-                            onChange={() => selectTrunkGroup(trunkGroup)}
+                            onChange={() => handleSelectTrunkGroup(trunkGroup)}
                             onClick={(e) => e.stopPropagation()}
                           />
                         </td>
-                        <td>{trunkGroup.name || trunkGroup.trunk_group_name}</td>
-                        <td>{trunkGroup.description || trunkGroup.trunk_group_description}</td>
+                        <td>{trunkGroup.name}</td>
+                        <td>{trunkGroup.description || 'No description'}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
                       <td colSpan={3} className="text-center py-3">
-                        {loadingTrunkGroups ? "Loading..." : "No results found"}
+                        {loadingTrunkGroups ? "Loading..." : "No trunk groups found"}
                       </td>
                     </tr>
                   )}

@@ -518,12 +518,13 @@ exports.modifierSIPUser = (req, res) => {
         id_user = ?, name = ?, accountcode = ?, host = ?, 
         status = ?, allow = ?, secret = ?, callerid = ?, 
         alias = ?, sip_group = ?,
-        block_call_reg = ?, record_call = ?, techprefix = ?,
+        record_call = ?, techprefix = ?,
         nat = ?, directmedia = ?, qualify = ?, context = ?,
         dtmfmode = ?, insecure = ?, deny = ?, permit = ?,
         type = ?, allowtransfer = ?, calllimit = ?,
         addparameter = ?, dial_timeout = ?,
-        voicemail_password = ?, id_trunk_group = ?, defaultuser = ?
+        voicemail = ?, voicemail_password = ?, 
+        id_trunk_group = ?, defaultuser = ?
       WHERE id = ?
     `;
 
@@ -539,7 +540,6 @@ exports.modifierSIPUser = (req, res) => {
       safeCallerId,
       safeValue(alias), 
       safeValue(sip_group), 
-      blockCallRegValue, 
       recordCallValue, 
       safeTechPrefix,
       safeValue(nat) || 'force_rport,comedia', 
@@ -555,11 +555,11 @@ exports.modifierSIPUser = (req, res) => {
       callLimit || 0, 
       safeValue(addparameter), 
       dial_timeout || 60,
-      safeValue(voicemail_email),  // Use safeValue for email fields
+      enableVoicemail === 'yes' ? 1 : 0,  // voicemail
       safeValue(voicemail_password) || '',
       0,  // id_trunk_group = 0
       safeValue(cleanName),  // defaultuser
-      id
+      parseInt(id)  // Ensure ID is a number
     ];  
 
     // Execute the query with better error handling

@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Alert, Spinner, Button, Badge } from 'react-bootstrap';
-import { Line, Doughnut, Bar } from 'react-chartjs-2';
+import React, { useState, useEffect } from "react";
+import { Card, Row, Col, Alert, Spinner, Button, Badge } from "react-bootstrap";
+import { Line, Doughnut } from "react-chartjs-2";
 
-import axios from 'axios';
+import axios from "axios";
+import { PowerBIEmbed } from "powerbi-client-react"; // Import PowerBIEmbed component
+import { models } from "powerbi-client";
 
 import {
   Chart as ChartJS,
@@ -13,11 +15,9 @@ import {
   LinearScale,
   PointElement,
   LineElement,
-  BarElement,
   Title,
   Filler,
-  BarController
-} from 'chart.js';
+} from "chart.js";
 
 ChartJS.register(
   ArcElement,
@@ -27,11 +27,24 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
-  BarElement,
-  BarController,
   Title,
   Filler
 );
+
+// PowerBI Report Component
+const PowerBIReport = () => {
+  return (
+    <div className="powerbi-container">
+      <iframe
+        title="CDR Analytics"
+        className="powerbi-frame"
+        src="YOUR_POWERBI_EMBED_URL_HERE"
+        frameBorder="0"
+        allowFullScreen
+      ></iframe>
+    </div>
+  );
+};
 
 // Helper function to format duration
 const formatDuration = (seconds) => {
@@ -53,239 +66,241 @@ function Dashboard() {
   // Light theme styles
   const getLightTheme = () => ({
     container: {
-      padding: '1.5rem',
-      backgroundColor: '#f8f9fa',
-      backgroundImage: 'linear-gradient(to bottom, #f8f9fa, #ffffff)',
-      minHeight: '100vh',
-      transition: 'all 0.3s ease'
+      padding: "1.5rem",
+      backgroundColor: "#f8f9fa",
+      backgroundImage: "linear-gradient(to bottom, #f8f9fa, #ffffff)",
+      minHeight: "100vh",
+      transition: "all 0.3s ease",
     },
     headerCard: {
-      borderLeft: '4px solid #007bff',
-      boxShadow: '0 0.25rem 0.5rem rgba(0, 0, 0, 0.05)',
-      marginBottom: '1.5rem',
-      borderRadius: '0.75rem',
-      background: 'linear-gradient(135deg, #ffffff, #f8f9fa)',
-      overflow: 'hidden',
-      position: 'relative'
+      borderLeft: "4px solid #007bff",
+      boxShadow: "0 0.25rem 0.5rem rgba(0, 0, 0, 0.05)",
+      marginBottom: "1.5rem",
+      borderRadius: "0.75rem",
+      background: "linear-gradient(135deg, #ffffff, #f8f9fa)",
+      overflow: "hidden",
+      position: "relative",
     },
     statCard: {
-      borderRadius: '0.75rem',
-      boxShadow: '0 0.25rem 1rem rgba(0, 0, 0, 0.05)',
-      transition: 'all 0.3s ease',
-      height: '100%',
-      overflow: 'hidden',
-      border: 'none'
+      borderRadius: "0.75rem",
+      boxShadow: "0 0.25rem 1rem rgba(0, 0, 0, 0.05)",
+      transition: "all 0.3s ease",
+      height: "100%",
+      overflow: "hidden",
+      border: "none",
     },
     statCardHover: {
-      transform: 'translateY(-5px)',
-      boxShadow: '0 0.5rem 1.5rem rgba(0, 0, 0, 0.1)'
+      transform: "translateY(-5px)",
+      boxShadow: "0 0.5rem 1.5rem rgba(0, 0, 0, 0.1)",
     },
     chartCard: {
-      borderRadius: '0.75rem',
-      boxShadow: '0 0.25rem 1rem rgba(0, 0, 0, 0.05)',
-      height: '100%',
-      border: 'none',
-      overflow: 'hidden'
+      borderRadius: "0.75rem",
+      boxShadow: "0 0.25rem 1rem rgba(0, 0, 0, 0.05)",
+      height: "100%",
+      border: "none",
+      overflow: "hidden",
     },
     chartContainer: {
-      height: '250px',
-      position: 'relative'
+      height: "250px",
+      position: "relative",
     },
     activityCard: {
-      borderRadius: '0.75rem',
-      boxShadow: '0 0.25rem 1rem rgba(0, 0, 0, 0.05)',
-      border: 'none',
-      overflow: 'hidden',
-      transition: 'all 0.3s ease'
+      borderRadius: "0.75rem",
+      boxShadow: "0 0.25rem 1rem rgba(0, 0, 0, 0.05)",
+      border: "none",
+      overflow: "hidden",
+      transition: "all 0.3s ease",
     },
     activityItem: {
-      borderLeft: '3px solid #dee2e6',
-      padding: '0.75rem 1rem',
-      marginBottom: '0.5rem',
-      backgroundColor: 'white',
-      borderRadius: '0.5rem',
-      display: 'flex',
-      alignItems: 'center',
-      transition: 'all 0.2s ease',
-      boxShadow: '0 0.125rem 0.25rem rgba(0, 0, 0, 0.03)'
+      borderLeft: "3px solid #dee2e6",
+      padding: "0.75rem 1rem",
+      marginBottom: "0.5rem",
+      backgroundColor: "white",
+      borderRadius: "0.5rem",
+      display: "flex",
+      alignItems: "center",
+      transition: "all 0.2s ease",
+      boxShadow: "0 0.125rem 0.25rem rgba(0, 0, 0, 0.03)",
     },
     activityItemHover: {
-      transform: 'translateX(5px)',
-      boxShadow: '0 0.25rem 0.5rem rgba(0, 0, 0, 0.05)'
+      transform: "translateX(5px)",
+      boxShadow: "0 0.25rem 0.5rem rgba(0, 0, 0, 0.05)",
     },
     iconContainer: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '48px',
-      height: '48px',
-      borderRadius: '12px',
-      marginRight: '1rem'
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: "48px",
+      height: "48px",
+      borderRadius: "12px",
+      marginRight: "1rem",
     },
     cardHeader: {
-      background: 'linear-gradient(to right, #ffffff, #f8f9fa)',
-      borderBottom: 'none',
-      padding: '1.25rem 1.5rem 0.75rem'
+      background: "linear-gradient(to right, #ffffff, #f8f9fa)",
+      borderBottom: "none",
+      padding: "1.25rem 1.5rem 0.75rem",
     },
     progressBar: {
-      height: '8px',
-      borderRadius: '4px',
-      marginTop: '0.5rem'
+      height: "8px",
+      borderRadius: "4px",
+      marginTop: "0.5rem",
     },
     badge: {
-      padding: '0.5rem 0.75rem',
-      fontWeight: '500',
-      borderRadius: '50rem'
-    }
+      padding: "0.5rem 0.75rem",
+      fontWeight: "500",
+      borderRadius: "50rem",
+    },
   });
-  
+
   // Dark theme styles
   const getDarkTheme = () => ({
     container: {
-      padding: '1.5rem',
-      backgroundColor: '#212529',
-      backgroundImage: 'linear-gradient(to bottom, #212529, #343a40)',
-      minHeight: '100vh',
-      transition: 'all 0.3s ease',
-      color: '#e9ecef'
+      padding: "1.5rem",
+      backgroundColor: "#212529",
+      backgroundImage: "linear-gradient(to bottom, #212529, #343a40)",
+      minHeight: "100vh",
+      transition: "all 0.3s ease",
+      color: "#e9ecef",
     },
     headerCard: {
-      borderLeft: '4px solid #007bff',
-      boxShadow: '0 0.25rem 0.5rem rgba(0, 0, 0, 0.2)',
-      marginBottom: '1.5rem',
-      borderRadius: '0.75rem',
-      background: 'linear-gradient(135deg, #343a40, #212529)',
-      overflow: 'hidden',
-      position: 'relative'
+      borderLeft: "4px solid #007bff",
+      boxShadow: "0 0.25rem 0.5rem rgba(0, 0, 0, 0.2)",
+      marginBottom: "1.5rem",
+      borderRadius: "0.75rem",
+      background: "linear-gradient(135deg, #343a40, #212529)",
+      overflow: "hidden",
+      position: "relative",
     },
     statCard: {
-      borderRadius: '0.75rem',
-      boxShadow: '0 0.25rem 1rem rgba(0, 0, 0, 0.2)',
-      transition: 'all 0.3s ease',
-      height: '100%',
-      overflow: 'hidden',
-      border: 'none',
-      backgroundColor: '#343a40',
-      color: '#e9ecef'
+      borderRadius: "0.75rem",
+      boxShadow: "0 0.25rem 1rem rgba(0, 0, 0, 0.2)",
+      transition: "all 0.3s ease",
+      height: "100%",
+      overflow: "hidden",
+      border: "none",
+      backgroundColor: "#343a40",
+      color: "#e9ecef",
     },
     statCardHover: {
-      transform: 'translateY(-5px)',
-      boxShadow: '0 0.5rem 1.5rem rgba(0, 0, 0, 0.3)'
+      transform: "translateY(-5px)",
+      boxShadow: "0 0.5rem 1.5rem rgba(0, 0, 0, 0.3)",
     },
     chartCard: {
-      borderRadius: '0.75rem',
-      boxShadow: '0 0.25rem 1rem rgba(0, 0, 0, 0.2)',
-      height: '100%',
-      border: 'none',
-      overflow: 'hidden',
-      backgroundColor: '#343a40',
-      color: '#e9ecef'
+      borderRadius: "0.75rem",
+      boxShadow: "0 0.25rem 1rem rgba(0, 0, 0, 0.2)",
+      height: "100%",
+      border: "none",
+      overflow: "hidden",
+      backgroundColor: "#343a40",
+      color: "#e9ecef",
     },
     chartContainer: {
-      height: '250px',
-      position: 'relative'
+      height: "250px",
+      position: "relative",
     },
     activityCard: {
-      borderRadius: '0.75rem',
-      boxShadow: '0 0.25rem 1rem rgba(0, 0, 0, 0.2)',
-      border: 'none',
-      overflow: 'hidden',
-      backgroundColor: '#343a40',
-      color: '#e9ecef',
-      transition: 'all 0.3s ease'
+      borderRadius: "0.75rem",
+      boxShadow: "0 0.25rem 1rem rgba(0, 0, 0, 0.2)",
+      border: "none",
+      overflow: "hidden",
+      backgroundColor: "#343a40",
+      color: "#e9ecef",
+      transition: "all 0.3s ease",
     },
     activityItem: {
-      borderLeft: '3px solid #495057',
-      padding: '0.75rem 1rem',
-      marginBottom: '0.5rem',
-      backgroundColor: '#343a40',
-      borderRadius: '0.5rem',
-      display: 'flex',
-      alignItems: 'center',
-      transition: 'all 0.2s ease',
-      boxShadow: '0 0.125rem 0.25rem rgba(0, 0, 0, 0.1)'
+      borderLeft: "3px solid #495057",
+      padding: "0.75rem 1rem",
+      marginBottom: "0.5rem",
+      backgroundColor: "#343a40",
+      borderRadius: "0.5rem",
+      display: "flex",
+      alignItems: "center",
+      transition: "all 0.2s ease",
+      boxShadow: "0 0.125rem 0.25rem rgba(0, 0, 0, 0.1)",
     },
     activityItemHover: {
-      transform: 'translateX(5px)',
-      boxShadow: '0 0.25rem 0.5rem rgba(0, 0, 0, 0.2)'
+      transform: "translateX(5px)",
+      boxShadow: "0 0.25rem 0.5rem rgba(0, 0, 0, 0.2)",
     },
     iconContainer: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '48px',
-      height: '48px',
-      borderRadius: '12px',
-      marginRight: '1rem'
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: "48px",
+      height: "48px",
+      borderRadius: "12px",
+      marginRight: "1rem",
     },
     cardHeader: {
-      background: 'linear-gradient(to right, #343a40, #212529)',
-      borderBottom: 'none',
-      padding: '1.25rem 1.5rem 0.75rem',
-      color: '#e9ecef'
+      background: "linear-gradient(to right, #343a40, #212529)",
+      borderBottom: "none",
+      padding: "1.25rem 1.5rem 0.75rem",
+      color: "#e9ecef",
     },
     progressBar: {
-      height: '8px',
-      borderRadius: '4px',
-      marginTop: '0.5rem'
+      height: "8px",
+      borderRadius: "4px",
+      marginTop: "0.5rem",
     },
     badge: {
-      padding: '0.5rem 0.75rem',
-      fontWeight: '500',
-      borderRadius: '50rem'
-    }
+      padding: "0.5rem 0.75rem",
+      fontWeight: "500",
+      borderRadius: "50rem",
+    },
   });
-  
+
   // State for theme
   const [darkMode, setDarkMode] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [dateRange, setDateRange] = useState('week'); // 'day', 'week', 'month', 'year'
-  
+  const [dateRange, setDateRange] = useState("week"); // 'day', 'week', 'month', 'year'
+
   // Get theme based on dark mode state
   const dashboardStyles = darkMode ? getDarkTheme() : getLightTheme();
-  
+
   const [loading, setLoading] = useState({
     callTrends: false,
     recentActivity: false,
-    callStats: false
+    callStats: false,
   });
 
   const [error, setError] = useState({
-    callTrends: '',
-    recentActivity: '',
-    callStats: ''
+    callTrends: "",
+    recentActivity: "",
+    callStats: "",
   });
   const [callTrendsData, setCallTrendsData] = useState({
     labels: [],
-    datasets: []
+    datasets: [],
   });
   const [monthlyStatsData, setMonthlyStatsData] = useState({
     labels: [],
-    datasets: []
+    datasets: [],
   });
   const [callTrendsOptions, setCallTrendsOptions] = useState({
     responsive: true,
     maintainAspectRatio: false,
     scales: {
       y: {
-        beginAtZero: true
-      }
+        beginAtZero: true,
+      },
     },
-    animation: false
+    animation: false,
   });
   const [callDistributionData, setCallDistributionData] = useState({
-    labels: ['Successful', 'Failed'],
-    datasets: [{
-      data: [0, 0],
-      backgroundColor: ['#28a745', '#dc3545'],
-      hoverOffset: 4
-    }]
+    labels: ["Successful", "Failed"],
+    datasets: [
+      {
+        data: [0, 0],
+        backgroundColor: ["#28a745", "#dc3545"],
+        hoverOffset: 4,
+      },
+    ],
   });
   const [callDistributionOptions, setCallDistributionOptions] = useState({
     responsive: true,
     maintainAspectRatio: false,
-    cutout: '50%',
-    animation: false
+    cutout: "50%",
+    animation: false,
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [callStats, setCallStats] = useState({
@@ -294,100 +309,22 @@ function Dashboard() {
     failedCalls: 0,
     totalDuration: 0,
     totalBuyPrice: 0,
-    totalSellPrice: 0
+    totalSellPrice: 0,
   });
 
   const [userCallStats, setUserCallStats] = useState([]);
   const [userMonthlyCallStats, setUserMonthlyCallStats] = useState([]);
   const [loadingUserStats, setLoadingUserStats] = useState(true);
   const [loadingMonthlyUserStats, setLoadingMonthlyUserStats] = useState(true);
-  const [userCallChartData, setUserCallChartData] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  
-  // Define colors for the chart
-  const colors = {
-    total: {
-      bg: 'rgba(63, 94, 251, 0.85)',
-      border: 'rgba(63, 94, 251, 1)',
-      hover: 'rgba(63, 94, 251, 1)'
-    },
-    answered: {
-      bg: 'rgba(0, 227, 150, 0.85)',
-      border: 'rgba(0, 227, 150, 1)',
-      hover: 'rgba(0, 200, 130, 1)'
-    },
-    failed: {
-      bg: 'rgba(255, 71, 87, 0.85)',
-      border: 'rgba(255, 71, 87, 1)',
-      hover: 'rgba(230, 50, 70, 1)'
-    }
-  };
 
   // Fetch user call statistics
-  const fetchUserCallStats = async (date) => {
+  const fetchUserCallStats = async () => {
     setLoadingUserStats(true);
     try {
-      const response = await axios.get("http://localhost:5000/api/admin/SummaryDayUser/stats/user-calls", {
-        params: { date: date || selectedDate }
-      });
-      console.log('API Response:', response.data); // Debug log
+      const response = await axios.get(
+        "http://localhost:5000/api/admin/SummaryDayUser/stats/user-calls"
+      );
       setUserCallStats(response.data);
-      
-      // Prepare chart data
-      if (response.data && response.data.length > 0) {
-        console.log('Preparing chart data with:', response.data); // Debug log
-        const labels = response.data.map(user => user.username || 'Unknown');
-        const totalCalls = response.data.map(user => user.total_calls || 0);
-        const answeredCalls = response.data.map(user => user.answered_calls || 0);
-        const failedCalls = response.data.map(user => user.failed_calls || 0);
-
-        // Using the component-scoped colors
-
-        setUserCallChartData({
-          labels,
-          datasets: [
-            {
-              label: 'Total Calls',
-              data: totalCalls,
-              backgroundColor: colors.total.bg,
-              borderColor: colors.total.border,
-              borderWidth: 1.5,
-              borderRadius: 4,
-              hoverBackgroundColor: colors.total.hover,
-              hoverBorderColor: colors.total.border,
-              hoverBorderWidth: 2,
-              barPercentage: 0.8,
-              categoryPercentage: 0.7
-            },
-            {
-              label: 'Answered',
-              data: answeredCalls,
-              backgroundColor: colors.answered.bg,
-              borderColor: colors.answered.border,
-              borderWidth: 1.5,
-              borderRadius: 4,
-              hoverBackgroundColor: colors.answered.hover,
-              hoverBorderColor: colors.answered.border,
-              hoverBorderWidth: 2,
-              barPercentage: 0.8,
-              categoryPercentage: 0.7
-            },
-            {
-              label: 'Failed',
-              data: failedCalls,
-              backgroundColor: colors.failed.bg,
-              borderColor: colors.failed.border,
-              borderWidth: 1.5,
-              borderRadius: 4,
-              hoverBackgroundColor: colors.failed.hover,
-              hoverBorderColor: colors.failed.border,
-              hoverBorderWidth: 2,
-              barPercentage: 0.8,
-              categoryPercentage: 0.7
-            }
-          ]
-        });
-      }
     } catch (error) {
       console.error("Error fetching user call stats:", error);
     } finally {
@@ -399,7 +336,9 @@ function Dashboard() {
   const fetchUserMonthlyCallStats = async () => {
     setLoadingMonthlyUserStats(true);
     try {
-      const response = await axios.get("http://localhost:5000/api/admin/SummaryMonthUser/stats/user-monthly-stats");
+      const response = await axios.get(
+        "http://localhost:5000/api/admin/SummaryMonthUser/stats/user-monthly-stats"
+      );
       setUserMonthlyCallStats(response.data);
     } catch (error) {
       console.error("Error fetching monthly user call stats:", error);
@@ -420,34 +359,34 @@ function Dashboard() {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          position: 'top'
+          position: "top",
         },
         tooltip: {
-          mode: 'index',
-          intersect: false
-        }
+          mode: "index",
+          intersect: false,
+        },
       },
       scales: {
         y: {
           beginAtZero: true,
           title: {
             display: true,
-            text: 'Number of calls'
-          }
+            text: "Number of calls",
+          },
         },
         x: {
           title: {
             display: true,
-            text: 'Date'
-          }
-        }
-      }
+            text: "Date",
+          },
+        },
+      },
     });
 
     setCallDistributionOptions({
       responsive: true,
       maintainAspectRatio: false,
-      cutout: '50%'
+      cutout: "50%",
     });
 
     // Fetch initial data
@@ -458,11 +397,11 @@ function Dashboard() {
         await fetchCallStats();
       } catch (error) {
         console.error("Error fetching data:", error);
-        setError(prev => ({
+        setError((prev) => ({
           ...prev,
           callTrends: "Failed to load call trends",
           recentActivity: "Failed to load recent activity",
-          callStats: "Failed to load call stats"
+          callStats: "Failed to load call stats",
         }));
       }
     };
@@ -474,225 +413,254 @@ function Dashboard() {
   }, []);
 
   const fetchCallSummaryData = async () => {
-    setLoading(prev => ({ ...prev, callTrends: true }));
+    setLoading((prev) => ({ ...prev, callTrends: true }));
     try {
       const today = new Date();
-      const date = today.toISOString().split('T')[0];
-      
-      const response = await axios.get(`http://localhost:5000/api/admin/SummaryPerDay`, {
-        params: {
-          date: date
+      const date = today.toISOString().split("T")[0];
+
+      const response = await axios.get(
+        `http://localhost:5000/api/admin/SummaryPerDay`,
+        {
+          params: {
+            date: date,
+          },
         }
-      });
-      console.log('Summary Per Day Response:', response.data);
-      
+      );
+      console.log("Summary Per Day Response:", response.data);
+
       if (response.data && Array.isArray(response.data.data)) {
         const summaryData = response.data.data;
-        
+
         // Sort data by day
         summaryData.sort((a, b) => new Date(a.day) - new Date(b.day));
-        
+
         // Extract labels (days) and call volumes
-        const labels = summaryData.map(day => {
+        const labels = summaryData.map((day) => {
           const date = new Date(day.day);
-          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          return date.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          });
         });
-        
-        const callVolumes = summaryData.map(day => day.nbcall || 0);
-        const failedVolumes = summaryData.map(day => day.nbcall_fail || 0);
-        const successVolumes = summaryData.map(day => (day.nbcall || 0) - (day.nbcall_fail || 0));
-        
+
+        const callVolumes = summaryData.map((day) => day.nbcall || 0);
+        const failedVolumes = summaryData.map((day) => day.nbcall_fail || 0);
+        const successVolumes = summaryData.map(
+          (day) => (day.nbcall || 0) - (day.nbcall_fail || 0)
+        );
+
         // Update call trends data
         setCallTrendsData({
           labels,
           datasets: [
             {
-              label: 'Total Calls',
+              label: "Total Calls",
               data: callVolumes,
               fill: false,
-              borderColor: '#007bff',
-              backgroundColor: 'rgba(0, 123, 255, 0.1)',
+              borderColor: "#007bff",
+              backgroundColor: "rgba(0, 123, 255, 0.1)",
               tension: 0.1,
               order: 1,
-              yAxisID: 'y'
+              yAxisID: "y",
             },
             {
-              label: 'Successful Calls',
+              label: "Successful Calls",
               data: successVolumes,
               fill: false,
-              borderColor: '#28a745',
-              backgroundColor: 'rgba(40, 167, 69, 0.1)',
+              borderColor: "#28a745",
+              backgroundColor: "rgba(40, 167, 69, 0.1)",
               tension: 0.1,
               order: 2,
-              yAxisID: 'y'
+              yAxisID: "y",
             },
             {
-              label: 'Failed Calls',
+              label: "Failed Calls",
               data: failedVolumes,
               fill: false,
-              borderColor: '#dc3545',
-              backgroundColor: 'rgba(220, 53, 69, 0.1)',
+              borderColor: "#dc3545",
+              backgroundColor: "rgba(220, 53, 69, 0.1)",
               tension: 0.1,
               order: 3,
-              yAxisID: 'y'
-            }
-          ]
+              yAxisID: "y",
+            },
+          ],
         });
 
         // Fetch monthly statistics
-        const monthlyResponse = await axios.get(`http://localhost:5000/api/admin/SummaryPerMonth`);
-        console.log('Summary Per Month Response:', monthlyResponse.data);
-        
+        const monthlyResponse = await axios.get(
+          `http://localhost:5000/api/admin/SummaryPerMonth`
+        );
+        console.log("Summary Per Month Response:", monthlyResponse.data);
+
         // Process monthly statistics
         const monthlyData = monthlyResponse.data && monthlyResponse.data.data;
-        const monthlyStats = monthlyData && Array.isArray(monthlyData) ? {
-          labels: monthlyData.map(item => item.month),
-          datasets: [
-            {
-              label: 'Successful Calls',
-              data: monthlyData.map(item => item.nbcall - item.nbcall_fail),
-              borderColor: '#4CAF50',
-              backgroundColor: 'rgba(76, 175, 80, 0.2)',
-              fill: true
-            },
-            {
-              label: 'Failed Calls',
-              data: monthlyData.map(item => item.nbcall_fail),
-              borderColor: '#f44336',
-              backgroundColor: 'rgba(244, 67, 54, 0.2)',
-              fill: true
-            }
-          ]
-        } : {
-          labels: [],
-          datasets: []
-        };
+        const monthlyStats =
+          monthlyData && Array.isArray(monthlyData)
+            ? {
+                labels: monthlyData.map((item) => item.month),
+                datasets: [
+                  {
+                    label: "Successful Calls",
+                    data: monthlyData.map(
+                      (item) => item.nbcall - item.nbcall_fail
+                    ),
+                    borderColor: "#4CAF50",
+                    backgroundColor: "rgba(76, 175, 80, 0.2)",
+                    fill: true,
+                  },
+                  {
+                    label: "Failed Calls",
+                    data: monthlyData.map((item) => item.nbcall_fail),
+                    borderColor: "#f44336",
+                    backgroundColor: "rgba(244, 67, 54, 0.2)",
+                    fill: true,
+                  },
+                ],
+              }
+            : {
+                labels: [],
+                datasets: [],
+              };
         setMonthlyStatsData(monthlyStats);
       }
-
     } catch (error) {
       console.error("Error fetching call trends:", error);
-      setError(prev => ({
+      setError((prev) => ({
         ...prev,
-        callTrends: "Failed to load call trends"
+        callTrends: "Failed to load call trends",
       }));
     } finally {
-      setLoading(prev => ({ ...prev, callTrends: false }));
+      setLoading((prev) => ({ ...prev, callTrends: false }));
     }
-  }
+  };
 
   const fetchRecentActivity = async () => {
-    setLoading(prev => ({ ...prev, recentActivity: true }));
+    setLoading((prev) => ({ ...prev, recentActivity: true }));
     try {
       // Fetch CDR data
-      const cdrResponse = await axios.get("http://localhost:5000/api/admin/CDR/affiche");
-      
+      const cdrResponse = await axios.get(
+        "http://localhost:5000/api/admin/CDR/affiche"
+      );
+
       // Fetch user history
-      const userHistoryResponse = await axios.get("http://localhost:5000/api/admin/UserHistory/affiche");
-      
+      const userHistoryResponse = await axios.get(
+        "http://localhost:5000/api/admin/UserHistory/affiche"
+      );
+
       const activities = [];
-      
+
       // Process CDR data
       if (cdrResponse.data && Array.isArray(cdrResponse.data)) {
-        const recentCalls = cdrResponse.data.slice(0, 5).map(call => ({
+        const recentCalls = cdrResponse.data.slice(0, 5).map((call) => ({
           id: `call-${call.id || Math.random().toString(36).substr(2, 9)}`,
-          type: 'call',
-          user: call.src || 'Unknown',
+          type: "call",
+          user: call.src || "Unknown",
           timestamp: new Date(call.calldate || Date.now()).toLocaleString(),
-          status: call.disposition === 'ANSWERED' ? 'success' : 'danger',
-          details: `${call.disposition === 'ANSWERED' ? 'Successful' : 'Failed'} call to ${call.dst || 'Unknown'}`
+          status: call.disposition === "ANSWERED" ? "success" : "danger",
+          details: `${
+            call.disposition === "ANSWERED" ? "Successful" : "Failed"
+          } call to ${call.dst || "Unknown"}`,
         }));
-        
+
         activities.push(...recentCalls);
       }
-      
+
       // Process user history data
       if (userHistoryResponse.data && Array.isArray(userHistoryResponse.data)) {
-        const userActivities = userHistoryResponse.data.slice(0, 5).map(activity => ({
-          id: `activity-${activity.id || Math.random().toString(36).substr(2, 9)}`,
-          type: 'user',
-          user: activity.username || 'Unknown',
-          timestamp: new Date(activity.date || Date.now()).toLocaleString(),
-          status: 'info',
-          details: activity.description || 'User activity'
-        }));
-        
+        const userActivities = userHistoryResponse.data
+          .slice(0, 5)
+          .map((activity) => ({
+            id: `activity-${
+              activity.id || Math.random().toString(36).substr(2, 9)
+            }`,
+            type: "user",
+            user: activity.username || "Unknown",
+            timestamp: new Date(activity.date || Date.now()).toLocaleString(),
+            status: "info",
+            details: activity.description || "User activity",
+          }));
+
         activities.push(...userActivities);
       }
-      
+
       // Sort activities by timestamp (most recent first)
       activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-      
+
       // Take the 10 most recent activities
       setRecentActivity(activities.slice(0, 10));
     } catch (error) {
       console.error("Error fetching activity data:", error);
-      setError(prev => ({
+      setError((prev) => ({
         ...prev,
-        recentActivity: "Failed to load recent activity"
+        recentActivity: "Failed to load recent activity",
       }));
     } finally {
-      setLoading(prev => ({ ...prev, recentActivity: false }));
+      setLoading((prev) => ({ ...prev, recentActivity: false }));
     }
-  }
+  };
 
   const fetchCallStats = async () => {
-    setLoading(prev => ({ ...prev, callStats: true }));
+    setLoading((prev) => ({ ...prev, callStats: true }));
     try {
       // Fetch all CDR data (both successful and failed)
       const [successResponse, failedResponse] = await Promise.all([
         axios.get("http://localhost:5000/api/admin/CDR/affiche"),
-        axios.get("http://localhost:5000/api/admin/CdrFailed/affiche")
+        axios.get("http://localhost:5000/api/admin/CdrFailed/affiche"),
       ]);
-      
-      console.log('CDR Response:', successResponse.data);
-      console.log('Failed CDR Response:', failedResponse?.data);
+
+      console.log("CDR Response:", successResponse.data);
+      console.log("Failed CDR Response:", failedResponse?.data);
 
       // Process successful CDR data
       let successData = [];
       let uniqueCalls = [];
       const seenCallIds = new Set();
-      
+
       if (successResponse.data && Array.isArray(successResponse.data.cdr)) {
-        console.log('Raw CDR data count:', successResponse.data.cdr.length);
-        
+        console.log("Raw CDR data count:", successResponse.data.cdr.length);
+
         // First, filter out duplicates based on call ID
-        uniqueCalls = successResponse.data.cdr.filter(call => {
+        uniqueCalls = successResponse.data.cdr.filter((call) => {
           if (!call.id) return false; // Skip if no ID
           if (seenCallIds.has(call.id)) {
-            console.log('Found duplicate call ID:', call.id);
+            console.log("Found duplicate call ID:", call.id);
             return false;
           }
           seenCallIds.add(call.id);
           return true;
         });
-        
-        console.log('Unique calls after deduplication:', uniqueCalls.length);
-        
+
+        console.log("Unique calls after deduplication:", uniqueCalls.length);
+
         // Now filter successful calls from unique calls
-        successData = uniqueCalls.filter(call => {
+        successData = uniqueCalls.filter((call) => {
           const hasSessionTime = parseFloat(call.sessiontime) > 0;
-          const isAnswered = call.disposition === 'ANSWERED';
-          const isTerminatedNormally = call.terminatecauseid === '16' || call.terminatecauseid === 16;
-          
+          const isAnswered = call.disposition === "ANSWERED";
+          const isTerminatedNormally =
+            call.terminatecauseid === "16" || call.terminatecauseid === 16;
+
           // Log the first few calls for debugging
           if (successData.length < 3) {
-            console.log('Call details:', {
+            console.log("Call details:", {
               id: call.id,
               sessiontime: call.sessiontime,
               disposition: call.disposition,
               terminatecauseid: call.terminatecauseid,
-              isSuccessful: hasSessionTime || isAnswered || isTerminatedNormally
+              isSuccessful:
+                hasSessionTime || isAnswered || isTerminatedNormally,
             });
           }
-          
+
           return hasSessionTime || isAnswered || isTerminatedNormally;
         });
       }
 
       // Process failed CDR data
       let failedData = [];
-      if (failedResponse?.data?.cdr_failed && Array.isArray(failedResponse.data.cdr_failed)) {
+      if (
+        failedResponse?.data?.cdr_failed &&
+        Array.isArray(failedResponse.data.cdr_failed)
+      ) {
         failedData = failedResponse.data.cdr_failed;
       }
 
@@ -700,8 +668,8 @@ function Dashboard() {
       const successfulCalls = successData.length;
       const failedCalls = failedData.length;
       const totalCalls = successfulCalls + failedCalls;
-      
-      console.log('Total calls from API:', totalCalls);
+
+      console.log("Total calls from API:", totalCalls);
 
       // Calculate total duration, buy price and sell price
       let totalDuration = 0;
@@ -714,20 +682,20 @@ function Dashboard() {
         totalBuyPrice += parseFloat(call.buycost || 0);
         totalSellPrice += parseFloat(call.sessionbill || 0);
       }
-      
+
       // Process failed calls
       for (const call of failedData) {
         totalBuyPrice += parseFloat(call.buycost || 0);
         totalSellPrice += parseFloat(call.sessionbill || 0);
       }
-      
+
       // Round to 4 decimal places to avoid floating point precision issues
       totalBuyPrice = parseFloat(totalBuyPrice.toFixed(4));
       totalSellPrice = parseFloat(totalSellPrice.toFixed(4));
-      
-      console.log('Total buy price:', totalBuyPrice);
-      console.log('Total sell price:', totalSellPrice);
-      console.log('Total duration:', totalDuration);
+
+      console.log("Total buy price:", totalBuyPrice);
+      console.log("Total sell price:", totalSellPrice);
+      console.log("Total duration:", totalDuration);
 
       // Update call stats
       setCallStats({
@@ -736,23 +704,25 @@ function Dashboard() {
         failedCalls,
         totalDuration,
         totalBuyPrice,
-        totalSellPrice
+        totalSellPrice,
       });
 
       // Update call distribution data
       setCallDistributionData({
-        labels: ['Successful', 'Failed'],
-        datasets: [{
-          data: [successfulCalls, failedCalls],
-          backgroundColor: ['#28a745', '#dc3545'],
-          hoverOffset: 4
-        }]
+        labels: ["Successful", "Failed"],
+        datasets: [
+          {
+            data: [successfulCalls, failedCalls],
+            backgroundColor: ["#28a745", "#dc3545"],
+            hoverOffset: 4,
+          },
+        ],
       });
     } catch (error) {
       console.error("Error fetching call stats:", error);
-      setError(prev => ({
+      setError((prev) => ({
         ...prev,
-        callStats: error.message || "Failed to load call stats"
+        callStats: error.message || "Failed to load call stats",
       }));
       setCallStats({
         totalCalls: 0,
@@ -760,35 +730,37 @@ function Dashboard() {
         failedCalls: 0,
         totalDuration: 0,
         totalBuyPrice: 0,
-        totalSellPrice: 0
+        totalSellPrice: 0,
       });
       setCallDistributionData({
-        labels: ['Successful', 'Failed'],
-        datasets: [{
-          data: [0, 0],
-          backgroundColor: ['#28a745', '#dc3545'],
-          hoverOffset: 4
-        }]
+        labels: ["Successful", "Failed"],
+        datasets: [
+          {
+            data: [0, 0],
+            backgroundColor: ["#28a745", "#dc3545"],
+            hoverOffset: 4,
+          },
+        ],
       });
     } finally {
-      setLoading(prev => ({ ...prev, callStats: false }));
+      setLoading((prev) => ({ ...prev, callStats: false }));
     }
-  }
+  };
 
   // Custom animation for cards
   const fadeInAnimation = {
     opacity: 0,
-    animation: 'fadeIn 0.6s ease-in-out forwards',
-    animationDelay: '0.2s'
+    animation: "fadeIn 0.6s ease-in-out forwards",
+    animationDelay: "0.2s",
   };
-  
+
   // Handle theme toggle
   const toggleTheme = () => {
     setDarkMode(!darkMode);
     // Update chart options for dark mode
     updateChartOptions();
   };
-  
+
   // Handle refresh data
   const refreshData = () => {
     setRefreshing(true);
@@ -796,12 +768,12 @@ function Dashboard() {
     Promise.all([
       fetchCallSummaryData(),
       fetchRecentActivity(),
-      fetchCallStats()
+      fetchCallStats(),
     ]).finally(() => {
       setTimeout(() => setRefreshing(false), 1500);
     });
   };
-  
+
   // Handle date range change
   const handleDateRangeChange = (range) => {
     setDateRange(range);
@@ -809,80 +781,96 @@ function Dashboard() {
     // For demo, we'll just simulate a refresh
     refreshData();
   };
-  
+
   // Update chart options based on theme
   const updateChartOptions = () => {
-    const textColor = darkMode ? '#e9ecef' : '#666';
-    const gridColor = darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-    
+    const textColor = darkMode ? "#e9ecef" : "#666";
+    const gridColor = darkMode
+      ? "rgba(255, 255, 255, 0.1)"
+      : "rgba(0, 0, 0, 0.1)";
+
     // Update options for all charts with safe access to nested properties
-    setCallTrendsOptions(prev => {
+    setCallTrendsOptions((prev) => {
       // Create a safe copy of the previous options
       const safeOptions = { ...prev };
-      
+
       // Ensure scales and its properties exist
       if (!safeOptions.scales) safeOptions.scales = {};
       if (!safeOptions.scales.x) safeOptions.scales.x = {};
       if (!safeOptions.scales.y) safeOptions.scales.y = {};
-      
+
       // Ensure plugins and legend exist
       if (!safeOptions.plugins) safeOptions.plugins = {};
       if (!safeOptions.plugins.legend) safeOptions.plugins.legend = {};
-      if (!safeOptions.plugins.legend.labels) safeOptions.plugins.legend.labels = {};
-      
+      if (!safeOptions.plugins.legend.labels)
+        safeOptions.plugins.legend.labels = {};
+
       return {
         ...safeOptions,
         scales: {
           ...safeOptions.scales,
-          x: { ...safeOptions.scales.x, grid: { color: gridColor }, ticks: { color: textColor } },
-          y: { ...safeOptions.scales.y, grid: { color: gridColor }, ticks: { color: textColor } }
+          x: {
+            ...safeOptions.scales.x,
+            grid: { color: gridColor },
+            ticks: { color: textColor },
+          },
+          y: {
+            ...safeOptions.scales.y,
+            grid: { color: gridColor },
+            ticks: { color: textColor },
+          },
         },
         plugins: {
           ...safeOptions.plugins,
-          legend: { 
-            ...safeOptions.plugins.legend, 
-            labels: { ...safeOptions.plugins.legend.labels, color: textColor } 
-          }
-        }
+          legend: {
+            ...safeOptions.plugins.legend,
+            labels: { ...safeOptions.plugins.legend.labels, color: textColor },
+          },
+        },
       };
     });
-    
+
     // Only update monthly stats if they exist
-    if (monthlyStatsData && monthlyStatsData.datasets && monthlyStatsData.datasets.length > 0) {
+    if (
+      monthlyStatsData &&
+      monthlyStatsData.datasets &&
+      monthlyStatsData.datasets.length > 0
+    ) {
       // We'll update the monthly stats options in the future if needed
       // For now, we'll skip this part as setMonthlyStatsOptions is not defined
     }
-    
+
     // Update call distribution options with safe access
-    setCallDistributionOptions(prev => {
+    setCallDistributionOptions((prev) => {
       // Create a safe copy of the previous options
       const safeOptions = { ...prev };
-      
+
       // Ensure plugins and legend exist
       if (!safeOptions.plugins) safeOptions.plugins = {};
       if (!safeOptions.plugins.legend) safeOptions.plugins.legend = {};
-      if (!safeOptions.plugins.legend.labels) safeOptions.plugins.legend.labels = {};
-      
+      if (!safeOptions.plugins.legend.labels)
+        safeOptions.plugins.legend.labels = {};
+
       return {
         ...safeOptions,
         plugins: {
           ...safeOptions.plugins,
-          legend: { 
-            ...safeOptions.plugins.legend, 
-            labels: { ...safeOptions.plugins.legend.labels, color: textColor } 
-          }
-        }
+          legend: {
+            ...safeOptions.plugins.legend,
+            labels: { ...safeOptions.plugins.legend.labels, color: textColor },
+          },
+        },
       };
     });
   };
-  
+
   // Effect to update chart options when theme changes
   useEffect(() => {
     if (callTrendsData.datasets.length > 0) {
       updateChartOptions();
     }
-  }, [darkMode, selectedDate]);
-  
+  }, [darkMode]);
+
   // Effect to update chart options when theme changes - removed duplicate
 
   return (
@@ -934,12 +922,14 @@ function Dashboard() {
             width: 48px;
             height: 24px;
             border-radius: 12px;
-            background-color: ${darkMode ? '#007bff' : '#e9ecef'};
+            background-color: ${darkMode ? "#007bff" : "#e9ecef"};
             position: relative;
             transition: all 0.3s ease;
           }
+          .theme-toggle-circle {
+            position: absolute;
             top: 2px;
-            left: ${darkMode ? '26px' : '2px'};
+            left: ${darkMode ? "26px" : "2px"};
             width: 20px;
             height: 20px;
             border-radius: 50%;
@@ -948,7 +938,7 @@ function Dashboard() {
             display: flex;
             align-items: center;
             justify-content: center;
-            color: ${darkMode ? '#343a40' : '#f8f9fa'};
+            color: ${darkMode ? "#343a40" : "#f8f9fa"};
             font-size: 12px;
           }
           .refresh-icon {
@@ -974,14 +964,14 @@ function Dashboard() {
             width: 48px;
             height: 24px;
             border-radius: 12px;
-            background-color: ${darkMode ? '#007bff' : '#e9ecef'};
+            background-color: ${darkMode ? "#007bff" : "#e9ecef"};
             position: relative;
             transition: all 0.3s ease;
           }
           .theme-toggle-circle {
             position: absolute;
             top: 2px;
-            left: ${darkMode ? '26px' : '2px'};
+            left: ${darkMode ? "26px" : "2px"};
             width: 20px;
             height: 20px;
             border-radius: 50%;
@@ -990,34 +980,51 @@ function Dashboard() {
             display: flex;
             align-items: center;
             justify-content: center;
-            color: ${darkMode ? '#343a40' : '#f8f9fa'};
+            color: ${darkMode ? "#343a40" : "#f8f9fa"};
             font-size: 12px;
           }
         `}
       </style>
-      
- 
-      <Card style={{...dashboardStyles.headerCard, ...fadeInAnimation, animationDelay: '0.1s'}} className="mb-4">
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: '150px',
-          height: '150px',
-          background: 'radial-gradient(circle, rgba(0,123,255,0.1) 0%, rgba(255,255,255,0) 70%)',
-          borderRadius: '0 0 0 100%',
-          zIndex: 0
-        }}></div>
-        <Card.Body style={{position: 'relative', zIndex: 1}}>
+
+      <Card
+        style={{
+          ...dashboardStyles.headerCard,
+          ...fadeInAnimation,
+          animationDelay: "0.1s",
+        }}
+        className="mb-4"
+      >
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: "150px",
+            height: "150px",
+            background:
+              "radial-gradient(circle, rgba(0,123,255,0.1) 0%, rgba(255,255,255,0) 70%)",
+            borderRadius: "0 0 0 100%",
+            zIndex: 0,
+          }}
+        ></div>
+        <Card.Body style={{ position: "relative", zIndex: 1 }}>
           <div className="d-flex justify-content-between align-items-center">
             <div>
               <h2 className="mb-0 fw-bold">Call Analysis Dashboard</h2>
-              <p className="text-muted mb-0">Welcome back! Here's an overview of your call activity</p>
+              <p className="text-muted mb-0">
+                Welcome back! Here's an overview of your call activity
+              </p>
             </div>
             <div className="d-flex align-items-center">
               <div className="bg-light rounded-pill px-3 py-2 d-flex align-items-center">
                 <i className="bi bi-calendar3 text-primary me-2"></i>
-                <span>{new Date().toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}</span>
+                <span>
+                  {new Date().toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </span>
               </div>
             </div>
           </div>
@@ -1040,47 +1047,84 @@ function Dashboard() {
         </div>
       )}
 
-      {/* Call Statistics - First Row */}
+      {/* First Row: Total Calls, Buy Price, Sell Price */}
       <Row className="g-3 mb-4">
         <Col md={4}>
-          <Card 
-            style={{...dashboardStyles.statCard}} 
+          <Card
+            style={{ ...dashboardStyles.statCard }}
             className="h-100"
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.transform = "translateY(-5px)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.transform = "translateY(0)")
+            }
           >
-            <div style={{height: '4px', background: 'linear-gradient(to right, #007bff, #00c6ff)'}}></div>
+            <div
+              style={{
+                height: "4px",
+                background: "linear-gradient(to right, #007bff, #00c6ff)",
+              }}
+            ></div>
             <Card.Body className="d-flex flex-column">
               <div className="d-flex align-items-center mb-3">
-                <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(0,123,255,0.1), rgba(0,198,255,0.1))'}} className="icon-container">
+                <div
+                  style={{
+                    ...dashboardStyles.iconContainer,
+                    background:
+                      "linear-gradient(135deg, rgba(0,123,255,0.1), rgba(0,198,255,0.1))",
+                  }}
+                  className="icon-container"
+                >
                   <i className="bi bi-telephone-fill text-primary fs-4"></i>
                 </div>
                 <div>
                   <h5 className="card-title mb-0">Total Calls</h5>
-                  <p className="text-muted mb-0 small">All calls in the selected period</p>
+                  <p className="text-muted mb-0 small">
+                    All calls in the selected period
+                  </p>
                 </div>
               </div>
               <div className="mt-3">
                 <h2 className="text-primary mb-1">{callStats.totalCalls}</h2>
                 <div className="progress" style={dashboardStyles.progressBar}>
-                  <div className="progress-bar bg-primary" style={{width: '100%'}}></div>
+                  <div
+                    className="progress-bar bg-primary"
+                    style={{ width: "100%" }}
+                  ></div>
                 </div>
               </div>
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col md={4}>
-          <Card 
-            style={{...dashboardStyles.statCard}} 
+          <Card
+            style={{ ...dashboardStyles.statCard }}
             className="h-100"
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.transform = "translateY(-5px)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.transform = "translateY(0)")
+            }
           >
-            <div style={{height: '4px', background: 'linear-gradient(to right, #20c997, #3dd5f3)'}}></div>
+            <div
+              style={{
+                height: "4px",
+                background: "linear-gradient(to right, #20c997, #3dd5f3)",
+              }}
+            ></div>
             <Card.Body className="d-flex flex-column">
               <div className="d-flex align-items-center mb-3">
-                <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(32,201,151,0.1), rgba(61,213,243,0.1))'}} className="icon-container">
+                <div
+                  style={{
+                    ...dashboardStyles.iconContainer,
+                    background:
+                      "linear-gradient(135deg, rgba(32,201,151,0.1), rgba(61,213,243,0.1))",
+                  }}
+                  className="icon-container"
+                >
                   <i className="bi bi-currency-dollar text-success fs-4"></i>
                 </div>
                 <div>
@@ -1090,44 +1134,69 @@ function Dashboard() {
               </div>
               <div className="mt-3">
                 <h2 className="text-success mb-1">
-                  {callStats.totalBuyPrice !== undefined && callStats.totalBuyPrice !== null 
-                    ? callStats.totalBuyPrice.toFixed(2) 
-                    : '0.00'}
+                  {callStats.totalBuyPrice !== undefined &&
+                  callStats.totalBuyPrice !== null
+                    ? callStats.totalBuyPrice.toFixed(2)
+                    : "0.00"}
                 </h2>
                 <div className="progress" style={dashboardStyles.progressBar}>
-                  <div className="progress-bar bg-success" style={{width: '100%'}}></div>
+                  <div
+                    className="progress-bar bg-success"
+                    style={{ width: "100%" }}
+                  ></div>
                 </div>
               </div>
             </Card.Body>
           </Card>
         </Col>
-        
         <Col md={4}>
-          <Card 
-            style={{...dashboardStyles.statCard}} 
+          <Card
+            style={{ ...dashboardStyles.statCard }}
             className="h-100"
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.transform = "translateY(-5px)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.transform = "translateY(0)")
+            }
           >
-            <div style={{height: '4px', background: 'linear-gradient(to right, #6f42c1, #9c27b0)'}}></div>
+            <div
+              style={{
+                height: "4px",
+                background: "linear-gradient(to right, #6f42c1, #9c27b0)",
+              }}
+            ></div>
             <Card.Body className="d-flex flex-column">
               <div className="d-flex align-items-center mb-3">
-                <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(111,66,193,0.1), rgba(156,39,176,0.1))'}} className="icon-container">
+                <div
+                  style={{
+                    ...dashboardStyles.iconContainer,
+                    background:
+                      "linear-gradient(135deg, rgba(111,66,193,0.1), rgba(156,39,176,0.1))",
+                  }}
+                  className="icon-container"
+                >
                   <i className="bi bi-cash-coin text-purple fs-4"></i>
                 </div>
                 <div>
                   <h5 className="card-title mb-0">Total Sell Price</h5>
-                  <p className="text-muted mb-0 small">Total revenue from calls</p>
+                  <p className="text-muted mb-0 small">
+                    Total revenue from calls
+                  </p>
                 </div>
               </div>
               <div className="mt-3">
                 <h2 className="text-purple mb-1">
-                  {callStats.totalSellPrice !== undefined && callStats.totalSellPrice !== null 
-                    ? callStats.totalSellPrice.toFixed(2) 
-                    : '0.00'}
+                  {callStats.totalSellPrice !== undefined &&
+                  callStats.totalSellPrice !== null
+                    ? callStats.totalSellPrice.toFixed(2)
+                    : "0.00"}
                 </h2>
                 <div className="progress" style={dashboardStyles.progressBar}>
-                  <div className="progress-bar bg-purple" style={{width: '100%'}}></div>
+                  <div
+                    className="progress-bar bg-purple"
+                    style={{ width: "100%" }}
+                  ></div>
                 </div>
               </div>
             </Card.Body>
@@ -1135,68 +1204,103 @@ function Dashboard() {
         </Col>
       </Row>
 
-      {/* Second Row - Successful and Failed Calls */}
+      {/* Second Row: Successful Calls and Failed Calls */}
       <Row className="g-3 mb-4">
         <Col md={6}>
-          <Card 
-            style={{...dashboardStyles.statCard}} 
+          <Card
+            style={{ ...dashboardStyles.statCard }}
             className="h-100"
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.transform = "translateY(-5px)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.transform = "translateY(0)")
+            }
           >
-            <div style={{height: '4px', background: 'linear-gradient(to right, #28a745, #5cb85c)'}}></div>
+            <div
+              style={{
+                height: "4px",
+                background: "linear-gradient(to right, #28a745, #20c997)",
+              }}
+            ></div>
             <Card.Body className="d-flex flex-column">
               <div className="d-flex align-items-center mb-3">
-                <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(40,167,69,0.1), rgba(92,184,92,0.1))'}} className="icon-container">
+                <div
+                  style={{
+                    ...dashboardStyles.iconContainer,
+                    background:
+                      "linear-gradient(135deg, rgba(40,167,69,0.1), rgba(32,201,151,0.1))",
+                  }}
+                  className="icon-container"
+                >
                   <i className="bi bi-check-circle-fill text-success fs-4"></i>
                 </div>
                 <div>
                   <h5 className="card-title mb-0">Successful Calls</h5>
-                  <p className="text-muted mb-0 small">Completed without errors</p>
+                  <p className="text-muted mb-0 small">
+                    Successfully connected calls
+                  </p>
                 </div>
               </div>
               <div className="mt-3">
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <h2 className="text-success mb-0">{callStats.successfulCalls}</h2>
-                  <span className="badge bg-success bg-opacity-10 text-success" style={dashboardStyles.badge}>
-                    {Math.round((callStats.successfulCalls / (callStats.totalCalls || 1)) * 100)}% successful calls
-                  </span>
-                </div>
+                <h2 className="text-success mb-1">{callStats.successfulCalls}</h2>
                 <div className="progress" style={dashboardStyles.progressBar}>
-                  <div className="progress-bar bg-success" style={{width: `${Math.round((callStats.successfulCalls / (callStats.totalCalls || 1)) * 100)}%`}}></div>
+                  <div
+                    className="progress-bar bg-success"
+                    style={{
+                      width: `${callStats.totalCalls > 0 ? (callStats.successfulCalls / callStats.totalCalls) * 100 : 0}%`,
+                    }}
+                  ></div>
                 </div>
               </div>
             </Card.Body>
           </Card>
         </Col>
-        
         <Col md={6}>
-          <Card 
-            style={{...dashboardStyles.statCard}} 
+          <Card
+            style={{ ...dashboardStyles.statCard }}
             className="h-100"
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.transform = "translateY(-5px)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.transform = "translateY(0)")
+            }
           >
-            <div style={{height: '4px', background: 'linear-gradient(to right, #dc3545, #ff6b81)'}}></div>
+            <div
+              style={{
+                height: "4px",
+                background: "linear-gradient(to right, #dc3545, #fd7e14)",
+              }}
+            ></div>
             <Card.Body className="d-flex flex-column">
               <div className="d-flex align-items-center mb-3">
-                <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(220,53,69,0.1), rgba(255,107,129,0.1))'}} className="icon-container">
+                <div
+                  style={{
+                    ...dashboardStyles.iconContainer,
+                    background:
+                      "linear-gradient(135deg, rgba(220,53,69,0.1), rgba(253,126,20,0.1))",
+                  }}
+                  className="icon-container"
+                >
                   <i className="bi bi-x-circle-fill text-danger fs-4"></i>
                 </div>
                 <div>
                   <h5 className="card-title mb-0">Failed Calls</h5>
-                  <p className="text-muted mb-0 small">Calls with errors</p>
+                  <p className="text-muted mb-0 small">
+                    Unsuccessful call attempts
+                  </p>
                 </div>
               </div>
               <div className="mt-3">
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <h2 className="text-danger mb-0">{callStats.failedCalls}</h2>
-                  <span className="badge bg-danger bg-opacity-10 text-danger" style={dashboardStyles.badge}>
-                    {Math.round((callStats.failedCalls / (callStats.totalCalls || 1)) * 100)}% failed calls
-                  </span>
-                </div>
+                <h2 className="text-danger mb-1">{callStats.failedCalls}</h2>
                 <div className="progress" style={dashboardStyles.progressBar}>
-                  <div className="progress-bar bg-danger" style={{width: `${Math.round((callStats.failedCalls / (callStats.totalCalls || 1)) * 100)}%`}}></div>
+                  <div
+                    className="progress-bar bg-danger"
+                    style={{
+                      width: `${callStats.totalCalls > 0 ? (callStats.failedCalls / callStats.totalCalls) * 100 : 0}%`,
+                    }}
+                  ></div>
                 </div>
               </div>
             </Card.Body>
@@ -1208,52 +1312,68 @@ function Dashboard() {
       <Row className="g-3 mb-4">
         <Col md={12}>
           <Card style={dashboardStyles.chartCard}>
-            <Card.Header style={dashboardStyles.cardHeader} className="border-bottom-0 pt-3 pb-0">
-              <div className="d-flex justify-content-between align-items-center w-100">
-                <div className="d-flex align-items-center">
-                  <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(108,117,125,0.05), rgba(173,181,189,0.05))', width: '36px', height: '36px', marginRight: '0.75rem'}}>
-                    <i className="bi bi-pie-chart-fill text-primary"></i>
-                  </div>
-                  <div>
-                    <h5 className="card-title mb-0">Call Distribution</h5>
-                    <p className="text-muted small mb-0">Successful vs. Failed Calls</p>
-                  </div>
+            <Card.Header
+              style={dashboardStyles.cardHeader}
+              className="border-bottom-0 pt-3 pb-0"
+            >
+              <div className="d-flex align-items-center">
+                <div
+                  style={{
+                    ...dashboardStyles.iconContainer,
+                    background:
+                      "linear-gradient(135deg, rgba(108,117,125,0.05), rgba(173,181,189,0.05))",
+                    width: "36px",
+                    height: "36px",
+                    marginRight: "0.75rem",
+                  }}
+                >
+                  <i className="bi bi-pie-chart-fill text-primary"></i>
                 </div>
-                <div className="text-end">
-                  <h4 className="text-primary mb-0">
-                    <i className="bi bi-telephone-fill me-2"></i>
-                    {callStats.totalCalls} Total Calls
-                  </h4>
+                <div>
+                  <h5 className="card-title mb-0">Call Distribution</h5>
+                  <p className="text-muted small mb-0">
+                    Successful vs. Failed Calls
+                  </p>
                 </div>
               </div>
             </Card.Header>
             <Card.Body>
-              <div style={{...dashboardStyles.chartContainer, height: '300px'}} className="chart-container">
-                {callDistributionData && callDistributionData.datasets && callDistributionData.datasets.length > 0 ? (
-                  <Doughnut 
-                    data={callDistributionData} 
+              <div
+                style={{ ...dashboardStyles.chartContainer, height: "300px" }}
+                className="chart-container"
+              >
+                {callDistributionData &&
+                callDistributionData.datasets &&
+                callDistributionData.datasets.length > 0 ? (
+                  <Doughnut
+                    data={callDistributionData}
                     options={{
                       ...callDistributionOptions,
                       plugins: {
                         legend: {
-                          position: 'bottom',
+                          position: "bottom",
                           labels: {
                             usePointStyle: true,
-                            padding: 20
-                          }
+                            padding: 20,
+                          },
                         },
                         tooltip: {
                           callbacks: {
                             label: (context) => {
-                              const label = context.label || '';
+                              const label = context.label || "";
                               const value = context.raw || 0;
-                              const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                              const percentage = Math.round((value / total) * 100);
+                              const total = context.dataset.data.reduce(
+                                (a, b) => a + b,
+                                0
+                              );
+                              const percentage = Math.round(
+                                (value / total) * 100
+                              );
                               return `${label}: ${value} (${percentage}%)`;
-                            }
-                          }
-                        }
-                      }
+                            },
+                          },
+                        },
+                      },
                     }}
                   />
                 ) : (
@@ -1271,81 +1391,36 @@ function Dashboard() {
       </Row>
 
       {/* Daily User Call Statistics */}
-      <Card 
-        style={{...dashboardStyles.chartCard, ...fadeInAnimation, animationDelay: '0.7s', marginBottom: '1.5rem'}}
+      <Card
+        style={{
+          ...dashboardStyles.chartCard,
+          ...fadeInAnimation,
+          animationDelay: "0.7s",
+          marginBottom: "1.5rem",
+        }}
       >
-        <Card.Header style={dashboardStyles.cardHeader} className="border-bottom-0 pt-3 pb-0">
+        <Card.Header
+          style={dashboardStyles.cardHeader}
+          className="border-bottom-0 pt-3 pb-0"
+        >
           <div className="d-flex align-items-center">
-            <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(108,117,125,0.05), rgba(173,181,189,0.05))', width: '36px', height: '36px', marginRight: '0.75rem'}}>
+            <div
+              style={{
+                ...dashboardStyles.iconContainer,
+                background:
+                  "linear-gradient(135deg, rgba(108,117,125,0.05), rgba(173,181,189,0.05))",
+                width: "36px",
+                height: "36px",
+                marginRight: "0.75rem",
+              }}
+            >
               <i className="bi bi-people-fill text-primary"></i>
             </div>
             <div>
-              <div className="d-flex justify-content-between align-items-center w-100">
-                <div>
-                  <h5 className="card-title mb-0">Daily User Call Statistics</h5>
-                  <p className="text-muted small mb-0">Call distribution by user</p>
-                </div>
-                <div className="d-flex align-items-center">
-                  <div className="d-flex align-items-center bg-light rounded-pill px-3 py-1 shadow-sm" style={{ backgroundColor: darkMode ? '#2a3042' : '#f8f9fa' }}>
-                    <label htmlFor="datePicker" className="form-label mb-0 me-2 text-nowrap fw-medium" style={{ 
-                      fontSize: '0.85rem',
-                      color: darkMode ? '#e9ecef' : '#495057'
-                    }}>
-                      <i className="bi bi-calendar3 me-1"></i> Date :
-                    </label>
-                    <div className="input-group input-group-sm border-0 bg-transparent" style={{ width: 'auto' }}>
-                      <input 
-                        type="date" 
-                        id="datePicker"
-                        className="form-control form-control-sm border-0 bg-transparent p-0"
-                        value={selectedDate}
-                        max={new Date().toISOString().split('T')[0]}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        style={{
-                          width: '120px',
-                          cursor: 'pointer',
-                          fontSize: '0.85rem',
-                          fontWeight: '500',
-                          color: darkMode ? '#e9ecef' : '#212529',
-                          backgroundColor: 'transparent',
-                          border: 'none',
-                          boxShadow: 'none',
-                          WebkitAppearance: 'none',
-                          appearance: 'none'
-                        }}
-                      />
-                      <button 
-                        className="btn btn-sm p-0 ms-2 d-flex align-items-center justify-content-center" 
-                        type="button"
-                        onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
-                        title="Today"
-                        style={{
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          backgroundColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                          border: 'none',
-                          color: darkMode ? '#e9ecef' : '#6c757d',
-                          transition: 'all 0.2s',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                        onMouseOver={(e) => {
-                          e.currentTarget.style.backgroundColor = darkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)';
-                          e.currentTarget.style.color = darkMode ? '#fff' : '#495057';
-                        }}
-                        onMouseOut={(e) => {
-                          e.currentTarget.style.backgroundColor = darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
-                          e.currentTarget.style.color = darkMode ? '#e9ecef' : '#6c757d';
-                        }}
-                      >
-                        <i className="bi bi-calendar-check" style={{ fontSize: '0.8rem' }}></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <h5 className="card-title mb-0">Daily User Call Statistics</h5>
+              <p className="text-muted small mb-0">
+                Top 5 users by call volume (Today)
+              </p>
             </div>
           </div>
         </Card.Header>
@@ -1355,125 +1430,94 @@ function Dashboard() {
               <Spinner animation="border" variant="primary" />
               <p className="mt-2 mb-0">Loading user statistics...</p>
             </div>
-          ) : userCallStats && userCallStats.length > 0 ? (
-            <div>
-              <div style={{ height: '400px' }} className="mb-4">
-                <Bar
-                  data={userCallChartData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: 'top',
-                        labels: {
-                          color: darkMode ? '#dee2e6' : '#212529',
-                        },
-                      },
-                      tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        backgroundColor: darkMode ? '#2a3042' : '#ffffff',
-                        titleColor: darkMode ? '#ffffff' : '#212529',
-                        bodyColor: darkMode ? '#e9ecef' : '#495057',
-                        borderColor: darkMode ? '#495057' : '#e9ecef',
-                      },
-                    },
-                    scales: {
-                      x: {
-                        stacked: true,
-                        grid: {
-                          color: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-                        },
-                        ticks: {
-                          color: darkMode ? '#dee2e6' : '#212529',
-                        },
-                      },
-                      y: {
-                        stacked: true,
-                        beginAtZero: true,
-                        grid: {
-                          color: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-                        },
-                        ticks: {
-                          color: darkMode ? '#dee2e6' : '#212529',
-                          stepSize: 1,
-                        },
-                      },
-                    },
-                  }}
-                />
-              </div>
-              {/* Tableau des détails */}
-              <div className="mt-4">
-                <h6 className="mb-3">User Details</h6>
-                <div className="table-responsive">
-                  <table className="table table-sm table-hover">
-                    <thead>
-                      <tr>
-                        <th>User</th>
-                        <th className="text-end">Duration</th>
-                        <th className="text-end">Sell Price</th>
-                        <th className="text-end">Revenue</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {userCallStats.map((user, index) => (
-                        <tr key={`details-${index}`}>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <div className="avatar-sm me-2">
-                                <div className="avatar-title rounded-circle bg-soft-primary text-primary">
-                                  {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
-                                </div>
-                              </div>
-                              <div>
-                                <h6 className="mb-0">{user.username || 'Unknown'}</h6>
-                              </div>
+          ) : userCallStats.length > 0 ? (
+            <div className="table-responsive">
+              <table className="table table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th className="text-end">Total Calls</th>
+                    <th className="text-end">Answered</th>
+                    <th className="text-end">Failed</th>
+                    <th className="text-end">Duration</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {userCallStats.map((user, index) => (
+                    <tr key={`daily-${index}`}>
+                      <td>
+                        <div className="d-flex align-items-center">
+                          <div className="avatar-sm me-2">
+                            <div className="avatar-title rounded-circle bg-soft-primary text-primary">
+                              {user.username
+                                ? user.username.charAt(0).toUpperCase()
+                                : "U"}
                             </div>
-                          </td>
-                          <td className="text-end">{formatDuration(user.total_duration || 0)}</td>
-                          <td className="text-end">{(user.sell_price || 0).toFixed(2)}</td>
-                          <td 
-                            className="text-end fw-bold" 
-                            style={{color: ((user.sell_price || 0) - (user.buy_price || 0)) >= 0 ? '#28a745' : '#dc3545'}}
-                          >
-                            {((user.sell_price || 0) - (user.buy_price || 0)).toFixed(2)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                          </div>
+                          <div>
+                            <h6 className="mb-0">
+                              {user.username || "Unknown"}
+                            </h6>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="text-end">{user.total_calls}</td>
+                      <td className="text-end text-success">
+                        {user.answered_calls}
+                      </td>
+                      <td className="text-end text-danger">
+                        {user.failed_calls}
+                      </td>
+                      <td className="text-end">
+                        {formatDuration(user.total_duration)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
             <div className="text-center py-4">
               <i className="bi bi-people fs-1 text-muted mb-2 d-block"></i>
-              <p className="text-muted mb-0">No user statistics available</p>
-              <div className="mt-3 text-start">
-                <p className="small text-muted">Debug details:</p>
-                <pre className="bg-light p-3 rounded small">
-                  userCallStats: {JSON.stringify(userCallStats, null, 2)}
-                </pre>
-              </div>
+              <p className="text-muted mb-0">
+                No daily user statistics available
+              </p>
             </div>
           )}
         </Card.Body>
       </Card>
 
       {/* Monthly User Call Statistics */}
-      <Card 
-        style={{...dashboardStyles.chartCard, ...fadeInAnimation, animationDelay: '0.75s', marginBottom: '1.5rem'}}
+      <Card
+        style={{
+          ...dashboardStyles.chartCard,
+          ...fadeInAnimation,
+          animationDelay: "0.75s",
+          marginBottom: "1.5rem",
+        }}
       >
-        <Card.Header style={dashboardStyles.cardHeader} className="border-bottom-0 pt-3 pb-0">
+        <Card.Header
+          style={dashboardStyles.cardHeader}
+          className="border-bottom-0 pt-3 pb-0"
+        >
           <div className="d-flex align-items-center">
-            <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(255,193,7,0.1), rgba(255,220,57,0.1))', width: '36px', height: '36px', marginRight: '0.75rem'}}>
+            <div
+              style={{
+                ...dashboardStyles.iconContainer,
+                background:
+                  "linear-gradient(135deg, rgba(255,193,7,0.1), rgba(255,220,57,0.1))",
+                width: "36px",
+                height: "36px",
+                marginRight: "0.75rem",
+              }}
+            >
               <i className="bi bi-calendar2-month-fill text-warning"></i>
             </div>
             <div>
               <h5 className="card-title mb-0">Monthly User Call Statistics</h5>
-              <p className="text-muted small mb-0">Top users by call volume (Current Month)</p>
+              <p className="text-muted small mb-0">
+                Top users by call volume (Current Month)
+              </p>
             </div>
           </div>
         </Card.Header>
@@ -1494,8 +1538,6 @@ function Dashboard() {
                     <th className="text-end">Answered</th>
                     <th className="text-end">Failed</th>
                     <th className="text-end">Duration</th>
-                    <th className="text-end">Sell Price</th>
-                    <th className="text-end">Revenue</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1505,22 +1547,28 @@ function Dashboard() {
                         <div className="d-flex align-items-center">
                           <div className="avatar-sm me-2">
                             <div className="avatar-title rounded-circle bg-soft-warning text-warning">
-                              {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
+                              {user.username
+                                ? user.username.charAt(0).toUpperCase()
+                                : "U"}
                             </div>
                           </div>
                           <div>
-                            <h6 className="mb-0">{user.username || 'Unknown'}</h6>
+                            <h6 className="mb-0">
+                              {user.username || "Unknown"}
+                            </h6>
                           </div>
                         </div>
                       </td>
                       <td className="text-end">{user.month}</td>
                       <td className="text-end">{user.total_calls}</td>
-                      <td className="text-end text-success">{user.answered_calls}</td>
-                      <td className="text-end text-danger">{user.failed_calls}</td>
-                      <td className="text-end">{formatDuration(user.total_duration)}</td>
-                      <td className="text-end">{(user.sell_price || 0).toFixed(2)}</td>
-                      <td className="text-end fw-bold" style={{color: (user.sell_price - (user.buy_price || 0)) >= 0 ? '#28a745' : '#dc3545'}}>
-                        {((user.sell_price || 0) - (user.buy_price || 0)).toFixed(2)}
+                      <td className="text-end text-success">
+                        {user.answered_calls}
+                      </td>
+                      <td className="text-end text-danger">
+                        {user.failed_calls}
+                      </td>
+                      <td className="text-end">
+                        {formatDuration(user.total_duration)}
                       </td>
                     </tr>
                   ))}
@@ -1530,130 +1578,110 @@ function Dashboard() {
           ) : (
             <div className="text-center py-4">
               <i className="bi bi-calendar2-month fs-1 text-muted mb-2 d-block"></i>
-              <p className="text-muted mb-0">No monthly user statistics available</p>
+              <p className="text-muted mb-0">
+                No monthly user statistics available
+              </p>
             </div>
           )}
         </Card.Body>
       </Card>
 
       {/* Recent Activity */}
-      <Card 
-        style={{...dashboardStyles.activityCard, ...fadeInAnimation, animationDelay: '0.8s'}}
-        onMouseEnter={(e) => e.currentTarget.style.boxShadow = darkMode ? '0 0.5rem 1.5rem rgba(0, 0, 0, 0.3)' : '0 0.5rem 1.5rem rgba(0, 0, 0, 0.1)'}
-        onMouseLeave={(e) => e.currentTarget.style.boxShadow = darkMode ? '0 0.25rem 1rem rgba(0, 0, 0, 0.2)' : '0 0.25rem 1rem rgba(0, 0, 0, 0.05)'}
+ 
+
+      <Card
+        style={{
+          ...dashboardStyles.activityCard,
+          ...fadeInAnimation,
+          animationDelay: "0.8s",
+        }}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.boxShadow = darkMode
+            ? "0 0.5rem 1.5rem rgba(0, 0, 0, 0.3)"
+            : "0 0.5rem 1.5rem rgba(0, 0, 0, 0.1)")
+        }
+        onMouseLeave={(e) =>
+          (e.currentTarget.style.boxShadow = darkMode
+            ? "0 0.25rem 1rem rgba(0, 0, 0, 0.2)"
+            : "0 0.25rem 1rem rgba(0, 0, 0, 0.05)")
+        }
       >
-        <Card.Header style={dashboardStyles.cardHeader} className="d-flex justify-content-between align-items-center">
+        <Card.Header
+          style={dashboardStyles.cardHeader}
+          className="d-flex justify-content-between align-items-center"
+        >
           <div>
             <div className="d-flex align-items-center">
-              <div style={{...dashboardStyles.iconContainer, background: 'linear-gradient(135deg, rgba(108,117,125,0.05), rgba(173,181,189,0.05))', width: '36px', height: '36px', marginRight: '0.75rem'}}>
-                <i className="bi bi-activity text-secondary"></i>
+              <div
+                style={{
+                  ...dashboardStyles.iconContainer,
+                  background:
+                    "linear-gradient(135deg, rgba(108,117,125,0.05), rgba(173,181,189,0.05))",
+                  width: "36px",
+                  height: "36px",
+                  marginRight: "0.75rem",
+                }}
+              >
+                <i className="bi bi-bar-chart-fill text-primary"></i>
               </div>
               <div>
-                <h5 className="card-title mb-0">Recent Activity</h5>
-                <p className="text-muted small mb-0">Latest call records</p>
+                <h5 className="card-title mb-0">CDR Analytics Dashboard</h5>
+                <p className="text-muted small mb-0">
+                  Detailed call data analysis
+                </p>
               </div>
             </div>
           </div>
-          {recentActivity.length > 0 && (
-            <span className="badge bg-primary rounded-pill" style={{fontSize: '0.8rem', padding: '0.35rem 0.75rem'}}>{recentActivity.length}</span>
-          )}
         </Card.Header>
         <Card.Body className="p-3">
-          {recentActivity.length > 0 ? (
-            <div className="position-relative">
-              {/* Timeline line */}
-              <div style={{
-                position: 'absolute',
-                left: '24px',
-                top: '0',
-                bottom: '0',
-                width: '2px',
-                backgroundColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-                zIndex: '1'
-              }}></div>
-              
-              {recentActivity.map((activity, index) => (
-                <div 
-                  key={activity.id || index} 
-                  style={{...dashboardStyles.activityItem, position: 'relative', zIndex: '2', borderLeft: 'none', marginLeft: '20px'}}
-                  className="mb-3 ps-4"
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 123, 255, 0.05)';
-                    e.currentTarget.style.transform = 'translateX(5px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = darkMode ? '#343a40' : 'white';
-                    e.currentTarget.style.transform = 'translateX(0)';
-                  }}
-                >
-                  {/* Timeline dot */}
-                  <div style={{
-                    position: 'absolute',
-                    left: '-6px',
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
-                    backgroundColor: activity.status === 'success' ? '#28a745' : (activity.status === 'warning' ? '#ffc107' : '#dc3545'),
-                    border: darkMode ? '2px solid #343a40' : '2px solid white',
-                    zIndex: '3'
-                  }}></div>
-                  
-                  <div className="d-flex align-items-start">
-                    <div style={{
-                      width: '40px', 
-                      height: '40px', 
-                      borderRadius: '50%', 
-                      backgroundColor: activity.status === 'success' ? 
-                        (darkMode ? 'rgba(40, 167, 69, 0.2)' : 'rgba(40, 167, 69, 0.1)') : 
-                        (activity.status === 'warning' ? 
-                          (darkMode ? 'rgba(255, 193, 7, 0.2)' : 'rgba(255, 193, 7, 0.1)') : 
-                          (darkMode ? 'rgba(220, 53, 69, 0.2)' : 'rgba(220, 53, 69, 0.1)')), 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center', 
-                      marginRight: '1rem',
-                      transition: 'all 0.3s ease'
-                    }}>
-                      <i className={`bi ${activity.status === 'success' ? 'bi-check-lg text-success' : (activity.status === 'warning' ? 'bi-exclamation-triangle text-warning' : 'bi-x-lg text-danger')}`} style={{fontSize: '1.2rem'}}></i>
-                    </div>
-                    
-                    <div className="flex-grow-1">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <h6 className="mb-0" style={{fontWeight: '600'}}>{activity.user}</h6>
-                        <Badge bg={darkMode ? 'dark' : 'light'} text={darkMode ? 'light' : 'dark'} style={{borderRadius: '12px', padding: '0.35rem 0.75rem'}}>
-                          <i className="bi bi-clock me-1"></i>
-                          {activity.timestamp}
-                        </Badge>
-                      </div>
-                      <p className="mb-0 text-muted small">{activity.details}</p>
-                      <div className="mt-1">
-                        <Badge bg={activity.status === 'success' ? 'success' : (activity.status === 'warning' ? 'warning' : 'danger')} style={{opacity: 0.8, fontSize: '0.7rem'}}>
-                          {activity.status === 'success' ? 'Successful' : (activity.status === 'warning' ? 'Warning' : 'Failed')}
-                        </Badge>
-                        {activity.duration && (
-                          <Badge bg={darkMode ? 'secondary' : 'light'} text={darkMode ? 'light' : 'dark'} className="ms-2" style={{fontSize: '0.7rem'}}>
-                            {activity.duration} min
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-5">
-              <div style={{width: '70px', height: '70px', borderRadius: '50%', backgroundColor: darkMode ? 'rgba(108, 117, 125, 0.2)' : 'rgba(108, 117, 125, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem'}}>
-                <i className="bi bi-activity text-muted" style={{fontSize: '2rem'}}></i>
-              </div>
-              <h6 className="mb-1">No Recent Activity</h6>
-              <p className="mb-3 text-muted small">Call activity will appear here</p>
-              <Button variant="outline-primary" size="sm" onClick={refreshData}>
-                <i className="bi bi-arrow-clockwise me-2"></i>
-                Refresh Data
-              </Button>
-            </div>
-          )}
+          <PowerBIEmbed
+            embedConfig={{
+              type: "report",
+              id: "22784ba6-c4f2-4b2c-a0f8-6708a114b06f", // Your report ID
+              embedUrl:
+                "https://app.powerbi.com/reportEmbed?reportId=22784ba6-c4f2-4b2c-a0f8-6708a114b06f&config=eyJjbHVzdGVyVXJsIjoiaHR0cHM6Ly9XQUJJLUZSQU5DRS1DRU5UUkFMLUEtUFJJTUFSWS1yZWRpcmVjdC5hbmFseXNpcy53aW5kb3dzLm5ldCIsImVtYmVkRmVhdHVyZXMiOnsidXNhZ2VNZXRyaWNzVk5leHQiOnRydWV9fQ%3d%3d",
+              accessToken:
+                "eyJjbHVzdGVyVXJsIjoiaHR0cHM6Ly9XQUJJLUZSQU5DRS1DRU5UUkFMLUEtUFJJTUFSWS1yZWRpcmVjdC5hbmFseXNpcy53aW5kb3dzLm5ldCIsImVtYmVkRmVhdHVyZXMiOnsidXNhZ2VNZXRyaWNzVk5leHQiOnRydWV9fQ",
+              tokenType: models.TokenType.Embed, // Azure AD token
+              settings: {
+                panes: {
+                  filters: {
+                    expanded: false,
+                    visible: false,
+                  },
+                },
+                background: models.BackgroundType.Transparent,
+              },
+            }}
+            eventHandlers={
+              new Map([
+                [
+                  "loaded",
+                  function () {
+                    console.log("Report loaded");
+                  },
+                ],
+                [
+                  "rendered",
+                  function () {
+                    console.log("Report rendered");
+                  },
+                ],
+                [
+                  "error",
+                  function (event) {
+                    console.log(event.detail);
+                  },
+                ],
+                ["visualClicked", () => console.log("visual clicked")],
+                ["pageChanged", (event) => console.log(event)],
+              ])
+            }
+            cssClassName={"reportClass"}
+            getEmbeddedComponent={(embeddedReport) => {
+              window.report = embeddedReport;
+            }}
+          />
         </Card.Body>
       </Card>
     </div>

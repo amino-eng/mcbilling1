@@ -16,7 +16,7 @@ const menuItems = {
   DIDs: [
     { path: "/DIDs", icon: "bi-telephone", label: "DIDs" },
     { path: "/DIDs/DIDDestination", icon: "bi-signpost", label: "DID Destination" },
-    { path: "/DIDs/DIDsUse", icon: "bi-person", label: "DID Usage" },
+    { path: "/DIDs/DIDsUse", icon: "bi-person", label: "DID Use" },
     // { path: "/DIDs/IVRs", icon: "bi-sliders", label: "IVR" },
     // { path: "/DIDs/Queues", icon: "bi-speedometer2", label: "Queues" },
     // { path: "/DIDs/QueuesMembres", icon: "bi-people", label: "Queue Members" },

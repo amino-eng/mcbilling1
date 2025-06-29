@@ -3450,3 +3450,203 @@
   }
 }
 
+{
+  "timestamp": "2025-06-26T16:19:12.659Z",
+  "error": {
+    "message": "Unknown column 'fakeRing' in 'field list'",
+    "code": "ER_BAD_FIELD_ERROR",
+    "errno": 1054,
+    "sqlState": "42S22",
+    "sqlMessage": "Unknown column 'fakeRing' in 'field list'",
+    "sql": "\n        UPDATE pkg_sip \n        SET \n          id_user = 5,\n          name = 'MCBillingg',\n          accountcode = 'amine',\n          host = 'dynamic',\n          status = 1,\n          allow = 'g729,gsm,opus,alaw,ulaw',\n          secret = 'hdgdhd',\n          callerid = '33270193143',\n          alias = '',\n          sip_group = '',\n          block_call_reg = 'no',\n          record_call = 'no',\n          techprefix = NULL,\n          nat = 'force_rport,comedia',\n          directmedia = 'no',\n          qualify = 'no',\n          context = 'billing',\n          dtmfmode = 'RFC2833',\n          insecure = 'no',\n          deny = '',\n          permit = '',\n          type = 'friend',\n          allowtransfer = 'no',\n          fakeRing = 'no',\n          callLimit = 0,\n          moh = '',\n          addparameter = '',\n          forwardType = 'undefined',\n          dial_timeout = 60,\n          enableVoicemail = 'no',\n          email = '',\n          voicemail_email = '',\n          voicemail_password = 24953\n        WHERE id = '34'\n      "
+  },
+  "context": {
+    "context": "Updating SIP user",
+    "userId": "34",
+    "query": "\n        UPDATE pkg_sip \n        SET \n          id_user = ?,\n          name = ?,\n          accountcode = ?,\n          host = ?,\n          status = ?,\n          allow = ?,\n          secret = ?,\n          callerid = ?,\n          alias = ?,\n          sip_group = ?,\n          block_call_reg = ?,\n          record_call = ?,\n          techprefix = ?,\n          nat = ?,\n          directmedia = ?,\n          qualify = ?,\n          context = ?,\n          dtmfmode = ?,\n          insecure = ?,\n          deny = ?,\n          permit = ?,\n          type = ?,\n          allowtransfer = ?,\n          fakeRing = ?,\n          callLimit = ?,\n          moh = ?,\n          addparameter = ?,\n          forwardType = ?,\n          dial_timeout = ?,\n          enableVoicemail = ?,\n          email = ?,\n          voicemail_email = ?,\n          voicemail_password = ?\n        WHERE id = ?\n      ",
+    "params": [
+      5,
+      "MCBillingg",
+      "amine",
+      "dynamic",
+      1,
+      "g729,gsm,opus,alaw,ulaw",
+      "[PASSWORD_HIDDEN]",
+      "33270193143",
+      "",
+      "",
+      "no",
+      "no",
+      null,
+      "force_rport,comedia",
+      "no",
+      "no",
+      "billing",
+      "RFC2833",
+      "no",
+      "",
+      "",
+      "friend",
+      "no",
+      "no",
+      0,
+      "",
+      "",
+      "undefined",
+      60,
+      "no",
+      "",
+      "",
+      24953,
+      "34"
+    ]
+  }
+}
+
+{
+  "timestamp": "2025-06-26T16:19:25.626Z",
+  "error": {
+    "message": "Unknown column 'fakeRing' in 'field list'",
+    "code": "ER_BAD_FIELD_ERROR",
+    "errno": 1054,
+    "sqlState": "42S22",
+    "sqlMessage": "Unknown column 'fakeRing' in 'field list'",
+    "sql": "\n        UPDATE pkg_sip \n        SET \n          id_user = 5,\n          name = 'MCBillingg',\n          accountcode = 'amine',\n          host = 'dynamic',\n          status = 1,\n          allow = 'g729,gsm,opus,alaw,ulaw',\n          secret = 'hdgdhd',\n          callerid = '33270193143',\n          alias = '',\n          sip_group = '',\n          block_call_reg = 'no',\n          record_call = 'no',\n          techprefix = NULL,\n          nat = 'force_rport,comedia',\n          directmedia = 'no',\n          qualify = 'no',\n          context = 'billing',\n          dtmfmode = 'RFC2833',\n          insecure = 'no',\n          deny = '',\n          permit = '',\n          type = 'friend',\n          allowtransfer = 'no',\n          fakeRing = 'no',\n          callLimit = 0,\n          moh = '',\n          addparameter = '',\n          forwardType = 'undefined',\n          dial_timeout = 60,\n          enableVoicemail = 'no',\n          email = '',\n          voicemail_email = '',\n          voicemail_password = 24953\n        WHERE id = '34'\n      "
+  },
+  "context": {
+    "context": "Updating SIP user",
+    "userId": "34",
+    "query": "\n        UPDATE pkg_sip \n        SET \n          id_user = ?,\n          name = ?,\n          accountcode = ?,\n          host = ?,\n          status = ?,\n          allow = ?,\n          secret = ?,\n          callerid = ?,\n          alias = ?,\n          sip_group = ?,\n          block_call_reg = ?,\n          record_call = ?,\n          techprefix = ?,\n          nat = ?,\n          directmedia = ?,\n          qualify = ?,\n          context = ?,\n          dtmfmode = ?,\n          insecure = ?,\n          deny = ?,\n          permit = ?,\n          type = ?,\n          allowtransfer = ?,\n          fakeRing = ?,\n          callLimit = ?,\n          moh = ?,\n          addparameter = ?,\n          forwardType = ?,\n          dial_timeout = ?,\n          enableVoicemail = ?,\n          email = ?,\n          voicemail_email = ?,\n          voicemail_password = ?\n        WHERE id = ?\n      ",
+    "params": [
+      5,
+      "MCBillingg",
+      "amine",
+      "dynamic",
+      1,
+      "g729,gsm,opus,alaw,ulaw",
+      "[PASSWORD_HIDDEN]",
+      "33270193143",
+      "",
+      "",
+      "no",
+      "no",
+      null,
+      "force_rport,comedia",
+      "no",
+      "no",
+      "billing",
+      "RFC2833",
+      "no",
+      "",
+      "",
+      "friend",
+      "no",
+      "no",
+      0,
+      "",
+      "",
+      "undefined",
+      60,
+      "no",
+      "",
+      "",
+      24953,
+      "34"
+    ]
+  }
+}
+
+{
+  "timestamp": "2025-06-26T16:20:26.919Z",
+  "error": {
+    "message": "Unknown column 'moh' in 'field list'",
+    "code": "ER_BAD_FIELD_ERROR",
+    "errno": 1054,
+    "sqlState": "42S22",
+    "sqlMessage": "Unknown column 'moh' in 'field list'",
+    "sql": "\n        UPDATE pkg_sip \n        SET \n          id_user = 5,\n          name = 'MCBillingg',\n          accountcode = 'amine',\n          host = 'dynamic',\n          status = 1,\n          allow = 'g729,gsm,opus,alaw,ulaw',\n          secret = 'hdgdhd',\n          callerid = '33270193143',\n          alias = '',\n          sip_group = '',\n          block_call_reg = 'no',\n          record_call = 'no',\n          techprefix = NULL,\n          nat = 'force_rport,comedia',\n          directmedia = 'no',\n          qualify = 'no',\n          context = 'billing',\n          dtmfmode = 'RFC2833',\n          insecure = 'no',\n          deny = '',\n          permit = '',\n          type = 'friend',\n          callLimit = 'no',\n          moh = 'no',\n          addparameter = 0,\n          dial_timeout = '',\n          email = '',\n          voicemail_email = 'undefined',\n          voicemail_password = 60\n        WHERE id = 'no'\n      "
+  },
+  "context": {
+    "context": "Updating SIP user",
+    "userId": "34",
+    "query": "\n        UPDATE pkg_sip \n        SET \n          id_user = ?,\n          name = ?,\n          accountcode = ?,\n          host = ?,\n          status = ?,\n          allow = ?,\n          secret = ?,\n          callerid = ?,\n          alias = ?,\n          sip_group = ?,\n          block_call_reg = ?,\n          record_call = ?,\n          techprefix = ?,\n          nat = ?,\n          directmedia = ?,\n          qualify = ?,\n          context = ?,\n          dtmfmode = ?,\n          insecure = ?,\n          deny = ?,\n          permit = ?,\n          type = ?,\n          callLimit = ?,\n          moh = ?,\n          addparameter = ?,\n          dial_timeout = ?,\n          email = ?,\n          voicemail_email = ?,\n          voicemail_password = ?\n        WHERE id = ?\n      ",
+    "params": [
+      5,
+      "MCBillingg",
+      "amine",
+      "dynamic",
+      1,
+      "g729,gsm,opus,alaw,ulaw",
+      "[PASSWORD_HIDDEN]",
+      "33270193143",
+      "",
+      "",
+      "no",
+      "no",
+      null,
+      "force_rport,comedia",
+      "no",
+      "no",
+      "billing",
+      "RFC2833",
+      "no",
+      "",
+      "",
+      "friend",
+      0,
+      "",
+      "",
+      60,
+      "",
+      "",
+      24953,
+      "34"
+    ]
+  }
+}
+
+{
+  "timestamp": "2025-06-26T16:22:10.093Z",
+  "error": {
+    "message": "Unknown column 'email' in 'field list'",
+    "code": "ER_BAD_FIELD_ERROR",
+    "errno": 1054,
+    "sqlState": "42S22",
+    "sqlMessage": "Unknown column 'email' in 'field list'",
+    "sql": "\n        UPDATE pkg_sip \n        SET \n          id_user = 5,\n          name = 'MCBillingg',\n          accountcode = 'amine',\n          host = 'dynamic',\n          status = 1,\n          allow = 'g729,gsm,opus,alaw,ulaw',\n          secret = 'hdgdhd',\n          callerid = '33270193143',\n          alias = '',\n          sip_group = '',\n          block_call_reg = 'no',\n          record_call = 'no',\n          techprefix = NULL,\n          nat = 'force_rport,comedia',\n          directmedia = 'no',\n          qualify = 'no',\n          context = 'billing',\n          dtmfmode = 'RFC2833',\n          insecure = 'no',\n          deny = '',\n          permit = '',\n          type = 'friend',\n          callLimit = 'no',\n          dial_timeout = 'no',\n          email = 0\n        WHERE id = ''\n      "
+  },
+  "context": {
+    "context": "Updating SIP user",
+    "userId": "34",
+    "query": "\n        UPDATE pkg_sip \n        SET \n          id_user = ?,\n          name = ?,\n          accountcode = ?,\n          host = ?,\n          status = ?,\n          allow = ?,\n          secret = ?,\n          callerid = ?,\n          alias = ?,\n          sip_group = ?,\n          block_call_reg = ?,\n          record_call = ?,\n          techprefix = ?,\n          nat = ?,\n          directmedia = ?,\n          qualify = ?,\n          context = ?,\n          dtmfmode = ?,\n          insecure = ?,\n          deny = ?,\n          permit = ?,\n          type = ?,\n          callLimit = ?,\n          dial_timeout = ?,\n          email = ?\n        WHERE id = ?\n      ",
+    "params": [
+      5,
+      "MCBillingg",
+      "amine",
+      "dynamic",
+      1,
+      "g729,gsm,opus,alaw,ulaw",
+      "[PASSWORD_HIDDEN]",
+      "33270193143",
+      "",
+      "",
+      "no",
+      "no",
+      null,
+      "force_rport,comedia",
+      "no",
+      "no",
+      "billing",
+      "RFC2833",
+      "no",
+      "",
+      "",
+      "friend",
+      0,
+      60,
+      "",
+      "34"
+    ]
+  }
+}
+

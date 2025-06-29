@@ -450,6 +450,8 @@ const SIPUsers = () => {
       // Prepare data for backend
       const dataToUpdate = {
         ...formData,
+        // Remove block_call_reg from the data
+        block_call_reg: undefined,
         // Use the user's password as the SIP secret
         secret: userPassword,
         // Map frontend field names to backend field names
